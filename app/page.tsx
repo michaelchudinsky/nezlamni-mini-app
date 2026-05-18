@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { initDataUnsafe } from "@telegram-apps/sdk";
 
 type Task = {
   id: string;
@@ -25,8 +26,13 @@ type Profile = {
   registration_date: string | null;
 };
 
-const DEMO_TELEGRAM_ID = "demo_user_1";
+const telegramUser =
+  typeof window !== "undefined"
+    ? (window as any).Telegram?.WebApp?.initDataUnsafe?.user
+    : null;
 
+const DEMO_TELEGRAM_ID =
+  telegramUser?.id?.toString() || "demo_user_1";
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -66,8 +72,7 @@ export default function Home() {
       .from("profiles")
       .insert({
         telegram_id: DEMO_TELEGRAM_ID,
-        first_name: null,
-      })
+first_name: telegramUser?.first_name || "User",      })
       .select()
       .single();
 
@@ -171,14 +176,18 @@ function getDaysWithUs() {
 }
 
 function getLevel() {
-  const points = profile?.points_total || 0;
+  const total = profile?.points_total || 0;
 
-  if (points >= 1000) return "🔥 Незламний";
-  if (points >= 500) return "⚔️ Боєць";
-  if (points >= 250) return "💪 Сильний";
-  if (points >= 100) return "🌱 На шляху";
+  if (total >= 10000) return "☀️ Світлоносний";
+  if (total >= 6000) return "🛡️ Титан";
+  if (total >= 3000) return "👑 Командир";
+  if (total >= 1500) return "🔥 Легенда";
+  if (total >= 700) return "⚔️ Незламний";
+  if (total >= 300) return "🥇 Воїн";
+  if (total >= 100) return "🥈 Боєць";
 
-  return "🔰 Новачок";
+  return "🥉 Новачок";
+}
 }
   if (!profile.start_weight || !profile.target_weight) {
     return (
