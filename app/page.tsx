@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { initDataUnsafe } from "@telegram-apps/sdk";
 
 type Task = {
   id: string;
@@ -26,14 +25,8 @@ type Profile = {
   registration_date: string | null;
 };
 
-const telegramUser =
-  typeof window !== "undefined"
-    ? (window as any).Telegram?.WebApp?.initDataUnsafe?.user
-    : null;
-
-const DEMO_TELEGRAM_ID =
-  telegramUser?.id?.toString() || "demo_user_1";
 export default function Home() {
+  const [telegramUser, setTelegramUser] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
@@ -43,12 +36,18 @@ export default function Home() {
   const [targetWeight, setTargetWeight] = useState("");
 
   useEffect(() => {
-    init();
+    const tg = (window as any).Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user || null;
+
+    if (tg) tg.ready();
+
+    setTelegramUser(user);
+    init(user);
   }, []);
 
-  async function init() {
+  async function init(tgUser: any) {
     await fetchTasks();
-    await getOrCreateProfile();
+    await getOrCreateProfile(tgUser);
   }
 
   async function fetchTasks() {
@@ -56,11 +55,13 @@ export default function Home() {
     setTasks(data || []);
   }
 
-  async function getOrCreateProfile() {
+  async function getOrCreateProfile(tgUser: any) {
+    const telegramId = tgUser?.id?.toString() || "demo_user_1";
+
     const { data: existing } = await supabase
       .from("profiles")
       .select("*")
-      .eq("telegram_id", DEMO_TELEGRAM_ID)
+      .eq("telegram_id", telegramId)
       .single();
 
     if (existing) {
@@ -71,8 +72,9 @@ export default function Home() {
     const { data: created } = await supabase
       .from("profiles")
       .insert({
-        telegram_id: DEMO_TELEGRAM_ID,
-first_name: telegramUser?.first_name || "User",      })
+        telegram_id: telegramId,
+        first_name: tgUser?.first_name || null,
+      })
       .select()
       .single();
 
@@ -101,6 +103,30 @@ first_name: telegramUser?.first_name || "User",      })
     return new Date().toISOString().slice(0, 10);
   }
 
+  function getDaysWithUs() {
+    if (!profile?.registration_date) return 1;
+
+    const start = new Date(profile.registration_date);
+    const now = new Date();
+    const diff = now.getTime() - start.getTime();
+
+    return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
+  }
+
+  function getLevel() {
+    const total = profile?.points_total || 0;
+
+    if (total >= 10000) return "☀️ Світлоносний";
+    if (total >= 6000) return "🛡️ Титан";
+    if (total >= 3000) return "👑 Командир";
+    if (total >= 1500) return "🔥 Легенда";
+    if (total >= 700) return "⚔️ Незламний";
+    if (total >= 300) return "🥇 Воїн";
+    if (total >= 100) return "🥈 Боєць";
+
+    return "🥉 Новачок";
+  }
+
   async function completeTask(task: Task) {
     if (!profile) return;
 
@@ -125,34 +151,31 @@ first_name: telegramUser?.first_name || "User",      })
       event_day: todayDate,
     });
 
-  let newStreak = profile.streak_current || 0;
+    let newStreak = profile.streak_current || 0;
 
-const todayDateObj = new Date(todayDate);
+    const todayDateObj = new Date(todayDate);
+    const yesterday = new Date(todayDateObj);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-const yesterday = new Date(todayDateObj);
-yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().slice(0, 10);
 
-const yesterdayString = yesterday.toISOString().slice(0, 10);
+    if (profile.last_activity_date === yesterdayString) {
+      newStreak += 1;
+    } else if (profile.last_activity_date !== todayDate) {
+      newStreak = 1;
+    }
 
-if (profile.last_activity_date === yesterdayString) {
-  newStreak += 1;
-} else if (profile.last_activity_date !== todayDate) {
-  newStreak = 1;
-}
-
-
-
-const { data } = await supabase
-  .from("profiles")
-  .update({
-    points_today: profile.points_today + task.points,
-    points_total: profile.points_total + task.points,
-    streak_current: newStreak,
-    last_activity_date: todayDate,
-  })
-  .eq("id", profile.id)
-  .select()
-  .single();
+    const { data } = await supabase
+      .from("profiles")
+      .update({
+        points_today: profile.points_today + task.points,
+        points_total: profile.points_total + task.points,
+        streak_current: newStreak,
+        last_activity_date: todayDate,
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
 
     setProfile(data);
     setMessage(`🔥 Зараховано! ${task.title} +${task.points} балів`);
@@ -165,35 +188,16 @@ const { data } = await supabase
       </main>
     );
   }
-function getDaysWithUs() {
-  if (!profile?.registration_date) return 1;
 
-  const start = new Date(profile.registration_date);
-  const now = new Date();
-
-  const diff = now.getTime() - start.getTime();
-  return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
-}
-
-function getLevel() {
-  const total = profile?.points_total || 0;
-
-  if (total >= 10000) return "☀️ Світлоносний";
-  if (total >= 6000) return "🛡️ Титан";
-  if (total >= 3000) return "👑 Командир";
-  if (total >= 1500) return "🔥 Легенда";
-  if (total >= 700) return "⚔️ Незламний";
-  if (total >= 300) return "🥇 Воїн";
-  if (total >= 100) return "🥈 Боєць";
-
-  return "🥉 Новачок";
-}
-}
   if (!profile.start_weight || !profile.target_weight) {
     return (
       <main className="min-h-screen bg-black text-white p-6">
         <div className="max-w-md mx-auto">
           <h1 className="text-3xl font-bold mb-6">NEZLAMNI 🔥</h1>
+
+          <div className="bg-red-900 rounded-xl p-3 mb-4 text-xs break-all">
+            Telegram ID: {telegramUser?.id?.toString() || "NO TELEGRAM USER"}
+          </div>
 
           <div className="bg-zinc-900 rounded-2xl p-5 space-y-4">
             <h2 className="text-xl font-bold">Стартова анкета</h2>
@@ -237,45 +241,48 @@ function getLevel() {
     <main className="min-h-screen bg-black text-white p-6">
       <div className="max-w-md mx-auto">
         <h1 className="text-4xl font-bold mb-6">NEZLAMNI 🔥</h1>
- <div className="bg-red-900 rounded-xl p-3 mb-4 text-xs break-all">
-  Telegram ID: {telegramUser?.id?.toString() || "NO TELEGRAM USER"}
-</div>
+
+        <div className="bg-red-900 rounded-xl p-3 mb-4 text-xs break-all">
+          Telegram ID: {telegramUser?.id?.toString() || "NO TELEGRAM USER"}
+        </div>
 
         <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
           <p>📊 Сьогодні: {profile.points_today || 0} балів</p>
           <p>🏆 Всього: {profile.points_total || 0} балів</p>
           <p>🔥 Серія: {profile.streak_current || 0} днів</p>
           <p>🎮 Рівень: {getLevel()}</p>
-<p>🗓 З нами: {getDaysWithUs()} днів</p>
-<p>
-  ⚖️ {profile.start_weight} кг → {profile.current_weight} кг → {profile.target_weight} кг
-</p>
+          <p>🗓 З нами: {getDaysWithUs()} днів</p>
+          <p>
+            ⚖️ {profile.start_weight} кг → {profile.current_weight} кг →{" "}
+            {profile.target_weight} кг
+          </p>
 
-<div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden mt-3">
-  <div
-    className="bg-green-500 h-4"
-    style={{
-      width: `${
-        profile.start_weight && profile.target_weight && profile.current_weight
-          ? Math.min(
-              100,
-              Math.max(
-                0,
-                ((profile.start_weight - profile.current_weight) /
-                  (profile.start_weight - profile.target_weight)) *
-                  100
-              )
-            )
-          : 0
-      }%`,
-    }}
-  />
-</div>        </div>
+          <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden mt-3">
+            <div
+              className="bg-green-500 h-4"
+              style={{
+                width: `${
+                  profile.start_weight &&
+                  profile.target_weight &&
+                  profile.current_weight
+                    ? Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          ((profile.start_weight - profile.current_weight) /
+                            (profile.start_weight - profile.target_weight)) *
+                            100
+                        )
+                      )
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
+        </div>
 
         {message && (
-          <div className="bg-zinc-800 rounded-2xl p-4 mb-6">
-            {message}
-          </div>
+          <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
         )}
 
         <div className="space-y-4">
