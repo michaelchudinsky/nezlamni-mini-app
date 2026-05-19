@@ -23,11 +23,11 @@ type Profile = {
   target_weight: number | null;
   last_activity_date: string | null;
   registration_date: string | null;
+  };
   type LeaderboardUser = {
   profile_id: string;
   name: string;
   points: number;
-};
 };
 
 export default function Home() {
