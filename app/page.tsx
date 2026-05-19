@@ -195,9 +195,6 @@ export default function Home() {
         <div className="max-w-md mx-auto">
           <h1 className="text-3xl font-bold mb-6">NEZLAMNI 🔥</h1>
 
-          <div className="bg-red-900 rounded-xl p-3 mb-4 text-xs break-all">
-            Telegram ID: {telegramUser?.id?.toString() || "NO TELEGRAM USER"}
-          </div>
 
           <div className="bg-zinc-900 rounded-2xl p-5 space-y-4">
             <h2 className="text-xl font-bold">Стартова анкета</h2>
@@ -242,9 +239,6 @@ export default function Home() {
       <div className="max-w-md mx-auto">
         <h1 className="text-4xl font-bold mb-6">NEZLAMNI 🔥</h1>
 
-        <div className="bg-red-900 rounded-xl p-3 mb-4 text-xs break-all">
-          Telegram ID: {telegramUser?.id?.toString() || "NO TELEGRAM USER"}
-        </div>
 
         <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
           <p>📊 Сьогодні: {profile.points_today || 0} балів</p>
