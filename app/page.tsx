@@ -36,6 +36,7 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
+  
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -257,8 +258,7 @@ async function updateWeight() {
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-black text-white p-6">
-        Завантаження...
+<main className="min-h-screen bg-black text-white p-6 pb-24">        Завантаження...
       </main>
     );
   }
@@ -411,6 +411,14 @@ async function updateWeight() {
   )}
 </div>
       </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
+  <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
+    <button>🏠<br />Головна</button>
+    <button>🏆<br />Рейтинг</button>
+    <button>👤<br />Профіль</button>
+    <button>🎁<br />Нагороди</button>
+  </div>
+</div>
     </main>
   );
 }
