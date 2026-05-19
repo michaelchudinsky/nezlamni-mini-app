@@ -62,31 +62,41 @@ export default function Home() {
     setTasks(data || []);
   }
 
-  async function getOrCreateProfile(tgUser: any) {
-    const telegramId = tgUser?.id?.toString() || "demo_user_1";
+async function getOrCreateProfile(tgUser: any) {
+  const telegramId = tgUser?.id?.toString() || "demo_user_1";
 
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("telegram_id", telegramId)
-      .single();
+  const { data: existing, error: selectError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("telegram_id", telegramId)
+    .maybeSingle();
 
-    if (existing) {
-      setProfile(existing);
-      return;
-    }
-
-    const { data: created } = await supabase
-      .from("profiles")
-      .insert({
-        telegram_id: telegramId,
-        first_name: tgUser?.first_name || null,
-      })
-      .select()
-      .single();
-
-    setProfile(created);
+  if (selectError) {
+    setMessage("Помилка профілю: " + selectError.message);
+    return;
   }
+
+  if (existing) {
+    setProfile(existing);
+    return;
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("profiles")
+    .insert({
+      telegram_id: telegramId,
+      first_name: tgUser?.first_name || "User",
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    setMessage("Помилка створення профілю: " + insertError.message);
+    return;
+  }
+
+  setProfile(created);
+}
 
   async function saveProfile() {
     if (!profile) return;
