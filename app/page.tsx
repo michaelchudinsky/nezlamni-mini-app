@@ -36,6 +36,7 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("home");
   
 
   const [name, setName] = useState("");
@@ -312,6 +313,9 @@ async function updateWeight() {
     <main className="min-h-screen bg-black text-white p-6">
       <div className="max-w-md mx-auto">
         <h1 className="text-4xl font-bold mb-6">NEZLAMNI 🔥</h1>
+        <p className="text-zinc-400 mb-4">
+  Активна вкладка: {activeTab}
+</p>
 
 
         <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
@@ -413,10 +417,10 @@ async function updateWeight() {
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
   <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
-    <button>🏠<br />Головна</button>
-    <button>🏆<br />Рейтинг</button>
-    <button>👤<br />Профіль</button>
-    <button>🎁<br />Нагороди</button>
+<button onClick={() => setActiveTab("home")}>🏠<br />Головна</button>
+<button onClick={() => setActiveTab("leaderboard")}>🏆<br />Рейтинг</button>
+<button onClick={() => setActiveTab("profile")}>👤<br />Профіль</button>
+<button onClick={() => setActiveTab("rewards")}>🎁<br />Нагороди</button>
   </div>
 </div>
     </main>
