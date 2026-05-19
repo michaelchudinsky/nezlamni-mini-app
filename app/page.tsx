@@ -23,11 +23,17 @@ type Profile = {
   target_weight: number | null;
   last_activity_date: string | null;
   registration_date: string | null;
+  type LeaderboardUser = {
+  profile_id: string;
+  name: string;
+  points: number;
+};
 };
 
 export default function Home() {
   const [telegramUser, setTelegramUser] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
 
@@ -46,9 +52,10 @@ export default function Home() {
   }, []);
 
   async function init(tgUser: any) {
-    await fetchTasks();
-    await getOrCreateProfile(tgUser);
-  }
+  await fetchTasks();
+  await getOrCreateProfile(tgUser);
+  await fetchLeaderboard();
+}
 
   async function fetchTasks() {
     const { data } = await supabase.from("tasks").select("*");
@@ -126,7 +133,44 @@ export default function Home() {
 
     return "🥉 Новачок";
   }
+async function fetchLeaderboard() {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
 
+  const monthStart = startOfMonth.toISOString().slice(0, 10);
+
+  const { data } = await supabase
+    .from("daily_logs")
+    .select("profile_id, points, profiles(first_name, telegram_id)")
+    .gte("event_day", monthStart);
+
+  const map = new Map<string, LeaderboardUser>();
+
+  data?.forEach((log: any) => {
+    const profileId = log.profile_id;
+    const name =
+      log.profiles?.first_name ||
+      `User ${log.profiles?.telegram_id || ""}`;
+
+    const existing = map.get(profileId);
+
+    if (existing) {
+      existing.points += log.points || 0;
+    } else {
+      map.set(profileId, {
+        profile_id: profileId,
+        name,
+        points: log.points || 0,
+      });
+    }
+  });
+
+  const sorted = Array.from(map.values())
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 10);
+
+  setLeaderboard(sorted);
+}
   async function completeTask(task: Task) {
     if (!profile) return;
 
@@ -179,6 +223,7 @@ export default function Home() {
 
     setProfile(data);
     setMessage(`🔥 Зараховано! ${task.title} +${task.points} балів`);
+    await fetchLeaderboard();
   }
 
   if (!profile) {
@@ -290,6 +335,27 @@ export default function Home() {
             </button>
           ))}
         </div>
+        <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
+  <h2 className="text-xl font-bold mb-4">🏆 Рейтинг місяця</h2>
+
+  {leaderboard.length === 0 ? (
+    <p className="text-zinc-400">Поки немає учасників</p>
+  ) : (
+    <div className="space-y-2">
+      {leaderboard.map((user, index) => (
+        <div
+          key={user.profile_id}
+          className="flex justify-between bg-zinc-800 rounded-xl p-3"
+        >
+          <span>
+            {index + 1}. {user.name}
+          </span>
+          <span>{user.points} балів</span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
       </div>
     </main>
   );
