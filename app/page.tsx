@@ -40,7 +40,8 @@ export default function Home() {
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
   const [targetWeight, setTargetWeight] = useState("");
-
+const [newWeight, setNewWeight] = useState("");
+const [showWeightForm, setShowWeightForm] = useState(false);
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user || null;
@@ -181,6 +182,24 @@ async function fetchLeaderboard() {
 
   setLeaderboard(sorted);
 }
+async function updateWeight() {
+  if (!profile || !newWeight) return;
+
+  const { data } = await supabase
+    .from("profiles")
+    .update({
+      current_weight: Number(newWeight),
+    })
+    .eq("id", profile.id)
+    .select()
+    .single();
+
+  setProfile(data);
+  setNewWeight("");
+  setShowWeightForm(false);
+
+  setMessage("⚖️ Вага оновлена!");
+}
   async function completeTask(task: Task) {
     if (!profile) return;
 
@@ -296,6 +315,31 @@ async function fetchLeaderboard() {
 
 
         <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
+          <button
+  onClick={() => setShowWeightForm(!showWeightForm)}
+  className="w-full bg-zinc-800 rounded-xl p-3 mt-4 font-semibold"
+>
+  ✏️ Оновити вагу
+</button>
+
+{showWeightForm && (
+  <div className="mt-4 space-y-3">
+    <input
+      className="w-full rounded-xl p-3 bg-zinc-800"
+      placeholder="Нова вага"
+      type="number"
+      value={newWeight}
+      onChange={(e) => setNewWeight(e.target.value)}
+    />
+
+    <button
+      onClick={updateWeight}
+      className="w-full bg-green-600 rounded-xl p-3 font-bold"
+    >
+      Зберегти
+    </button>
+  </div>
+)}
           <p>📊 Сьогодні: {profile.points_today || 0} балів</p>
           <p>🏆 Всього: {profile.points_total || 0} балів</p>
           <p>🔥 Серія: {profile.streak_current || 0} днів</p>
