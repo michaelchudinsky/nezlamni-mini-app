@@ -317,7 +317,7 @@ async function updateWeight() {
   Активна вкладка: {activeTab}
 </p>
 
-
+{activeTab === "home" && (
         <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
           <button
   onClick={() => setShowWeightForm(!showWeightForm)}
@@ -343,6 +343,7 @@ async function updateWeight() {
       Зберегти
     </button>
   </div>
+  
 )}
           <p>📊 Сьогодні: {profile.points_today || 0} балів</p>
           <p>🏆 Всього: {profile.points_total || 0} балів</p>
@@ -377,7 +378,7 @@ async function updateWeight() {
             />
           </div>
         </div>
-
+)}
         {message && (
           <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
         )}
@@ -392,6 +393,7 @@ async function updateWeight() {
               {task.title} +{task.points}
             </button>
           ))}
+          
         </div>
         <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
   <h2 className="text-xl font-bold mb-4">🏆 Рейтинг місяця</h2>
@@ -422,6 +424,7 @@ async function updateWeight() {
 <button onClick={() => setActiveTab("profile")}>👤<br />Профіль</button>
 <button onClick={() => setActiveTab("rewards")}>🎁<br />Нагороди</button>
   </div>
+  
 </div>
     </main>
   );
