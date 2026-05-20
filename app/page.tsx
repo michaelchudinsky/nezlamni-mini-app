@@ -509,13 +509,13 @@ async function updateWeight() {
 
   return (
     <main className="nezlamni-shell min-h-screen p-3 text-[#F5F5F5]">
-      <div className="app-frame vyshyvanka-edge relative mx-auto min-h-[calc(100vh-24px)] max-w-md overflow-hidden rounded-[28px] px-4 pb-28 pt-4">
+      <div className="app-frame vyshyvanka-edge relative mx-auto min-h-[calc(100vh-24px)] max-w-md overflow-hidden rounded-[18px] px-4 pb-28 pt-4">
         <header className="mb-4 flex items-start justify-between">
           <div>
-            <h1 className="logo-gold text-[3.25rem] font-black leading-none">
+            <h1 className="logo-gold text-[3.55rem] font-black leading-none">
               NEZLAMNI
             </h1>
-            <p className="mt-1 text-[1.05rem] text-[#F3D49A]">
+            <p className="mt-1 text-[1.02rem] text-[#F3D49A]">
               Сила. Дисципліна. Незламність.
             </p>
           </div>
@@ -535,10 +535,10 @@ async function updateWeight() {
         )}
 
         {activeTab === "home" && (
-          <section className="space-y-4">
-            <div className="premium-card rounded-2xl p-3">
-              <div className="flex items-center gap-4">
-                <div className="avatar-ring relative h-[7.2rem] w-[7.2rem] shrink-0 rounded-full p-2">
+          <section className="space-y-3">
+            <div className="home-user-card rounded-2xl p-3">
+              <div className="grid grid-cols-[7.2rem_1fr_5.6rem] items-center gap-4">
+                <div className="avatar-ring relative h-[7.1rem] w-[7.1rem] shrink-0 rounded-full p-2">
                   <div className="avatar-portrait h-full w-full rounded-full" />
                   <div className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
                     ◉
@@ -562,40 +562,42 @@ async function updateWeight() {
                     </span>
                   </div>
                 </div>
-                <div className="hidden w-20 shrink-0 flex-col items-center sm:flex">
-                  <div className="trident-badge grid h-16 w-16 place-items-center rounded-xl text-3xl text-[#D4AF37]">
+                <div className="flex w-[5.6rem] shrink-0 flex-col items-center">
+                  <div className="trident-badge grid h-[4.6rem] w-[4.6rem] place-items-center rounded-xl text-4xl text-[#D4AF37]">
                     ♜
                   </div>
-                  <p className="mt-2 text-2xl font-black text-[#F2C94C]">
+                  <p className="mt-1 text-2xl font-black leading-none text-[#F2C94C]">
                     {profile.streak_current || 7}
                   </p>
-                  <p className="-mt-1 text-xs text-[#F0D8A1]">
+                  <p className="mt-0.5 text-xs text-[#F0D8A1]">
                     стрік
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="premium-card rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="grid h-16 w-24 place-items-center rounded-xl bg-[#0B0C0D] text-4xl text-[#E63946]">
+            <div className="premium-card overflow-hidden rounded-xl p-0">
+              <div className="flex min-h-[4.6rem] items-stretch justify-between">
+                <div className="score-card-symbol grid w-[7.4rem] place-items-center text-4xl text-[#E63946]">
                   ✥
                 </div>
-                <div className="flex-1 px-4">
+                <div className="flex-1 px-4 py-3">
                   <p className="section-title text-xs font-black">
                     ТВОЇ БАЛИ
                   </p>
-                  <p className="mt-1 text-4xl font-light text-[#F2CDA0]">
+                  <p className="text-4xl font-light leading-tight text-[#F2CDA0]">
                     {formatPoints(displayPoints)}
                   </p>
                 </div>
-                <span className="text-3xl text-[#F2C94C]">›</span>
+                <span className="flex items-center pr-4 text-3xl text-[#F2C94C]">
+                  ›
+                </span>
               </div>
             </div>
 
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="section-title text-xl font-medium">
+                <h2 className="section-title text-lg font-medium">
                   СЬОГОДНІШНІ ЗАВДАННЯ
                 </h2>
                 <span className="rounded-full border border-[#A67C52]/40 px-3 py-1 text-xs text-[#D4AF37]">
@@ -603,7 +605,7 @@ async function updateWeight() {
                 </span>
               </div>
 
-              <div className="space-y-0 overflow-hidden rounded-2xl border border-[#A67C52]/32">
+              <div className="space-y-0 overflow-hidden rounded-xl border border-[#A67C52]/32">
                 {tasks.map((task) => {
                   const meta = getTaskMeta(task);
                   const isCompleted = completedTaskCodes.includes(task.code);
@@ -613,7 +615,7 @@ async function updateWeight() {
                       key={task.id}
                       onClick={() => completeTask(task)}
                       disabled={isCompleted}
-                      className={`task-row flex w-full items-center gap-3 border-b border-[#A67C52]/14 p-3 text-left transition last:border-b-0 active:scale-[0.99] ${
+                      className={`task-row flex w-full items-center gap-3 border-b border-[#A67C52]/14 px-4 py-3 text-left transition last:border-b-0 active:scale-[0.99] ${
                         isCompleted
                           ? "bg-[#8B1E3F]/28"
                           : ""
@@ -624,7 +626,7 @@ async function updateWeight() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-lg font-medium">{meta.title}</h3>
+                          <h3 className="text-lg font-medium leading-tight">{meta.title}</h3>
                           <span className="text-xl font-medium text-[#F5E4C5]">
                             +{task.points}
                           </span>
@@ -648,7 +650,7 @@ async function updateWeight() {
               </div>
             </div>
 
-            <div className="hero-banner relative overflow-hidden rounded-2xl border border-[#A67C52]/38 p-6">
+            <div className="banner-warrior relative min-h-[9.7rem] overflow-hidden rounded-xl border border-[#A67C52]/38 p-6">
               <div className="max-w-[14rem]">
                 <p className="font-serif text-2xl font-black leading-tight tracking-[0.03em] text-[#F2D8A4]">
                   СИЛА РОДУ В ТОБІ

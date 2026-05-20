@@ -116,7 +116,10 @@ body {
 
 .app-frame {
   border: 1px solid rgba(166, 124, 82, 0.46);
-  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.04), 0 24px 60px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 0 48px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(212, 175, 55, 0.04),
+    0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
 .logo-gold {
@@ -138,9 +141,10 @@ body {
 
 .avatar-portrait {
   background:
-    radial-gradient(circle at 50% 24%, #f0c2a3 0 12%, transparent 13%),
-    radial-gradient(ellipse at 50% 40%, #2b1712 0 26%, transparent 27%),
-    linear-gradient(180deg, transparent 0 48%, rgba(230, 57, 70, 0.35) 49% 62%, #111 63%);
+    radial-gradient(circle at 50% 27%, #f0c2a3 0 12%, transparent 13%),
+    radial-gradient(ellipse at 50% 38%, #27120e 0 30%, transparent 31%),
+    radial-gradient(ellipse at 50% 17%, #0b0706 0 35%, transparent 36%),
+    linear-gradient(180deg, transparent 0 48%, rgba(230, 57, 70, 0.36) 49% 64%, #111 65%);
 }
 
 .trident-badge {
@@ -171,4 +175,30 @@ body {
 .section-title {
   color: var(--warm-gold);
   letter-spacing: 0.12em;
+}
+
+.home-user-card {
+  background:
+    radial-gradient(circle at 14% 15%, rgba(166, 124, 82, 0.18), transparent 9rem),
+    linear-gradient(145deg, rgba(20, 26, 29, 0.82), rgba(8, 9, 10, 0.95));
+  border: 1px solid rgba(166, 124, 82, 0.44);
+  box-shadow: inset 0 1px 0 rgba(242, 201, 76, 0.06), 0 18px 42px rgba(0, 0, 0, 0.34);
+}
+
+.score-card-symbol {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(230, 57, 70, 0.22), transparent 45%),
+    linear-gradient(145deg, rgba(18, 18, 19, 0.95), rgba(7, 8, 9, 0.98));
+  border-right: 1px solid rgba(166, 124, 82, 0.28);
+}
+
+.banner-warrior {
+  background:
+    linear-gradient(90deg, rgba(6, 6, 7, 0.84), rgba(6, 6, 7, 0.22) 58%, rgba(6, 6, 7, 0.42)),
+    radial-gradient(ellipse at 72% 67%, rgba(242, 201, 76, 0.34), transparent 16%),
+    radial-gradient(ellipse at 72% 100%, #111 0 18%, transparent 19%),
+    radial-gradient(ellipse at 72% 48%, #0d0d0f 0 9%, transparent 10%),
+    radial-gradient(circle at 72% 36%, #17100c 0 6%, transparent 7%),
+    radial-gradient(circle at 80% 12%, rgba(230, 57, 70, 0.18), transparent 11rem),
+    linear-gradient(135deg, #151414, #24100e 48%, #0b0b0d 100%);
 }
