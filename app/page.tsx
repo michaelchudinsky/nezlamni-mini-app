@@ -78,7 +78,13 @@ const [newWeight, setNewWeight] = useState("");
 const [showWeightForm, setShowWeightForm] = useState(false);
 
   const fetchTasks = useCallback(async () => {
-    const { data } = await supabase.from("tasks").select("*");
+    const { data, error } = await supabase.from("tasks").select("*");
+
+    if (error) {
+      setMessage("Помилка завантаження завдань: " + error.message);
+      return;
+    }
+
     setTasks(data || []);
   }, []);
 
@@ -124,10 +130,15 @@ const fetchLeaderboard = useCallback(async () => {
 
   const monthStart = startOfMonth.toISOString().slice(0, 10);
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("daily_logs")
     .select("profile_id, points, profiles(first_name, telegram_id)")
     .gte("event_day", monthStart);
+
+  if (error) {
+    setMessage("Помилка рейтингу: " + error.message);
+    return;
+  }
 
   const map = new Map<string, LeaderboardUser>();
 
@@ -182,7 +193,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   async function saveProfile() {
     if (!profile) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .update({
         first_name: name,
@@ -194,7 +205,13 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .select()
       .single();
 
+    if (error) {
+      setMessage("Помилка збереження профілю: " + error.message);
+      return;
+    }
+
     setProfile(data);
+    setMessage("Профіль збережено!");
   }
 
   function today() {
@@ -227,7 +244,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({
       current_weight: Number(newWeight),
@@ -235,6 +252,11 @@ async function updateWeight() {
     .eq("id", profile.id)
     .select()
     .single();
+
+  if (error) {
+    setMessage("Помилка оновлення ваги: " + error.message);
+    return;
+  }
 
   setProfile(data);
   setNewWeight("");
@@ -247,24 +269,34 @@ async function updateWeight() {
 
     const todayDate = today();
 
-    const { data: existingLogs } = await supabase
+    const { data: existingLogs, error: existingLogsError } = await supabase
       .from("daily_logs")
       .select("*")
       .eq("profile_id", profile.id)
       .eq("task_code", task.code)
       .eq("event_day", todayDate);
 
+    if (existingLogsError) {
+      setMessage("Помилка перевірки завдання: " + existingLogsError.message);
+      return;
+    }
+
     if (existingLogs && existingLogs.length > 0) {
       setMessage("❌ Ти вже виконав це завдання сьогодні");
       return;
     }
 
-    await supabase.from("daily_logs").insert({
+    const { error: insertLogError } = await supabase.from("daily_logs").insert({
       profile_id: profile.id,
       task_code: task.code,
       points: task.points,
       event_day: todayDate,
     });
+
+    if (insertLogError) {
+      setMessage("Помилка запису завдання: " + insertLogError.message);
+      return;
+    }
 
     let newStreak = profile.streak_current || 0;
 
@@ -280,7 +312,7 @@ async function updateWeight() {
       newStreak = 1;
     }
 
-    const { data } = await supabase
+    const { data, error: updateProfileError } = await supabase
       .from("profiles")
       .update({
         points_today: profile.points_today + task.points,
@@ -291,6 +323,11 @@ async function updateWeight() {
       .eq("id", profile.id)
       .select()
       .single();
+
+    if (updateProfileError) {
+      setMessage("Помилка оновлення балів: " + updateProfileError.message);
+      return;
+    }
 
     setProfile(data);
     setMessage(`🔥 Зараховано! ${task.title} +${task.points} балів`);
