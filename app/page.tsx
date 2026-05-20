@@ -583,11 +583,11 @@ async function updateWeight() {
                 <div className="flex w-[4.5rem] shrink-0 flex-col items-center">
                   <div className="trident-badge h-[3.65rem] w-[3.65rem] overflow-hidden">
                     <Image
-                      src="/assets/nezlamni-badge-custom.png"
+                      src="/assets/nezlamni-badge.png"
                       alt=""
-                      width={512}
-                      height={512}
-                      className="h-full w-full object-cover"
+                      width={104}
+                      height={104}
+                      className="h-full w-full object-contain"
                     />
                   </div>
                   <p className="mt-1 text-2xl font-black leading-none text-[#F2C94C]">
