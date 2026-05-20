@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Task = {
@@ -23,49 +23,66 @@ type Profile = {
   target_weight: number | null;
   last_activity_date: string | null;
   registration_date: string | null;
-  };
-  type LeaderboardUser = {
+};
+
+type LeaderboardUser = {
   profile_id: string;
   name: string;
   points: number;
 };
 
+type TelegramUser = {
+  id?: number | string;
+  first_name?: string | null;
+};
+
+type TelegramWebApp = {
+  initDataUnsafe?: {
+    user?: TelegramUser;
+  };
+  ready: () => void;
+};
+
+type TelegramWindow = Window & {
+  Telegram?: {
+    WebApp?: TelegramWebApp;
+  };
+};
+
+type LeaderboardLog = {
+  profile_id: string;
+  points: number | null;
+  profiles:
+    | {
+        first_name: string | null;
+        telegram_id: string | null;
+      }
+    | {
+        first_name: string | null;
+        telegram_id: string | null;
+      }[]
+    | null;
+};
+
 export default function Home() {
-  const [telegramUser, setTelegramUser] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("home");
-  
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
   const [targetWeight, setTargetWeight] = useState("");
 const [newWeight, setNewWeight] = useState("");
 const [showWeightForm, setShowWeightForm] = useState(false);
-  useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    const user = tg?.initDataUnsafe?.user || null;
 
-    if (tg) tg.ready();
-
-    setTelegramUser(user);
-    init(user);
-  }, []);
-
-  async function init(tgUser: any) {
-  await fetchTasks();
-  await getOrCreateProfile(tgUser);
-  await fetchLeaderboard();
-}
-
-  async function fetchTasks() {
+  const fetchTasks = useCallback(async () => {
     const { data } = await supabase.from("tasks").select("*");
     setTasks(data || []);
-  }
+  }, []);
 
-async function getOrCreateProfile(tgUser: any) {
+const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
   const telegramId = tgUser?.id?.toString() || "demo_user_1";
 
   const { data: existing, error: selectError } = await supabase
@@ -99,7 +116,68 @@ async function getOrCreateProfile(tgUser: any) {
   }
 
   setProfile(created);
-}
+}, []);
+
+const fetchLeaderboard = useCallback(async () => {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+
+  const monthStart = startOfMonth.toISOString().slice(0, 10);
+
+  const { data } = await supabase
+    .from("daily_logs")
+    .select("profile_id, points, profiles(first_name, telegram_id)")
+    .gte("event_day", monthStart);
+
+  const map = new Map<string, LeaderboardUser>();
+
+  (data as LeaderboardLog[] | null)?.forEach((log) => {
+    const profileId = log.profile_id;
+    const profileData = Array.isArray(log.profiles)
+      ? log.profiles[0]
+      : log.profiles;
+    const name =
+      profileData?.first_name ||
+      `User ${profileData?.telegram_id || ""}`;
+
+    const existing = map.get(profileId);
+
+    if (existing) {
+      existing.points += log.points || 0;
+    } else {
+      map.set(profileId, {
+        profile_id: profileId,
+        name,
+        points: log.points || 0,
+      });
+    }
+  });
+
+  const sorted = Array.from(map.values())
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 10);
+
+  setLeaderboard(sorted);
+}, []);
+
+const init = useCallback(async (tgUser: TelegramUser | null) => {
+  await fetchTasks();
+  await getOrCreateProfile(tgUser);
+  await fetchLeaderboard();
+}, [fetchLeaderboard, fetchTasks, getOrCreateProfile]);
+
+  useEffect(() => {
+    const tg = (window as TelegramWindow).Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user || null;
+
+    tg?.ready();
+
+    const timer = window.setTimeout(() => {
+      void init(user);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [init]);
 
   async function saveProfile() {
     if (!profile) return;
@@ -146,44 +224,6 @@ async function getOrCreateProfile(tgUser: any) {
 
     return "🥉 Новачок";
   }
-async function fetchLeaderboard() {
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-
-  const monthStart = startOfMonth.toISOString().slice(0, 10);
-
-  const { data } = await supabase
-    .from("daily_logs")
-    .select("profile_id, points, profiles(first_name, telegram_id)")
-    .gte("event_day", monthStart);
-
-  const map = new Map<string, LeaderboardUser>();
-
-  data?.forEach((log: any) => {
-    const profileId = log.profile_id;
-    const name =
-      log.profiles?.first_name ||
-      `User ${log.profiles?.telegram_id || ""}`;
-
-    const existing = map.get(profileId);
-
-    if (existing) {
-      existing.points += log.points || 0;
-    } else {
-      map.set(profileId, {
-        profile_id: profileId,
-        name,
-        points: log.points || 0,
-      });
-    }
-  });
-
-  const sorted = Array.from(map.values())
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 10);
-
-  setLeaderboard(sorted);
-}
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
