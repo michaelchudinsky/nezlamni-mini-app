@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0d0d0f;
+  --foreground: #f5f5f5;
+  --card: #141a1d;
+  --card-dark: #1a1a1d;
+  --red: #e63946;
+  --deep-red: #8b1e3f;
+  --gold: #d4af37;
+  --warm-gold: #f2c94c;
+  --brown: #5e4a2e;
+  --bronze: #a67c52;
+  --muted: #b8a98a;
 }
 
 @theme inline {
@@ -12,15 +21,85 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.nezlamni-shell {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(230, 57, 70, 0.18), transparent 28rem),
+    radial-gradient(circle at 85% 18%, rgba(212, 175, 55, 0.12), transparent 24rem),
+    linear-gradient(180deg, #111114 0%, #0d0d0f 42%, #09090b 100%);
+}
+
+.premium-card {
+  background: linear-gradient(145deg, rgba(20, 26, 29, 0.96), rgba(26, 26, 29, 0.96));
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+}
+
+.dark-premium-card {
+  background: rgba(26, 26, 29, 0.94);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+.gold-text {
+  color: var(--gold);
+}
+
+.muted-gold-text {
+  color: var(--muted);
+}
+
+.red-action {
+  background: linear-gradient(135deg, var(--red), var(--deep-red));
+  box-shadow: 0 10px 24px rgba(230, 57, 70, 0.24);
+}
+
+.vyshyvanka-edge {
+  position: relative;
+  overflow: hidden;
+}
+
+.vyshyvanka-edge::before,
+.vyshyvanka-edge::after {
+  background:
+    linear-gradient(45deg, transparent 35%, rgba(230, 57, 70, 0.6) 36% 43%, transparent 44%),
+    linear-gradient(-45deg, transparent 35%, rgba(230, 57, 70, 0.45) 36% 43%, transparent 44%);
+  background-size: 16px 16px;
+  content: "";
+  height: 100%;
+  opacity: 0.22;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 14px;
+}
+
+.vyshyvanka-edge::before {
+  left: 0;
+}
+
+.vyshyvanka-edge::after {
+  right: 0;
+}
+
+.hero-banner {
+  background:
+    linear-gradient(120deg, rgba(13, 13, 15, 0.35), rgba(139, 30, 63, 0.36)),
+    radial-gradient(circle at 82% 18%, rgba(242, 201, 76, 0.22), transparent 10rem),
+    linear-gradient(135deg, #1a1a1d, #101012 54%, #2a1017);
+}
+
+.ornament-line {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(230, 57, 70, 0.9) 0 8px,
+    transparent 8px 12px,
+    rgba(212, 175, 55, 0.55) 12px 16px,
+    transparent 16px 22px
+  );
+  height: 3px;
 }
