@@ -426,6 +426,30 @@ async function updateWeight() {
   </div>
   
 </div>
+{activeTab === "leaderboard" && (
+  <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
+    <h2 className="text-2xl font-bold mb-4">
+      🏆 Рейтинг місяця
+    </h2>
+
+    <div className="space-y-3">
+      <div className="flex justify-between bg-zinc-800 rounded-xl p-3">
+        <span>🥇 Michael</span>
+        <span>150 балів</span>
+      </div>
+
+      <div className="flex justify-between bg-zinc-800 rounded-xl p-3">
+        <span>🥈 Anna</span>
+        <span>120 балів</span>
+      </div>
+
+      <div className="flex justify-between bg-zinc-800 rounded-xl p-3">
+        <span>🥉 David</span>
+        <span>95 балів</span>
+      </div>
+    </div>
+  </div>
+)}
     </main>
   );
 }
