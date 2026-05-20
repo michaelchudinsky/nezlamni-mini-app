@@ -72,8 +72,6 @@ type TaskMeta = {
   emoji: string;
   title: string;
   description: string;
-  accent: string;
-  glow: string;
   action: string;
 };
 
@@ -81,33 +79,25 @@ const TASK_META: Record<string, TaskMeta> = {
   water: {
     emoji: "В",
     title: "Вода",
-    description: "Норма води на сьогодні.",
-    accent: "from-[#E63946] to-[#8B1E3F]",
-    glow: "shadow-red-500/20",
+    description: "Випито 2 літри",
     action: "Виконати",
   },
   activity: {
     emoji: "А",
     title: "Активність",
-    description: "Рух, прогулянка або тренування.",
-    accent: "from-[#E63946] to-[#8B1E3F]",
-    glow: "shadow-red-500/20",
+    description: "30 хвилин тренування",
     action: "Виконати",
   },
   food: {
     emoji: "Х",
     title: "Харчування",
-    description: "Контроль раціону без зривів.",
-    accent: "from-[#E63946] to-[#8B1E3F]",
-    glow: "shadow-red-500/20",
+    description: "Дотримано плану",
     action: "Виконати",
   },
   night: {
     emoji: "Н",
     title: "Ніч",
-    description: "Вечір без нічних перекусів.",
-    accent: "from-[#E63946] to-[#8B1E3F]",
-    glow: "shadow-red-500/20",
+    description: "7-8 годин сну",
     action: "Виконати",
   },
 };
@@ -118,8 +108,6 @@ function getTaskMeta(task: Task) {
       emoji: "🔥",
       title: task.title,
       description: task.description || "Виконай завдання та забери бали.",
-      accent: "from-[#E63946] to-[#8B1E3F]",
-      glow: "shadow-red-500/20",
       action: "Виконати",
     }
   );
@@ -360,6 +348,8 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   const displayName = profile?.first_name || "Соломіє";
   const displayPoints = profile?.points_total || 1250;
   const dailyMissionCount = Math.max(tasks.length, 4);
+  const topLeaderboard = leaderboard.slice(0, 3);
+  const restLeaderboard = leaderboard.slice(3, 8);
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
@@ -461,7 +451,8 @@ async function updateWeight() {
 
   if (!profile) {
     return (
-<main className="nezlamni-shell min-h-screen px-5 py-6 text-[#F5F5F5]">        Завантаження...
+<main className="nezlamni-shell min-h-screen px-5 py-6 text-[#F5F5F5]">
+        Завантаження...
       </main>
     );
   }
@@ -517,22 +508,23 @@ async function updateWeight() {
   }
 
   return (
-    <main className="nezlamni-shell vyshyvanka-edge min-h-screen px-4 pb-28 pt-5 text-[#F5F5F5]">
-      <div className="mx-auto max-w-md">
-        <header className="mb-5 flex items-start justify-between">
+    <main className="nezlamni-shell min-h-screen p-3 text-[#F5F5F5]">
+      <div className="app-frame vyshyvanka-edge relative mx-auto min-h-[calc(100vh-24px)] max-w-md overflow-hidden rounded-[28px] px-4 pb-28 pt-4">
+        <header className="mb-4 flex items-start justify-between">
           <div>
-            <h1 className="gold-text text-4xl font-black tracking-[0.08em]">
+            <h1 className="logo-gold text-[3.25rem] font-black leading-none">
               NEZLAMNI
             </h1>
-            <p className="muted-gold-text mt-1 text-sm">
+            <p className="mt-1 text-[1.05rem] text-[#F3D49A]">
               Сила. Дисципліна. Незламність.
             </p>
           </div>
           <button
             aria-label="Сповіщення"
-            className="grid h-11 w-11 place-items-center rounded-full border border-[#D4AF37]/30 bg-[#141A1D] text-[#D4AF37]"
+            className="relative mt-3 grid h-12 w-12 place-items-center rounded-full border border-[#A67C52]/45 bg-[#08090A] text-xl text-[#D4AF37]"
           >
-            !
+            ♧
+            <span className="absolute right-1.5 top-1.5 h-3 w-3 rounded-full bg-[#E63946]" />
           </button>
         </header>
 
@@ -544,71 +536,74 @@ async function updateWeight() {
 
         {activeTab === "home" && (
           <section className="space-y-4">
-            <div className="premium-card rounded-[30px] p-5">
+            <div className="premium-card rounded-2xl p-3">
               <div className="flex items-center gap-4">
-                <div className="grid h-16 w-16 place-items-center rounded-full border border-[#D4AF37]/50 bg-[#1A1A1D] text-2xl font-black text-[#D4AF37]">
-                  С
+                <div className="avatar-ring relative h-[7.2rem] w-[7.2rem] shrink-0 rounded-full p-2">
+                  <div className="avatar-portrait h-full w-full rounded-full" />
+                  <div className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
+                    ◉
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xl font-black">Привіт, {displayName}!</p>
-                  <p className="muted-gold-text text-sm">Рівень 7. Козачка</p>
+                <div className="min-w-0 flex-1 py-2">
+                  <p className="text-xl font-medium">Привіт, {displayName}!</p>
+                  <p className="mt-3 flex items-center gap-2 text-sm text-[#EAC46D]">
+                    <span className="text-[#E63946]">♜</span>
+                    Рівень 7. Козачка
+                  </p>
+                  <div className="mt-5 flex items-center gap-3">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#2A2A2E]">
+                      <div
+                        className="h-full rounded-full bg-[#E63946]"
+                        style={{ width: `${xpProgress}%` }}
+                      />
+                    </div>
+                    <span className="whitespace-nowrap text-xs text-[#F0D8A1]">
+                      {xpCurrent} / {xpGoal} XP
+                    </span>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-[#E63946]/30 bg-[#8B1E3F]/30 px-3 py-2 text-center">
-                  <p className="text-xl font-black text-[#E63946]">
+                <div className="hidden w-20 shrink-0 flex-col items-center sm:flex">
+                  <div className="trident-badge grid h-16 w-16 place-items-center rounded-xl text-3xl text-[#D4AF37]">
+                    ♜
+                  </div>
+                  <p className="mt-2 text-2xl font-black text-[#F2C94C]">
                     {profile.streak_current || 7}
                   </p>
-                  <p className="text-[10px] uppercase text-[#B8A98A]">
+                  <p className="-mt-1 text-xs text-[#F0D8A1]">
                     стрік
                   </p>
                 </div>
               </div>
-              <div className="mt-5">
-                <div className="mb-2 flex justify-between text-xs text-[#B8A98A]">
-                  <span>XP прогрес</span>
-                  <span>
-                    {xpCurrent} / {xpGoal}
-                  </span>
-                </div>
-                <div className="h-3 overflow-hidden rounded-full bg-[#0D0D0F]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#8B1E3F] to-[#E63946]"
-                    style={{ width: `${xpProgress}%` }}
-                  />
-                </div>
-              </div>
             </div>
 
-            <div className="premium-card rounded-[28px] p-5">
+            <div className="premium-card rounded-2xl p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-black tracking-[0.18em] text-[#B8A98A]">
+                <div className="grid h-16 w-24 place-items-center rounded-xl bg-[#0B0C0D] text-4xl text-[#E63946]">
+                  ✥
+                </div>
+                <div className="flex-1 px-4">
+                  <p className="section-title text-xs font-black">
                     ТВОЇ БАЛИ
                   </p>
-                  <p className="mt-1 text-5xl font-black text-[#F2C94C]">
+                  <p className="mt-1 text-4xl font-light text-[#F2CDA0]">
                     {formatPoints(displayPoints)}
                   </p>
                 </div>
-                <div className="grid h-16 w-16 place-items-center rounded-full border border-[#D4AF37]/40 bg-[#0D0D0F] text-3xl text-[#D4AF37]">
-                  ✦
-                </div>
+                <span className="text-3xl text-[#F2C94C]">›</span>
               </div>
-              <div className="ornament-line mt-5 rounded-full" />
             </div>
 
-            <div className="premium-card rounded-[28px] p-5">
-              <div className="mb-4 flex items-end justify-between">
-                <div>
-                  <p className="text-xs font-black tracking-[0.16em] text-[#E63946]">
-                    ЗАВДАННЯ
-                  </p>
-                  <h2 className="text-2xl font-black">Щоденна дисципліна</h2>
-                </div>
-                <div className="rounded-full border border-[#D4AF37]/30 px-3 py-1 text-sm font-black text-[#D4AF37]">
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="section-title text-xl font-medium">
+                  СЬОГОДНІШНІ ЗАВДАННЯ
+                </h2>
+                <span className="rounded-full border border-[#A67C52]/40 px-3 py-1 text-xs text-[#D4AF37]">
                   {completedTaskCodes.length}/{dailyMissionCount}
-                </div>
+                </span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-0 overflow-hidden rounded-2xl border border-[#A67C52]/32">
                 {tasks.map((task) => {
                   const meta = getTaskMeta(task);
                   const isCompleted = completedTaskCodes.includes(task.code);
@@ -618,33 +613,31 @@ async function updateWeight() {
                       key={task.id}
                       onClick={() => completeTask(task)}
                       disabled={isCompleted}
-                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
+                      className={`task-row flex w-full items-center gap-3 border-b border-[#A67C52]/14 p-3 text-left transition last:border-b-0 active:scale-[0.99] ${
                         isCompleted
-                          ? "border-[#E63946]/60 bg-[#8B1E3F]/28"
-                          : "border-[#D4AF37]/20 bg-[#1A1A1D]"
+                          ? "bg-[#8B1E3F]/28"
+                          : ""
                       }`}
                     >
-                      <div
-                        className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-lg font-black text-white shadow-lg ${meta.glow}`}
-                      >
+                      <div className="task-icon grid h-12 w-12 shrink-0 place-items-center rounded-full text-xl font-black">
                         {meta.emoji}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
-                          <h3 className="font-black">{meta.title}</h3>
-                          <span className="text-sm font-black text-[#F2C94C]">
+                          <h3 className="text-lg font-medium">{meta.title}</h3>
+                          <span className="text-xl font-medium text-[#F5E4C5]">
                             +{task.points}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-xs text-[#B8A98A]">
+                        <p className="mt-0.5 text-sm text-[#B8A98A]">
                           {meta.description}
                         </p>
                       </div>
                       <span
-                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border ${
                           isCompleted
-                            ? "bg-[#E63946] text-white"
-                            : "border border-[#E63946]/50 text-[#E63946]"
+                            ? "border-[#E63946] bg-[#8B1E3F]/70 text-[#F4C7C9]"
+                            : "border-[#E63946] text-[#E63946]"
                         }`}
                       >
                         ✓
@@ -655,101 +648,142 @@ async function updateWeight() {
               </div>
             </div>
 
-            <div className="hero-banner rounded-[30px] border border-[#D4AF37]/25 p-5">
+            <div className="hero-banner relative overflow-hidden rounded-2xl border border-[#A67C52]/38 p-6">
               <div className="max-w-[14rem]">
-                <p className="text-2xl font-black tracking-[0.05em] text-[#F2C94C]">
+                <p className="font-serif text-2xl font-black leading-tight tracking-[0.03em] text-[#F2D8A4]">
                   СИЛА РОДУ В ТОБІ
                 </p>
-                <p className="mt-2 text-sm text-[#B8A98A]">
+                <p className="mt-3 text-sm text-[#F0D8A1]">
                   Твій шлях — твоя легенда
                 </p>
               </div>
-              <div className="ornament-line mt-8 w-32 rounded-full" />
+              <div className="absolute bottom-4 right-4 grid h-12 w-12 place-items-center rounded-full border border-[#D4AF37]/50 bg-[#0D0D0F]/70 text-3xl text-[#F2C94C]">
+                ›
+              </div>
             </div>
           </section>
         )}
 
         {activeTab === "leaderboard" && (
-          <section className="premium-card rounded-[28px] p-5">
-            <p className="text-xs font-black tracking-[0.16em] text-[#E63946]">
-              РЕЙТИНГ
-            </p>
-            <h2 className="mb-4 mt-1 text-2xl font-black">Рейтинг місяця</h2>
+          <section className="space-y-5">
+            <div className="flex items-center justify-between">
+              <button className="text-3xl text-[#F5F5F5]">‹</button>
+              <h2 className="text-xl font-medium">Рейтинг</h2>
+              <button className="rounded-xl border border-[#A67C52]/40 px-3 py-2 text-sm text-[#F2C94C]">
+                Місяць⌄
+              </button>
+            </div>
 
             {leaderboard.length === 0 ? (
-              <p className="text-[#B8A98A]">Поки немає учасників</p>
+              <div className="premium-card rounded-2xl p-5 text-[#B8A98A]">
+                Поки немає учасників
+              </div>
             ) : (
-              <div className="space-y-3">
-                {leaderboard.map((user, index) => (
+              <>
+                <div className="grid grid-cols-3 items-end gap-3 px-2 pt-4">
+                  {topLeaderboard.map((user, index) => (
+                    <div
+                      key={user.profile_id}
+                      className={`text-center ${index === 0 ? "order-2" : index === 1 ? "order-1" : "order-3"}`}
+                    >
+                      <div
+                        className={`avatar-ring mx-auto rounded-full p-1 ${
+                          index === 0 ? "h-24 w-24" : "h-20 w-20"
+                        }`}
+                      >
+                        <div className="avatar-portrait h-full w-full rounded-full" />
+                      </div>
+                      <p className="mt-2 font-medium">{user.name}</p>
+                      <p className="text-xl text-[#F2C94C]">{user.points}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-[#A67C52]/30">
+                  {restLeaderboard.map((user, index) => (
                   <div
                     key={user.profile_id}
-                    className="flex items-center justify-between rounded-2xl border border-[#D4AF37]/15 bg-[#1A1A1D] p-3"
+                    className={`flex items-center justify-between border-b border-[#A67C52]/14 p-3 last:border-b-0 ${
+                      index === 0 ? "bg-[#8B1E3F]/45" : "bg-[#0B0C0D]/70"
+                    }`}
                   >
-                    <span className="font-bold">
-                      {index + 1}. {user.name}
+                    <span className="flex items-center gap-3">
+                      <span className="w-5 text-[#F2C94C]">{index + 4}</span>
+                      <span className="font-medium">{user.name}</span>
                     </span>
-                    <span className="font-black text-[#F2C94C]">
-                      {user.points} балів
-                    </span>
+                    <span>{user.points}</span>
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </section>
         )}
 
         {activeTab === "profile" && (
           <section className="space-y-4">
-            <div className="premium-card rounded-[28px] p-5">
-              <p className="text-xs font-black tracking-[0.16em] text-[#E63946]">
-                ПРОФІЛЬ
+            <div className="flex items-center justify-between">
+              <button className="text-3xl">‹</button>
+              <h2 className="text-xl font-medium">Профіль</h2>
+              <button className="text-2xl text-[#F2C94C]">⚙</button>
+            </div>
+
+            <div className="text-center">
+              <div className="avatar-ring relative mx-auto h-28 w-28 rounded-full p-2">
+                <div className="avatar-portrait h-full w-full rounded-full" />
+                <div className="absolute bottom-1 right-1 grid h-8 w-8 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
+                  ◉
+                </div>
+              </div>
+              <h2 className="mt-3 text-2xl font-medium">{displayName}</h2>
+              <p className="text-sm text-[#B8A98A]">
+                ♜ {getLevel()} · з нами {getDaysWithUs()} днів
               </p>
-              <h2 className="mt-1 text-2xl font-black">{displayName}</h2>
-              <p className="muted-gold-text mt-1">{getLevel()}</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="dark-premium-card rounded-2xl p-4">
-                  <p className="text-xs text-[#B8A98A]">З нами</p>
-                  <p className="text-2xl font-black text-[#F2C94C]">
-                    {getDaysWithUs()}
-                  </p>
-                </div>
-                <div className="dark-premium-card rounded-2xl p-4">
-                  <p className="text-xs text-[#B8A98A]">Стрік</p>
-                  <p className="text-2xl font-black text-[#E63946]">
-                    {profile.streak_current || 0}
-                  </p>
-                </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="dark-premium-card rounded-xl p-3 text-center">
+                <p className="text-xs text-[#F2C94C]">Рівень</p>
+                <p className="mt-1 text-2xl text-[#F2D8A4]">♜ 7</p>
+              </div>
+              <div className="dark-premium-card rounded-xl p-3 text-center">
+                <p className="text-xs text-[#F2C94C]">Стрік</p>
+                <p className="mt-1 text-2xl text-[#F2D8A4]">
+                  {profile.streak_current || 7}
+                </p>
+              </div>
+              <div className="dark-premium-card rounded-xl p-3 text-center">
+                <p className="text-xs text-[#F2C94C]">Бали</p>
+                <p className="mt-1 text-2xl text-[#F2D8A4]">
+                  {formatPoints(displayPoints)}
+                </p>
               </div>
             </div>
 
-            <div className="premium-card rounded-[28px] p-5">
-              <div className="flex items-center justify-between gap-3">
+            <div className="premium-card rounded-2xl p-4">
+              <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-xs font-black tracking-[0.16em] text-[#E63946]">
-                    ФОТО ПРОГРЕСУ
+                  <p className="text-xs text-[#F2C94C]">Поточна вага</p>
+                  <p className="text-2xl text-[#F2D8A4]">
+                    {profile.current_weight} кг
                   </p>
-                  <h2 className="mt-1 text-2xl font-black">Твоя трансформація</h2>
                 </div>
-                <div className="grid h-14 w-14 place-items-center rounded-2xl border border-[#D4AF37]/30 text-[#D4AF37]">
-                  +
+                <div>
+                  <p className="text-xs text-[#F2C94C]">Ціль</p>
+                  <p className="text-2xl text-[#F2D8A4]">
+                    {profile.target_weight} кг
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#F2C94C]">Прогрес</p>
+                  <p className="text-2xl text-[#F2D8A4]">
+                    {Math.round(getWeightProgress())}%
+                  </p>
                 </div>
               </div>
-              <p className="muted-gold-text mt-3 text-sm">
-                Тут будуть фото-чекіни та історія змін тіла.
-              </p>
-            </div>
-
-            <div className="premium-card rounded-[28px] p-5">
-              <div className="mb-2 flex justify-between text-sm text-[#B8A98A]">
-                <span>Вага</span>
-                <span>
-                  {profile.start_weight} кг → {profile.current_weight} кг →{" "}
-                  {profile.target_weight} кг
-                </span>
-              </div>
-              <div className="h-3 overflow-hidden rounded-full bg-[#0D0D0F]">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#2A2A2E]">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#8B1E3F] to-[#E63946]"
+                  className="h-full rounded-full bg-[#E63946]"
                   style={{ width: `${getWeightProgress()}%` }}
                 />
               </div>
@@ -779,30 +813,78 @@ async function updateWeight() {
                 </div>
               )}
             </div>
+
+            <div className="overflow-hidden rounded-2xl border border-[#A67C52]/30">
+              {["Фото прогресу", "Статистика"].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center justify-between border-b border-[#A67C52]/14 bg-[#0B0C0D]/70 p-4 last:border-b-0"
+                >
+                  <span className="text-[#F2D8A4]">{item}</span>
+                  <span className="text-2xl text-[#F2C94C]">›</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="premium-card rounded-2xl p-4">
+              <p className="section-title text-sm font-black">ФОТО ПРОГРЕСУ</p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {["до", "після"].map((label) => (
+                  <div
+                    key={label}
+                    className="avatar-portrait grid aspect-[3/4] place-items-end rounded-xl border border-[#A67C52]/24 p-3"
+                  >
+                    <span className="rounded-full bg-[#0D0D0F]/70 px-3 py-1 text-sm">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
         )}
 
         {activeTab === "rewards" && (
           <section className="space-y-4">
-            <div className="premium-card rounded-[28px] p-5">
-              <p className="text-xs font-black tracking-[0.16em] text-[#E63946]">
-                НАГОРОДИ
-              </p>
-              <h2 className="mt-1 text-2xl font-black">Знаки сили</h2>
-              <p className="muted-gold-text mt-2 text-sm">
-                Нагороди відкриватимуться за стрік, завдання та прогрес.
-              </p>
+            <div className="flex items-center justify-between">
+              <button className="text-3xl">‹</button>
+              <h2 className="text-xl font-medium">Нагороди</h2>
+              <span />
             </div>
-            {["7 днів дисципліни", "Перша сотня балів", "Нічна перемога"].map(
+            <div className="premium-card rounded-2xl p-4">
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-sm text-[#F2C94C]">Наступна нагорода</p>
+                  <h3 className="mt-1 text-xl">Скриня хоробрості</h3>
+                  <p className="mt-2 text-sm text-[#F2D8A4]">
+                    {formatPoints(displayPoints)} / 2 000 балів
+                  </p>
+                  <div className="mt-2 h-2 w-40 overflow-hidden rounded-full bg-[#2A2A2E]">
+                    <div
+                      className="h-full rounded-full bg-[#E63946]"
+                      style={{
+                        width: `${Math.min(100, (displayPoints / 2000) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="grid h-20 flex-1 place-items-center rounded-xl border border-[#A67C52]/30 bg-[#111] text-5xl text-[#D4AF37]">
+                  ▣
+                </div>
+              </div>
+            </div>
+            <p className="section-title text-sm font-black">ДОСТУПНІ НАГОРОДИ</p>
+            {["Скриня хоробрості", "Сила предків", "Козацька воля", "Легенда роду"].map(
               (reward) => (
                 <div
                   key={reward}
-                  className="dark-premium-card flex items-center justify-between rounded-2xl p-4"
+                  className="dark-premium-card flex items-center justify-between rounded-xl p-3"
                 >
-                  <span className="font-bold">{reward}</span>
-                  <span className="rounded-full border border-[#D4AF37]/30 px-3 py-1 text-xs font-black text-[#D4AF37]">
-                    скоро
+                  <span className="flex items-center gap-3">
+                    <span className="text-2xl text-[#D4AF37]">◈</span>
+                    <span>{reward}</span>
                   </span>
+                  <span className="text-[#B8A98A]">▣</span>
                 </div>
               )
             )}
@@ -810,23 +892,27 @@ async function updateWeight() {
         )}
 
         <nav className="fixed bottom-0 left-0 right-0 border-t border-[#D4AF37]/20 bg-[#0D0D0F]/95 px-3 py-3 backdrop-blur">
-          <div className="mx-auto grid max-w-md grid-cols-4 gap-2 text-center text-[11px] font-bold">
+          <div className="mx-auto grid max-w-md grid-cols-4 gap-2 text-center text-[11px]">
             {[
-              ["home", "Головна"],
-              ["leaderboard", "Рейтинг"],
-              ["profile", "Профіль"],
-              ["rewards", "Нагороди"],
-            ].map(([tab, label]) => (
+              ["home", "⌂", "Головна"],
+              ["leaderboard", "♕", "Рейтинг"],
+              ["profile", "♙", "Профіль"],
+              ["rewards", "▣", "Нагороди"],
+            ].map(([tab, icon, label]) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-2xl px-2 py-2 ${
+                className={`relative flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 ${
                   activeTab === tab
-                    ? "red-action text-white"
+                    ? "nav-item-active"
                     : "text-[#B8A98A]"
                 }`}
               >
+                <span className="text-2xl leading-none">{icon}</span>
                 {label}
+                {activeTab === tab && (
+                  <span className="absolute -bottom-3 h-0.5 w-10 rounded-full bg-[#E63946]" />
+                )}
               </button>
             ))}
           </div>
