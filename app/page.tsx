@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -539,7 +540,13 @@ async function updateWeight() {
             <div className="home-user-card rounded-2xl p-3">
               <div className="grid grid-cols-[7.2rem_1fr_5.6rem] items-center gap-4">
                 <div className="avatar-ring relative h-[7.1rem] w-[7.1rem] shrink-0 rounded-full p-2">
-                  <div className="avatar-portrait h-full w-full rounded-full" />
+                  <Image
+                    src="/assets/nezlamni-avatar.png"
+                    alt=""
+                    width={150}
+                    height={150}
+                    className="h-full w-full rounded-full object-cover"
+                  />
                   <div className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
                     ◉
                   </div>
@@ -563,8 +570,14 @@ async function updateWeight() {
                   </div>
                 </div>
                 <div className="flex w-[5.6rem] shrink-0 flex-col items-center">
-                  <div className="trident-badge grid h-[4.6rem] w-[4.6rem] place-items-center rounded-xl text-4xl text-[#D4AF37]">
-                    ♜
+                  <div className="trident-badge h-[4.6rem] w-[4.6rem] overflow-hidden rounded-xl">
+                    <Image
+                      src="/assets/nezlamni-badge.png"
+                      alt=""
+                      width={104}
+                      height={104}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <p className="mt-1 text-2xl font-black leading-none text-[#F2C94C]">
                     {profile.streak_current || 7}
@@ -650,8 +663,16 @@ async function updateWeight() {
               </div>
             </div>
 
-            <div className="banner-warrior relative min-h-[9.7rem] overflow-hidden rounded-xl border border-[#A67C52]/38 p-6">
-              <div className="max-w-[14rem]">
+            <div className="relative min-h-[9.7rem] overflow-hidden rounded-xl border border-[#A67C52]/38 p-6">
+              <Image
+                src="/assets/nezlamni-hero.png"
+                alt=""
+                fill
+                sizes="(max-width: 480px) 100vw, 420px"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-black/20" />
+              <div className="relative max-w-[14rem]">
                 <p className="font-serif text-2xl font-black leading-tight tracking-[0.03em] text-[#F2D8A4]">
                   СИЛА РОДУ В ТОБІ
                 </p>
@@ -693,7 +714,13 @@ async function updateWeight() {
                           index === 0 ? "h-24 w-24" : "h-20 w-20"
                         }`}
                       >
-                        <div className="avatar-portrait h-full w-full rounded-full" />
+                        <Image
+                          src="/assets/nezlamni-avatar.png"
+                          alt=""
+                          width={150}
+                          height={150}
+                          className="h-full w-full rounded-full object-cover"
+                        />
                       </div>
                       <p className="mt-2 font-medium">{user.name}</p>
                       <p className="text-xl text-[#F2C94C]">{user.points}</p>
@@ -732,7 +759,13 @@ async function updateWeight() {
 
             <div className="text-center">
               <div className="avatar-ring relative mx-auto h-28 w-28 rounded-full p-2">
-                <div className="avatar-portrait h-full w-full rounded-full" />
+                <Image
+                  src="/assets/nezlamni-avatar.png"
+                  alt=""
+                  width={150}
+                  height={150}
+                  className="h-full w-full rounded-full object-cover"
+                />
                 <div className="absolute bottom-1 right-1 grid h-8 w-8 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
                   ◉
                 </div>
