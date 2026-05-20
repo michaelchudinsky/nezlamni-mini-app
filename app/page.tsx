@@ -692,8 +692,10 @@ async function updateWeight() {
             <div className="flex items-center justify-between">
               <button className="text-3xl text-[#F5F5F5]">‹</button>
               <h2 className="text-xl font-medium">Рейтинг</h2>
-              <button className="rounded-xl border border-[#A67C52]/40 px-3 py-2 text-sm text-[#F2C94C]">
-                Місяць⌄
+              <button className="flex items-center gap-2 rounded-xl border border-[#A67C52]/40 px-3 py-2 text-sm text-[#F2C94C]">
+                <span>▣</span>
+                Місяць
+                <span>⌄</span>
               </button>
             </div>
 
@@ -703,15 +705,30 @@ async function updateWeight() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-3 items-end gap-3 px-2 pt-4">
+                <div className="grid grid-cols-3 items-end gap-3 px-1 pt-4">
                   {topLeaderboard.map((user, index) => (
                     <div
                       key={user.profile_id}
                       className={`text-center ${index === 0 ? "order-2" : index === 1 ? "order-1" : "order-3"}`}
                     >
                       <div
-                        className={`avatar-ring mx-auto rounded-full p-1 ${
-                          index === 0 ? "h-24 w-24" : "h-20 w-20"
+                        className={`mb-1 text-3xl leading-none ${
+                          index === 0
+                            ? "leader-crown-gold"
+                            : index === 1
+                              ? "leader-crown-silver"
+                              : "leader-crown-bronze"
+                        }`}
+                      >
+                        ♛
+                      </div>
+                      <div
+                        className={`avatar-ring relative mx-auto rounded-full border-2 p-1 ${
+                          index === 0
+                            ? "leader-ring-gold h-28 w-28"
+                            : index === 1
+                              ? "leader-ring-silver h-20 w-20"
+                              : "leader-ring-bronze h-20 w-20"
                         }`}
                       >
                         <Image
@@ -721,26 +738,48 @@ async function updateWeight() {
                           height={150}
                           className="h-full w-full rounded-full object-cover"
                         />
+                        <span
+                          className={`absolute bottom-0 right-0 grid h-7 w-7 place-items-center rounded-full text-sm font-black ${
+                            index === 0
+                              ? "bg-[#F2C94C] text-[#3A2508]"
+                              : index === 1
+                                ? "bg-[#D8D6D1] text-[#2A2A2E]"
+                                : "bg-[#D46A36] text-white"
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
                       </div>
-                      <p className="mt-2 font-medium">{user.name}</p>
-                      <p className="text-xl text-[#F2C94C]">{user.points}</p>
+                      <p className="mt-2 truncate font-medium">{user.name}</p>
+                      <p className="text-xl text-[#F2C94C]">
+                        {formatPoints(user.points)}
+                      </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-[#A67C52]/30">
+                <div className="leader-list overflow-hidden rounded-2xl">
                   {restLeaderboard.map((user, index) => (
                   <div
                     key={user.profile_id}
-                    className={`flex items-center justify-between border-b border-[#A67C52]/14 p-3 last:border-b-0 ${
+                    className={`flex items-center justify-between border-b border-[#A67C52]/14 px-3 py-2.5 last:border-b-0 ${
                       index === 0 ? "bg-[#8B1E3F]/45" : "bg-[#0B0C0D]/70"
                     }`}
                   >
-                    <span className="flex items-center gap-3">
+                    <span className="flex min-w-0 items-center gap-3">
                       <span className="w-5 text-[#F2C94C]">{index + 4}</span>
-                      <span className="font-medium">{user.name}</span>
+                      <span className="avatar-ring h-9 w-9 shrink-0 rounded-full p-0.5">
+                        <Image
+                          src="/assets/nezlamni-avatar.png"
+                          alt=""
+                          width={150}
+                          height={150}
+                          className="h-full w-full rounded-full object-cover"
+                        />
+                      </span>
+                      <span className="truncate font-medium">{user.name}</span>
                     </span>
-                    <span>{user.points}</span>
+                    <span className="shrink-0">{formatPoints(user.points)}</span>
                   </div>
                 ))}
                 </div>

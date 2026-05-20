@@ -202,3 +202,35 @@ body {
     radial-gradient(circle at 80% 12%, rgba(230, 57, 70, 0.18), transparent 11rem),
     linear-gradient(135deg, #151414, #24100e 48%, #0b0b0d 100%);
 }
+
+.leader-crown-gold {
+  color: #f2c94c;
+  filter: drop-shadow(0 0 12px rgba(242, 201, 76, 0.28));
+}
+
+.leader-crown-silver {
+  color: #d8d6d1;
+}
+
+.leader-crown-bronze {
+  color: #d46a36;
+}
+
+.leader-ring-gold {
+  border-color: rgba(242, 201, 76, 0.92);
+  box-shadow: 0 0 24px rgba(242, 201, 76, 0.22);
+}
+
+.leader-ring-silver {
+  border-color: rgba(216, 214, 209, 0.75);
+}
+
+.leader-ring-bronze {
+  border-color: rgba(212, 106, 54, 0.88);
+  box-shadow: 0 0 18px rgba(212, 106, 54, 0.18);
+}
+
+.leader-list {
+  background: linear-gradient(180deg, rgba(11, 12, 13, 0.78), rgba(7, 8, 9, 0.92));
+  border: 1px solid rgba(166, 124, 82, 0.34);
+}
