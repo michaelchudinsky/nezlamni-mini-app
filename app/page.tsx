@@ -432,22 +432,24 @@ async function updateWeight() {
       🏆 Рейтинг місяця
     </h2>
 
-    <div className="space-y-3">
-      <div className="flex justify-between bg-zinc-800 rounded-xl p-3">
-        <span>🥇 Michael</span>
-        <span>150 балів</span>
-      </div>
+    {leaderboard.length === 0 ? (
+      <p className="text-zinc-400">Поки немає учасників</p>
+    ) : (
+      <div className="space-y-3">
+        {leaderboard.map((user, index) => (
+          <div
+            key={user.profile_id}
+            className="flex justify-between bg-zinc-800 rounded-xl p-3"
+          >
+            <span>
+              {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`} {user.name}
+            </span>
 
-      <div className="flex justify-between bg-zinc-800 rounded-xl p-3">
-        <span>🥈 Anna</span>
-        <span>120 балів</span>
+            <span>{user.points} балів</span>
+          </div>
+        ))}
       </div>
-
-      <div className="flex justify-between bg-zinc-800 rounded-xl p-3">
-        <span>🥉 David</span>
-        <span>95 балів</span>
-      </div>
-    </div>
+    )}
   </div>
 )}
     </main>
