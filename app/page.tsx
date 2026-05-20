@@ -604,7 +604,13 @@ async function updateWeight() {
             <div className="premium-card overflow-hidden rounded-xl p-0">
               <div className="flex min-h-[4.6rem] items-stretch justify-between">
                 <div className="score-card-symbol grid w-[7.4rem] place-items-center">
-                  <span className="score-rosette">✽</span>
+                  <Image
+                    src="/assets/points-ornament.png"
+                    alt=""
+                    width={944}
+                    height={925}
+                    className="h-14 w-16 object-contain"
+                  />
                 </div>
                 <div className="flex-1 px-4 py-3">
                   <p className="section-title text-xs font-black">
