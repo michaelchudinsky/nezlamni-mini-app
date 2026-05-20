@@ -580,8 +580,8 @@ async function updateWeight() {
                     </span>
                   </div>
                 </div>
-                <div className="flex w-[4.9rem] shrink-0 flex-col items-center">
-                  <div className="trident-badge h-[4.2rem] w-[4.2rem] overflow-hidden">
+                <div className="flex w-[4.5rem] shrink-0 flex-col items-center">
+                  <div className="trident-badge h-[3.65rem] w-[3.65rem] overflow-hidden">
                     <Image
                       src="/assets/nezlamni-badge-custom.png"
                       alt=""
