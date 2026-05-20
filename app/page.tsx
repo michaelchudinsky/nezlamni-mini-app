@@ -71,6 +71,7 @@ type CompletedTaskLog = {
 
 type TaskMeta = {
   emoji: string;
+  symbol: string;
   title: string;
   description: string;
   action: string;
@@ -79,24 +80,28 @@ type TaskMeta = {
 const TASK_META: Record<string, TaskMeta> = {
   water: {
     emoji: "В",
+    symbol: "♢",
     title: "Вода",
     description: "Випито 2 літри",
     action: "Виконати",
   },
   activity: {
     emoji: "А",
+    symbol: "♞",
     title: "Активність",
     description: "30 хвилин тренування",
     action: "Виконати",
   },
   food: {
     emoji: "Х",
+    symbol: "♨",
     title: "Харчування",
     description: "Дотримано плану",
     action: "Виконати",
   },
   night: {
     emoji: "Н",
+    symbol: "☾",
     title: "Ніч",
     description: "7-8 годин сну",
     action: "Виконати",
@@ -107,6 +112,7 @@ function getTaskMeta(task: Task) {
   return (
     TASK_META[task.code.toLowerCase()] || {
       emoji: "🔥",
+      symbol: "✦",
       title: task.title,
       description: task.description || "Виконай завдання та забери бали.",
       action: "Виконати",
@@ -512,13 +518,16 @@ async function updateWeight() {
     <main className="nezlamni-shell min-h-screen p-3 text-[#F5F5F5]">
       <div className="app-frame vyshyvanka-edge relative mx-auto min-h-[calc(100vh-24px)] max-w-md overflow-hidden rounded-[18px] px-4 pb-28 pt-4">
         <header className="mb-4 flex items-start justify-between">
-          <div>
+          <div className="flex items-start gap-3">
+            <div className="logo-ornament mt-2 h-[4.6rem] w-6 shrink-0" />
+            <div>
             <h1 className="logo-gold text-[3.55rem] font-black leading-none">
               NEZLAMNI
             </h1>
             <p className="mt-1 text-[1.02rem] text-[#F3D49A]">
               Сила. Дисципліна. Незламність.
             </p>
+            </div>
           </div>
           <button
             aria-label="Сповіщення"
@@ -538,8 +547,8 @@ async function updateWeight() {
         {activeTab === "home" && (
           <section className="space-y-3">
             <div className="home-user-card rounded-2xl p-3">
-              <div className="grid grid-cols-[7.2rem_1fr_5.6rem] items-center gap-4">
-                <div className="avatar-ring relative h-[7.1rem] w-[7.1rem] shrink-0 rounded-full p-2">
+              <div className="grid grid-cols-[6.6rem_minmax(0,1fr)_4.9rem] items-center gap-3">
+                <div className="avatar-ring relative h-[6.6rem] w-[6.6rem] shrink-0 rounded-full p-2">
                   <Image
                     src="/assets/nezlamni-avatar.png"
                     alt=""
@@ -547,13 +556,15 @@ async function updateWeight() {
                     height={150}
                     className="h-full w-full rounded-full object-cover"
                   />
-                  <div className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
-                    ◉
+                  <div className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-lg text-[#D4AF37]">
+                    ◌
                   </div>
                 </div>
                 <div className="min-w-0 flex-1 py-2">
-                  <p className="text-xl font-medium">Привіт, {displayName}!</p>
-                  <p className="mt-3 flex items-center gap-2 text-sm text-[#EAC46D]">
+                  <p className="whitespace-nowrap text-lg font-medium">
+                    Привіт, {displayName}!
+                  </p>
+                  <p className="mt-3 flex items-center gap-2 whitespace-nowrap text-sm text-[#EAC46D]">
                     <span className="text-[#E63946]">♜</span>
                     Рівень 7. Козачка
                   </p>
@@ -569,8 +580,8 @@ async function updateWeight() {
                     </span>
                   </div>
                 </div>
-                <div className="flex w-[5.6rem] shrink-0 flex-col items-center">
-                  <div className="trident-badge h-[4.6rem] w-[4.6rem] overflow-hidden rounded-xl">
+                <div className="flex w-[4.9rem] shrink-0 flex-col items-center">
+                  <div className="trident-badge h-[4.2rem] w-[4.2rem] overflow-hidden">
                     <Image
                       src="/assets/nezlamni-badge.png"
                       alt=""
@@ -582,7 +593,8 @@ async function updateWeight() {
                   <p className="mt-1 text-2xl font-black leading-none text-[#F2C94C]">
                     {profile.streak_current || 7}
                   </p>
-                  <p className="mt-0.5 text-xs text-[#F0D8A1]">
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-[#F0D8A1]">
+                    <span className="text-[#E63946]">🔥</span>
                     стрік
                   </p>
                 </div>
@@ -591,8 +603,8 @@ async function updateWeight() {
 
             <div className="premium-card overflow-hidden rounded-xl p-0">
               <div className="flex min-h-[4.6rem] items-stretch justify-between">
-                <div className="score-card-symbol grid w-[7.4rem] place-items-center text-4xl text-[#E63946]">
-                  ✥
+                <div className="score-card-symbol grid w-[7.4rem] place-items-center">
+                  <span className="score-rosette">✽</span>
                 </div>
                 <div className="flex-1 px-4 py-3">
                   <p className="section-title text-xs font-black">
@@ -634,8 +646,8 @@ async function updateWeight() {
                           : ""
                       }`}
                     >
-                      <div className="task-icon grid h-12 w-12 shrink-0 place-items-center rounded-full text-xl font-black">
-                        {meta.emoji}
+                      <div className="task-icon grid h-12 w-12 shrink-0 place-items-center rounded-full text-2xl">
+                        {meta.symbol}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
@@ -673,7 +685,7 @@ async function updateWeight() {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-black/20" />
               <div className="relative max-w-[14rem]">
-                <p className="font-serif text-2xl font-black leading-tight tracking-[0.03em] text-[#F2D8A4]">
+                <p className="font-serif text-xl font-black leading-tight tracking-[0.03em] text-[#F2D8A4]">
                   СИЛА РОДУ В ТОБІ
                 </p>
                 <p className="mt-3 text-sm text-[#F0D8A1]">

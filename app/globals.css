@@ -148,10 +148,7 @@ body {
 }
 
 .trident-badge {
-  background:
-    radial-gradient(circle at 50% 40%, rgba(212, 175, 55, 0.22), transparent 42%),
-    linear-gradient(145deg, rgba(20, 26, 29, 0.92), rgba(10, 10, 12, 0.98));
-  border: 1px solid rgba(212, 175, 55, 0.38);
+  background: transparent;
 }
 
 .nav-item-active {
@@ -190,6 +187,21 @@ body {
     radial-gradient(circle at 50% 50%, rgba(230, 57, 70, 0.22), transparent 45%),
     linear-gradient(145deg, rgba(18, 18, 19, 0.95), rgba(7, 8, 9, 0.98));
   border-right: 1px solid rgba(166, 124, 82, 0.28);
+}
+
+.logo-ornament {
+  background:
+    linear-gradient(45deg, transparent 30%, rgba(230, 57, 70, 0.92) 31% 40%, transparent 41%),
+    linear-gradient(-45deg, transparent 30%, rgba(230, 57, 70, 0.82) 31% 40%, transparent 41%),
+    radial-gradient(circle, rgba(230, 57, 70, 0.95) 0 2px, transparent 3px);
+  background-size: 13px 13px, 13px 13px, 17px 17px;
+}
+
+.score-rosette {
+  color: #e63946;
+  font-size: 2.4rem;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(230, 57, 70, 0.35);
 }
 
 .banner-warrior {
