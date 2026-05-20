@@ -64,8 +64,70 @@ type LeaderboardLog = {
     | null;
 };
 
+type CompletedTaskLog = {
+  task_code: string;
+};
+
+type TaskMeta = {
+  emoji: string;
+  title: string;
+  description: string;
+  accent: string;
+  glow: string;
+  action: string;
+};
+
+const TASK_META: Record<string, TaskMeta> = {
+  water: {
+    emoji: "💧",
+    title: "Вода",
+    description: "Закрий норму води та дай тілу чисту енергію.",
+    accent: "from-cyan-500 to-blue-600",
+    glow: "shadow-cyan-500/20",
+    action: "Випив воду",
+  },
+  activity: {
+    emoji: "⚡",
+    title: "Активність",
+    description: "Прогулянка, тренування або будь-який рух вперед.",
+    accent: "from-lime-400 to-emerald-600",
+    glow: "shadow-emerald-500/20",
+    action: "Я порухався",
+  },
+  food: {
+    emoji: "🥗",
+    title: "Контроль харчування",
+    description: "Обери нормальну їжу та не зривай свій темп.",
+    accent: "from-orange-400 to-rose-500",
+    glow: "shadow-orange-500/20",
+    action: "Харчування під контролем",
+  },
+  night: {
+    emoji: "🌙",
+    title: "Ніч без їжі",
+    description: "Закрий вечір спокійно: без нічних перекусів.",
+    accent: "from-violet-500 to-indigo-600",
+    glow: "shadow-violet-500/20",
+    action: "Ніч витримав",
+  },
+};
+
+function getTaskMeta(task: Task) {
+  return (
+    TASK_META[task.code.toLowerCase()] || {
+      emoji: "🔥",
+      title: task.title,
+      description: task.description || "Виконай завдання та забери бали.",
+      accent: "from-zinc-500 to-zinc-700",
+      glow: "shadow-zinc-500/20",
+      action: "Виконати",
+    }
+  );
+}
+
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [completedTaskCodes, setCompletedTaskCodes] = useState<string[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
@@ -99,12 +161,12 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
 
   if (selectError) {
     setMessage("Помилка профілю: " + selectError.message);
-    return;
+    return null;
   }
 
   if (existing) {
     setProfile(existing);
-    return;
+    return existing as Profile;
   }
 
   const { data: created, error: insertError } = await supabase
@@ -118,10 +180,11 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
 
   if (insertError) {
     setMessage("Помилка створення профілю: " + insertError.message);
-    return;
+    return null;
   }
 
   setProfile(created);
+  return created as Profile;
 }, []);
 
 const fetchLeaderboard = useCallback(async () => {
@@ -171,11 +234,35 @@ const fetchLeaderboard = useCallback(async () => {
   setLeaderboard(sorted);
 }, []);
 
+const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
+  const { data, error } = await supabase
+    .from("daily_logs")
+    .select("task_code")
+    .eq("profile_id", profileId)
+    .eq("event_day", today());
+
+  if (error) {
+    setMessage("Помилка завантаження прогресу дня: " + error.message);
+    return;
+  }
+
+  const completedCodes = (data as CompletedTaskLog[] | null)?.map(
+    (log) => log.task_code
+  );
+
+  setCompletedTaskCodes(completedCodes || []);
+}, []);
+
 const init = useCallback(async (tgUser: TelegramUser | null) => {
   await fetchTasks();
-  await getOrCreateProfile(tgUser);
+  const activeProfile = await getOrCreateProfile(tgUser);
+
+  if (activeProfile) {
+    await fetchCompletedTaskCodes(activeProfile.id);
+  }
+
   await fetchLeaderboard();
-}, [fetchLeaderboard, fetchTasks, getOrCreateProfile]);
+}, [fetchCompletedTaskCodes, fetchLeaderboard, fetchTasks, getOrCreateProfile]);
 
   useEffect(() => {
     const tg = (window as TelegramWindow).Telegram?.WebApp;
@@ -269,6 +356,11 @@ async function updateWeight() {
 
     const todayDate = today();
 
+    if (completedTaskCodes.includes(task.code)) {
+      setMessage("✅ Це завдання вже виконано сьогодні");
+      return;
+    }
+
     const { data: existingLogs, error: existingLogsError } = await supabase
       .from("daily_logs")
       .select("*")
@@ -330,6 +422,7 @@ async function updateWeight() {
     }
 
     setProfile(data);
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, task.code]);
     setMessage(`🔥 Зараховано! ${task.title} +${task.points} балів`);
     await fetchLeaderboard();
   }
@@ -460,17 +553,74 @@ async function updateWeight() {
           <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
         )}
 
-        <div className="space-y-4">
-          {tasks.map((task) => (
-            <button
-              key={task.id}
-              onClick={() => completeTask(task)}
-              className="w-full bg-zinc-800 rounded-2xl p-4 text-left font-semibold"
-            >
-              {task.title} +{task.points}
-            </button>
-          ))}
-          
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <p className="text-sm font-semibold text-green-400">
+              Щоденні місії
+            </p>
+            <h2 className="text-2xl font-black">Забери свої бали</h2>
+          </div>
+          <div className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300">
+            {completedTaskCodes.length}/{tasks.length}
+          </div>
+        </div>
+
+        <div className="space-y-3 pb-24">
+          {tasks.map((task) => {
+            const meta = getTaskMeta(task);
+            const isCompleted = completedTaskCodes.includes(task.code);
+
+            return (
+              <button
+                key={task.id}
+                onClick={() => completeTask(task)}
+                disabled={isCompleted}
+                className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+                  isCompleted
+                    ? "border-green-500/40 bg-green-950/40 text-white"
+                    : `border-zinc-800 bg-zinc-900 ${meta.glow}`
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-3xl shadow-lg`}
+                  >
+                    {isCompleted ? "✓" : meta.emoji}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-black leading-tight">
+                        {meta.title}
+                      </h3>
+                      <span className="shrink-0 rounded-full bg-black/30 px-3 py-1 text-sm font-black text-green-300">
+                        +{task.points}
+                      </span>
+                    </div>
+
+                    <p className="mb-3 text-sm leading-snug text-zinc-300">
+                      {meta.description}
+                    </p>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-white">
+                        {isCompleted ? "Виконано сьогодні" : meta.action}
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-black ${
+                          isCompleted
+                            ? "bg-green-500 text-black"
+                            : "bg-zinc-800 text-zinc-300"
+                        }`}
+                      >
+                        {isCompleted ? "DONE" : "START"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
       </div>
