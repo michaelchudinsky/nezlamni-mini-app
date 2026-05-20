@@ -589,10 +589,10 @@ async function updateWeight() {
                 <div className="flex w-[4.5rem] shrink-0 flex-col items-center">
                   <div className="trident-badge h-[3.65rem] w-[3.65rem] overflow-hidden">
                     <Image
-                      src="/assets/nezlamni-badge-custom.png"
+                      src="/assets/home-badge-reference.png"
                       alt=""
-                      width={512}
-                      height={512}
+                      width={118}
+                      height={118}
                       className="h-full w-full object-contain"
                     />
                   </div>
