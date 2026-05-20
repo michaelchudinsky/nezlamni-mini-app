@@ -565,7 +565,13 @@ async function updateWeight() {
                     Привіт, {displayName}!
                   </p>
                   <p className="mt-3 flex items-center gap-2 whitespace-nowrap text-sm text-[#EAC46D]">
-                    <span className="text-[#E63946]">♜</span>
+                    <Image
+                      src="/assets/level-icon.png"
+                      alt=""
+                      width={256}
+                      height={256}
+                      className="h-5 w-5 object-contain"
+                    />
                     Рівень 7. Козачка
                   </p>
                   <div className="mt-5 flex items-center gap-3">
