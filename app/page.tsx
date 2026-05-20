@@ -395,27 +395,7 @@ async function updateWeight() {
           ))}
           
         </div>
-        <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
-  <h2 className="text-xl font-bold mb-4">🏆 Рейтинг місяця</h2>
 
-  {leaderboard.length === 0 ? (
-    <p className="text-zinc-400">Поки немає учасників</p>
-  ) : (
-    <div className="space-y-2">
-      {leaderboard.map((user, index) => (
-        <div
-          key={user.profile_id}
-          className="flex justify-between bg-zinc-800 rounded-xl p-3"
-        >
-          <span>
-            {index + 1}. {user.name}
-          </span>
-          <span>{user.points} балів</span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
   <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
