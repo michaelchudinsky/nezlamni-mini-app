@@ -517,6 +517,7 @@ async function updateWeight() {
   return (
     <main className="nezlamni-shell min-h-screen p-3 text-[#F5F5F5]">
       <div className="app-frame vyshyvanka-edge relative mx-auto min-h-[calc(100vh-24px)] max-w-md overflow-hidden rounded-[18px] px-4 pb-28 pt-4">
+        {activeTab !== "home" && (
         <header className="mb-4 flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="logo-ornament mt-2 h-[4.6rem] w-6 shrink-0" />
@@ -537,14 +538,28 @@ async function updateWeight() {
             <span className="absolute right-1.5 top-1.5 h-3 w-3 rounded-full bg-[#E63946]" />
           </button>
         </header>
+        )}
 
-        {message && (
+        {activeTab !== "home" && message && (
           <div className="dark-premium-card mb-4 rounded-2xl p-4 text-sm text-[#F2C94C]">
             {message}
           </div>
         )}
 
         {activeTab === "home" && (
+          <section className="-mx-1 -mt-1">
+            <Image
+              src="/assets/reference-screen-placeholder.png"
+              alt=""
+              width={1024}
+              height={1535}
+              priority
+              className="h-auto w-full rounded-[16px] object-cover"
+            />
+          </section>
+        )}
+
+        {false && profile && (
           <section className="space-y-3">
             <div className="home-user-card rounded-2xl p-3">
               <div className="grid grid-cols-[6.6rem_minmax(0,1fr)_4.9rem] items-center gap-3">
@@ -597,7 +612,7 @@ async function updateWeight() {
                     />
                   </div>
                   <p className="mt-1 text-2xl font-black leading-none text-[#F2C94C]">
-                    {profile.streak_current || 7}
+                    {profile?.streak_current || 7}
                   </p>
                   <p className="mt-0.5 flex items-center gap-1 text-xs text-[#F0D8A1]">
                     <span className="text-[#E63946]">🔥</span>
@@ -995,7 +1010,7 @@ async function updateWeight() {
           </section>
         )}
 
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-[#D4AF37]/20 bg-[#0D0D0F]/95 px-3 py-3 backdrop-blur">
+        <nav className={`fixed bottom-0 left-0 right-0 border-t border-[#D4AF37]/20 bg-[#0D0D0F]/95 px-3 py-3 backdrop-blur ${activeTab === "home" ? "hidden" : ""}`}>
           <div className="mx-auto grid max-w-md grid-cols-4 gap-2 text-center text-[11px]">
             {[
               ["home", "⌂", "Головна"],
