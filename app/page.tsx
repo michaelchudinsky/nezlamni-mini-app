@@ -496,86 +496,297 @@ async function updateWeight() {
     );
   }
 
-  return (
-    <main className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-md mx-auto">
-        <header className="mb-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
-            Mini App
-          </p>
-          <h1 className="text-4xl font-black">NEZLAMNI 🔥</h1>
-        </header>
+  const completedCount = completedTaskCodes.length;
+  const weightProgress = getWeightProgress();
+  const nextTask = tasks.find((task) => !completedTaskCodes.includes(task.code));
+  const topUsers = leaderboard.slice(0, 3);
+  const restUsers = leaderboard.slice(3, 10);
 
+  return (
+    <main className="min-h-screen bg-black p-5 pb-28 text-white">
+      <div className="mx-auto max-w-md">
         {activeTab === "home" && (
-          <>
-            <section className="mb-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <div>
+          <div className="space-y-5">
+            <header className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
+                  Mini App
+                </p>
+                <h1 className="text-4xl font-black">NEZLAMNI 🔥</h1>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Сила. Дисципліна. Незламність.
+                </p>
+              </div>
+
+              <button className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-zinc-900 text-xl">
+                🔔
+              </button>
+            </header>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
+              <div className="flex gap-4">
+                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-gradient-to-br from-green-500 to-emerald-700 text-3xl font-black">
+                  {(profile.first_name || "U").slice(0, 1)}
+                </div>
+
+                <div className="min-w-0 flex-1">
                   <p className="text-sm text-zinc-400">Привіт,</p>
-                  <h2 className="text-2xl font-black">
+                  <h2 className="truncate text-2xl font-black">
                     {profile.first_name || "друже"}!
                   </h2>
                   <p className="mt-1 text-sm font-semibold text-green-400">
                     {getLevel()}
                   </p>
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="h-3 flex-1 overflow-hidden rounded-full bg-zinc-800">
+                      <div
+                        className="h-full rounded-full bg-green-500"
+                        style={{ width: `${weightProgress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-zinc-400">
+                      {weightProgress}%
+                    </span>
+                  </div>
                 </div>
 
-                <div className="rounded-2xl bg-orange-500/15 px-4 py-3 text-center">
+                <div className="rounded-2xl bg-orange-500/15 px-3 py-2 text-center">
                   <p className="text-2xl font-black">
                     {profile.streak_current || 0}
                   </p>
-                  <p className="text-xs font-bold text-orange-300">днів серії</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-black/40 p-4">
-                  <p className="text-xs text-zinc-400">Сьогодні</p>
-                  <p className="text-2xl font-black text-green-400">
-                    {profile.points_today || 0}
-                  </p>
-                  <p className="text-xs text-zinc-500">балів</p>
-                </div>
-
-                <div className="rounded-2xl bg-black/40 p-4">
-                  <p className="text-xs text-zinc-400">Всього</p>
-                  <p className="text-2xl font-black text-white">
-                    {profile.points_total || 0}
-                  </p>
-                  <p className="text-xs text-zinc-500">балів</p>
+                  <p className="text-xs font-bold text-orange-300">streak</p>
                 </div>
               </div>
             </section>
 
-            <section className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
+            <section className="grid grid-cols-[1fr_1.3fr] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
+              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl">
+                ❖
+              </div>
+              <div className="p-5">
+                <p className="text-sm font-bold uppercase tracking-wider text-green-400">
+                  Твої бали
+                </p>
+                <p className="text-4xl font-black">
+                  {profile.points_total || 0}
+                </p>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-4 flex items-end justify-between">
                 <div>
-                  <p className="text-sm font-bold text-zinc-400">Прогрес ваги</p>
-                  <h2 className="text-2xl font-black">{getWeightProgress()}%</h2>
+                  <p className="text-sm font-semibold text-green-400">
+                    Сьогоднішні завдання
+                  </p>
+                  <h2 className="text-2xl font-black">Забери свої бали</h2>
                 </div>
                 <button
-                  onClick={() => setShowWeightForm(!showWeightForm)}
-                  className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-bold"
+                  onClick={() => setActiveTab("tasks")}
+                  className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300"
                 >
-                  Оновити
+                  {completedCount}/{tasks.length}
                 </button>
               </div>
 
-              <div className="mb-3 flex justify-between text-sm text-zinc-300">
-                <span>{profile.current_weight} кг зараз</span>
-                <span>{profile.target_weight} кг ціль</span>
+              <div className="space-y-3">
+                {tasks.map((task) => {
+                  const meta = getTaskMeta(task);
+                  const isCompleted = completedTaskCodes.includes(task.code);
+
+                  return (
+                    <button
+                      key={task.id}
+                      onClick={() => completeTask(task)}
+                      disabled={isCompleted}
+                      className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+                        isCompleted
+                          ? "border-green-500/40 bg-green-950/40 text-white"
+                          : `border-zinc-800 bg-zinc-900 ${meta.glow}`
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-3xl shadow-lg`}
+                        >
+                          {isCompleted ? "✓" : meta.emoji}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-lg font-black leading-tight">
+                            {meta.title}
+                          </h3>
+                          <p className="truncate text-sm text-zinc-300">
+                            {meta.description}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="font-black text-green-300">
+                            +{task.points}
+                          </p>
+                          <p className="text-xl">
+                            {isCompleted ? "✅" : "○"}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-5">
+              <p className="text-sm font-bold text-green-400">Мотивація дня</p>
+              <h2 className="mt-2 text-2xl font-black">Сила роду в тобі</h2>
+              <p className="mt-2 text-sm text-zinc-300">
+                Твій шлях — твоя легенда. Один день, одне рішення, один крок.
+              </p>
+              <button
+                onClick={() => setActiveTab("tasks")}
+                className="mt-5 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
+              >
+                Перейти до завдань
+              </button>
+            </section>
+          </div>
+        )}
+        {message && (
+          <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
+        )}
+
+        {activeTab === "leaderboard" && (
+          <div className="space-y-5">
+            <header className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab("home")}
+                className="text-2xl"
+              >
+                ‹
+              </button>
+              <h1 className="text-2xl font-black">Рейтинг</h1>
+              <div className="rounded-full bg-zinc-900 px-3 py-2 text-sm text-zinc-300">
+                Місяць
+              </div>
+            </header>
+
+            {topUsers.length > 0 && (
+              <section className="grid grid-cols-3 items-end gap-3">
+                {topUsers.map((user, index) => (
+                  <div
+                    key={user.profile_id}
+                    className={`rounded-3xl border border-zinc-800 bg-zinc-900 p-3 text-center ${
+                      index === 0 ? "pb-8" : "pb-4"
+                    }`}
+                  >
+                    <div className="mx-auto mb-2 grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-green-500 to-emerald-800 text-xl font-black">
+                      {user.name.slice(0, 1)}
+                    </div>
+                    <p className="font-bold">{user.name}</p>
+                    <p className="text-green-400">{user.points}</p>
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {leaderboard.length === 0 ? (
+              <p className="text-zinc-400">Поки немає учасників</p>
+            ) : (
+              <div className="space-y-2 rounded-3xl border border-zinc-800 bg-zinc-900 p-3">
+                {restUsers.map((user, index) => (
+                  <div
+                    key={user.profile_id}
+                    className="flex items-center justify-between rounded-2xl bg-zinc-800/70 p-3"
+                  >
+                    <span className="text-zinc-400">{index + 4}</span>
+                    <span className="flex-1 px-3">{user.name}</span>
+                    <span className="font-bold">{user.points}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "profile" && (
+          <div className="space-y-5">
+            <header className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab("home")}
+                className="text-2xl"
+              >
+                ‹
+              </button>
+              <h1 className="text-2xl font-black">Профіль</h1>
+              <span className="text-2xl">⚙️</span>
+            </header>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-center">
+              <div className="mx-auto mb-3 grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-green-500 to-emerald-800 text-4xl font-black">
+                {(profile.first_name || "U").slice(0, 1)}
+              </div>
+              <h2 className="text-3xl font-black">
+                {profile.first_name || "User"}
+              </h2>
+              <p className="text-sm text-zinc-400">
+                Учасниця з {profile.registration_date || today()} ·{" "}
+                {getDaysWithUs()} днів з нами
+              </p>
+            </section>
+
+            <section className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-zinc-900 p-4 text-center">
+                <p className="text-xs text-zinc-400">Рівень</p>
+                <p className="text-xl font-black">{getLevel()}</p>
+              </div>
+              <div className="rounded-2xl bg-zinc-900 p-4 text-center">
+                <p className="text-xs text-zinc-400">Стрік</p>
+                <p className="text-2xl font-black">
+                  {profile.streak_current || 0}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-zinc-900 p-4 text-center">
+                <p className="text-xs text-zinc-400">Бали</p>
+                <p className="text-2xl font-black">
+                  {profile.points_total || 0}
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-3 grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs text-zinc-400">Поточна</p>
+                  <p className="text-xl font-black">
+                    {profile.current_weight} кг
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-400">Ціль</p>
+                  <p className="text-xl font-black">
+                    {profile.target_weight} кг
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-400">Прогрес</p>
+                  <p className="text-xl font-black">{weightProgress}%</p>
+                </div>
               </div>
 
-              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
+              <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
                 <div
                   className="h-full rounded-full bg-green-500"
-                  style={{ width: `${getWeightProgress()}%` }}
+                  style={{ width: `${weightProgress}%` }}
                 />
               </div>
 
-              <p className="mt-3 text-sm text-zinc-500">
-                Старт: {profile.start_weight} кг · з нами {getDaysWithUs()} днів
-              </p>
+              <button
+                onClick={() => setShowWeightForm(!showWeightForm)}
+                className="mt-4 w-full rounded-2xl bg-zinc-800 p-3 font-bold"
+              >
+                Оновити вагу
+              </button>
 
               {showWeightForm && (
                 <div className="mt-4 space-y-3">
@@ -596,144 +807,206 @@ async function updateWeight() {
                 </div>
               )}
             </section>
-          </>
-        )}
-        {message && (
-          <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
-        )}
 
-        {activeTab === "home" && (
-          <>
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="text-sm font-semibold text-green-400">
-              Щоденні місії
-            </p>
-            <h2 className="text-2xl font-black">Забери свої бали</h2>
-          </div>
-          <div className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300">
-            {completedTaskCodes.length}/{tasks.length}
-          </div>
-        </div>
-
-        <div className="space-y-3 pb-24">
-          {tasks.map((task) => {
-            const meta = getTaskMeta(task);
-            const isCompleted = completedTaskCodes.includes(task.code);
-
-            return (
+            <div className="space-y-3">
               <button
-                key={task.id}
-                onClick={() => completeTask(task)}
-                disabled={isCompleted}
-                className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
-                  isCompleted
-                    ? "border-green-500/40 bg-green-950/40 text-white"
-                    : `border-zinc-800 bg-zinc-900 ${meta.glow}`
-                }`}
+                onClick={() => setActiveTab("photo")}
+                className="flex w-full items-center justify-between rounded-2xl bg-zinc-900 p-4"
               >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-3xl shadow-lg`}
-                  >
-                    {isCompleted ? "✓" : meta.emoji}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-black leading-tight">
-                        {meta.title}
-                      </h3>
-                      <span className="shrink-0 rounded-full bg-black/30 px-3 py-1 text-sm font-black text-green-300">
-                        +{task.points}
-                      </span>
-                    </div>
-
-                    <p className="mb-3 text-sm leading-snug text-zinc-300">
-                      {meta.description}
-                    </p>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-bold text-white">
-                        {isCompleted ? "Виконано сьогодні" : meta.action}
-                      </span>
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-black ${
-                          isCompleted
-                            ? "bg-green-500 text-black"
-                            : "bg-zinc-800 text-zinc-300"
-                        }`}
-                      >
-                        {isCompleted ? "DONE" : "START"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <span>📸 Фото прогресу</span>
+                <span>›</span>
               </button>
-            );
-          })}
-        </div>
-          </>
-        )}
-
-        {activeTab === "leaderboard" && (
-          <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
-            <h2 className="text-2xl font-bold mb-4">
-              🏆 Рейтинг місяця
-            </h2>
-
-            {leaderboard.length === 0 ? (
-              <p className="text-zinc-400">Поки немає учасників</p>
-            ) : (
-              <div className="space-y-3">
-                {leaderboard.map((user, index) => (
-                  <div
-                    key={user.profile_id}
-                    className="flex justify-between bg-zinc-800 rounded-xl p-3"
-                  >
-                    <span>
-                      {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`} {user.name}
-                    </span>
-
-                    <span>{user.points} балів</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "profile" && (
-          <div className="rounded-2xl bg-zinc-900 p-5">
-            <h2 className="mb-4 text-2xl font-black">👤 Профіль</h2>
-            <div className="space-y-3 text-zinc-300">
-              <p>Імʼя: {profile.first_name || "User"}</p>
-              <p>Рівень: {getLevel()}</p>
-              <p>Серія: {profile.streak_current || 0} днів</p>
-              <p>Всього балів: {profile.points_total || 0}</p>
+              <button className="flex w-full items-center justify-between rounded-2xl bg-zinc-900 p-4">
+                <span>📊 Статистика</span>
+                <span>›</span>
+              </button>
             </div>
           </div>
         )}
 
-        {activeTab === "rewards" && (
-          <div className="rounded-2xl bg-zinc-900 p-5">
-            <h2 className="mb-4 text-2xl font-black">🎁 Нагороди</h2>
-            <p className="text-zinc-400">
-              Тут скоро будуть рівні, бейджі та подарунки за стабільність.
-            </p>
+        {activeTab === "tasks" && (
+          <div className="space-y-5">
+            <header className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab("home")}
+                className="text-2xl"
+              >
+                ‹
+              </button>
+              <h1 className="text-2xl font-black">Завдання</h1>
+              <span className="text-sm text-zinc-400">
+                {completedCount}/{tasks.length}
+              </span>
+            </header>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-center">
+              <div className="mx-auto mb-4 grid h-28 w-28 place-items-center rounded-full border-8 border-green-500/40 text-5xl">
+                {nextTask ? getTaskMeta(nextTask).emoji : "✅"}
+              </div>
+              <p className="font-black text-green-400">
+                {nextTask ? `+${nextTask.points} балів` : "День закрито"}
+              </p>
+              <h2 className="mt-2 text-3xl font-black">
+                {nextTask ? getTaskMeta(nextTask).title : "Все виконано"}
+              </h2>
+              <p className="mt-2 text-sm text-zinc-400">
+                {nextTask
+                  ? getTaskMeta(nextTask).description
+                  : "Сьогодні ти забрав усі доступні бали."}
+              </p>
+              {nextTask && (
+                <button
+                  onClick={() => completeTask(nextTask)}
+                  className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
+                >
+                  Завдання виконано
+                </button>
+              )}
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="font-bold text-green-400">
+                Дисципліна сьогодні — свобода завтра.
+              </p>
+            </section>
           </div>
         )}
 
+        {activeTab === "rewards" && (
+          <div className="space-y-5">
+            <header className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab("home")}
+                className="text-2xl"
+              >
+                ‹
+              </button>
+              <h1 className="text-2xl font-black">Нагороди</h1>
+              <span />
+            </header>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Наступна нагорода
+              </p>
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black">Скриня хоробрості</h2>
+                  <p className="text-sm text-zinc-400">
+                    {profile.points_total || 0} / 2 000 балів
+                  </p>
+                </div>
+                <div className="text-5xl">🎁</div>
+              </div>
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      ((profile.points_total || 0) / 2000) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              {[
+                ["Скриня хоробрості", "2 000 балів"],
+                ["Сила предків", "5 000 балів"],
+                ["Козацька воля", "10 000 балів"],
+                ["Легенда роду", "20 000 балів"],
+              ].map(([title, price]) => (
+                <div
+                  key={title}
+                  className="flex items-center justify-between rounded-2xl bg-zinc-900 p-4"
+                >
+                  <div>
+                    <p className="font-bold">{title}</p>
+                    <p className="text-sm text-zinc-400">{price}</p>
+                  </div>
+                  <span>🔒</span>
+                </div>
+              ))}
+            </section>
+          </div>
+        )}
+
+        {activeTab === "photo" && (
+          <div className="space-y-5">
+            <header className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab("profile")}
+                className="text-2xl"
+              >
+                ‹
+              </button>
+              <h1 className="text-2xl font-black">Фото прогресу</h1>
+              <span />
+            </header>
+
+            <section className="grid grid-cols-2 gap-4">
+              <div className="grid aspect-[3/4] place-items-center rounded-3xl border border-zinc-800 bg-zinc-900 text-center text-zinc-400">
+                <div>
+                  <p className="text-4xl">📷</p>
+                  <p className="mt-2 font-bold">До</p>
+                </div>
+              </div>
+              <div className="grid aspect-[3/4] place-items-center rounded-3xl border border-zinc-800 bg-zinc-900 text-center text-zinc-400">
+                <div>
+                  <p className="text-4xl">📷</p>
+                  <p className="mt-2 font-bold">Після</p>
+                </div>
+              </div>
+            </section>
+
+            <button className="w-full rounded-2xl bg-green-600 p-4 font-black">
+              + Додати нове фото
+            </button>
+
+            <p className="text-center text-sm text-zinc-400">
+              Роби фото раз на 7 днів для відстеження прогресу.
+            </p>
+          </div>
+        )}
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
-  <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
-<button onClick={() => setActiveTab("home")}>🏠<br />Головна</button>
-<button onClick={() => setActiveTab("leaderboard")}>🏆<br />Рейтинг</button>
-<button onClick={() => setActiveTab("profile")}>👤<br />Профіль</button>
-<button onClick={() => setActiveTab("rewards")}>🎁<br />Нагороди</button>
-  </div>
-  
-</div>
+        <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
+          <button
+            onClick={() => setActiveTab("home")}
+            className={activeTab === "home" ? "text-green-400" : "text-zinc-400"}
+          >
+            🏠<br />Головна
+          </button>
+          <button
+            onClick={() => setActiveTab("leaderboard")}
+            className={
+              activeTab === "leaderboard" ? "text-green-400" : "text-zinc-400"
+            }
+          >
+            🏆<br />Рейтинг
+          </button>
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={
+              activeTab === "profile" || activeTab === "photo"
+                ? "text-green-400"
+                : "text-zinc-400"
+            }
+          >
+            👤<br />Профіль
+          </button>
+          <button
+            onClick={() => setActiveTab("rewards")}
+            className={
+              activeTab === "rewards" ? "text-green-400" : "text-zinc-400"
+            }
+          >
+            🎁<br />Нагороди
+          </button>
+        </div>
+      </div>
     </main>
   );
 }
