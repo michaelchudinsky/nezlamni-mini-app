@@ -328,6 +328,23 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     return "🥉 Новачок";
   }
+
+  function getWeightProgress() {
+    if (!profile?.start_weight || !profile.current_weight || !profile.target_weight) {
+      return 0;
+    }
+
+    const distance = profile.start_weight - profile.target_weight;
+
+    if (distance <= 0) {
+      return 0;
+    }
+
+    const progress =
+      ((profile.start_weight - profile.current_weight) / distance) * 100;
+
+    return Math.min(100, Math.max(0, Math.round(progress)));
+  }
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
@@ -482,77 +499,111 @@ async function updateWeight() {
   return (
     <main className="min-h-screen bg-black text-white p-6">
       <div className="max-w-md mx-auto">
-        <h1 className="text-4xl font-bold mb-6">NEZLAMNI 🔥</h1>
-        <p className="text-zinc-400 mb-4">
-  Активна вкладка: {activeTab}
-</p>
-
-{activeTab === "home" && (
-        <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
-          <button
-  onClick={() => setShowWeightForm(!showWeightForm)}
-  className="w-full bg-zinc-800 rounded-xl p-3 mt-4 font-semibold"
->
-  ✏️ Оновити вагу
-</button>
-
-{showWeightForm && (
-  <div className="mt-4 space-y-3">
-    <input
-      className="w-full rounded-xl p-3 bg-zinc-800"
-      placeholder="Нова вага"
-      type="number"
-      value={newWeight}
-      onChange={(e) => setNewWeight(e.target.value)}
-    />
-
-    <button
-      onClick={updateWeight}
-      className="w-full bg-green-600 rounded-xl p-3 font-bold"
-    >
-      Зберегти
-    </button>
-  </div>
-  
-)}
-          <p>📊 Сьогодні: {profile.points_today || 0} балів</p>
-          <p>🏆 Всього: {profile.points_total || 0} балів</p>
-          <p>🔥 Серія: {profile.streak_current || 0} днів</p>
-          <p>🎮 Рівень: {getLevel()}</p>
-          <p>🗓 З нами: {getDaysWithUs()} днів</p>
-          <p>
-            ⚖️ {profile.start_weight} кг → {profile.current_weight} кг →{" "}
-            {profile.target_weight} кг
+        <header className="mb-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
+            Mini App
           </p>
+          <h1 className="text-4xl font-black">NEZLAMNI 🔥</h1>
+        </header>
 
-          <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden mt-3">
-            <div
-              className="bg-green-500 h-4"
-              style={{
-                width: `${
-                  profile.start_weight &&
-                  profile.target_weight &&
-                  profile.current_weight
-                    ? Math.min(
-                        100,
-                        Math.max(
-                          0,
-                          ((profile.start_weight - profile.current_weight) /
-                            (profile.start_weight - profile.target_weight)) *
-                            100
-                        )
-                      )
-                    : 0
-                }%`,
-              }}
-            />
-          </div>
-        </div>
-)}
+        {activeTab === "home" && (
+          <>
+            <section className="mb-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm text-zinc-400">Привіт,</p>
+                  <h2 className="text-2xl font-black">
+                    {profile.first_name || "друже"}!
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-green-400">
+                    {getLevel()}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-orange-500/15 px-4 py-3 text-center">
+                  <p className="text-2xl font-black">
+                    {profile.streak_current || 0}
+                  </p>
+                  <p className="text-xs font-bold text-orange-300">днів серії</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-black/40 p-4">
+                  <p className="text-xs text-zinc-400">Сьогодні</p>
+                  <p className="text-2xl font-black text-green-400">
+                    {profile.points_today || 0}
+                  </p>
+                  <p className="text-xs text-zinc-500">балів</p>
+                </div>
+
+                <div className="rounded-2xl bg-black/40 p-4">
+                  <p className="text-xs text-zinc-400">Всього</p>
+                  <p className="text-2xl font-black text-white">
+                    {profile.points_total || 0}
+                  </p>
+                  <p className="text-xs text-zinc-500">балів</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-zinc-400">Прогрес ваги</p>
+                  <h2 className="text-2xl font-black">{getWeightProgress()}%</h2>
+                </div>
+                <button
+                  onClick={() => setShowWeightForm(!showWeightForm)}
+                  className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-bold"
+                >
+                  Оновити
+                </button>
+              </div>
+
+              <div className="mb-3 flex justify-between text-sm text-zinc-300">
+                <span>{profile.current_weight} кг зараз</span>
+                <span>{profile.target_weight} кг ціль</span>
+              </div>
+
+              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{ width: `${getWeightProgress()}%` }}
+                />
+              </div>
+
+              <p className="mt-3 text-sm text-zinc-500">
+                Старт: {profile.start_weight} кг · з нами {getDaysWithUs()} днів
+              </p>
+
+              {showWeightForm && (
+                <div className="mt-4 space-y-3">
+                  <input
+                    className="w-full rounded-xl bg-zinc-800 p-3"
+                    placeholder="Нова вага"
+                    type="number"
+                    value={newWeight}
+                    onChange={(e) => setNewWeight(e.target.value)}
+                  />
+
+                  <button
+                    onClick={updateWeight}
+                    className="w-full rounded-xl bg-green-600 p-3 font-bold"
+                  >
+                    Зберегти
+                  </button>
+                </div>
+              )}
+            </section>
+          </>
+        )}
         {message && (
           <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
         )}
 
+        {activeTab === "home" && (
+          <>
         <div className="mb-4 flex items-end justify-between">
           <div>
             <p className="text-sm font-semibold text-green-400">
@@ -622,6 +673,56 @@ async function updateWeight() {
             );
           })}
         </div>
+          </>
+        )}
+
+        {activeTab === "leaderboard" && (
+          <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
+            <h2 className="text-2xl font-bold mb-4">
+              🏆 Рейтинг місяця
+            </h2>
+
+            {leaderboard.length === 0 ? (
+              <p className="text-zinc-400">Поки немає учасників</p>
+            ) : (
+              <div className="space-y-3">
+                {leaderboard.map((user, index) => (
+                  <div
+                    key={user.profile_id}
+                    className="flex justify-between bg-zinc-800 rounded-xl p-3"
+                  >
+                    <span>
+                      {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`} {user.name}
+                    </span>
+
+                    <span>{user.points} балів</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "profile" && (
+          <div className="rounded-2xl bg-zinc-900 p-5">
+            <h2 className="mb-4 text-2xl font-black">👤 Профіль</h2>
+            <div className="space-y-3 text-zinc-300">
+              <p>Імʼя: {profile.first_name || "User"}</p>
+              <p>Рівень: {getLevel()}</p>
+              <p>Серія: {profile.streak_current || 0} днів</p>
+              <p>Всього балів: {profile.points_total || 0}</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "rewards" && (
+          <div className="rounded-2xl bg-zinc-900 p-5">
+            <h2 className="mb-4 text-2xl font-black">🎁 Нагороди</h2>
+            <p className="text-zinc-400">
+              Тут скоро будуть рівні, бейджі та подарунки за стабільність.
+            </p>
+          </div>
+        )}
 
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
@@ -633,32 +734,6 @@ async function updateWeight() {
   </div>
   
 </div>
-{activeTab === "leaderboard" && (
-  <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
-    <h2 className="text-2xl font-bold mb-4">
-      🏆 Рейтинг місяця
-    </h2>
-
-    {leaderboard.length === 0 ? (
-      <p className="text-zinc-400">Поки немає учасників</p>
-    ) : (
-      <div className="space-y-3">
-        {leaderboard.map((user, index) => (
-          <div
-            key={user.profile_id}
-            className="flex justify-between bg-zinc-800 rounded-xl p-3"
-          >
-            <span>
-              {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`} {user.name}
-            </span>
-
-            <span>{user.points} балів</span>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
     </main>
   );
 }
