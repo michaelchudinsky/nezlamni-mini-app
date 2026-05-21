@@ -1356,7 +1356,7 @@ async function updateWeight() {
   return (
     <main className="min-h-screen bg-black p-5 pb-28 text-white">
       {rewardToast && (
-        <div className="reward-toast fixed left-1/2 top-5 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-green-400/40 bg-green-500 px-5 py-4 text-center font-black text-black shadow-2xl shadow-green-500/30">
+        <div className="reward-toast fixed inset-x-4 top-5 z-[60] mx-auto max-w-sm rounded-2xl border border-green-400/40 bg-green-500 px-5 py-4 text-center font-black text-black shadow-2xl shadow-green-500/30">
           {rewardToast}
         </div>
       )}

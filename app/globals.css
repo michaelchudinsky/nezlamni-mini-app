@@ -32,21 +32,21 @@ body {
 @keyframes reward-toast-slide {
   0% {
     opacity: 0;
-    transform: translateX(-50%) translateY(calc(-100% - 32px));
+    transform: translateY(calc(-100% - 32px));
   }
 
   14% {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 
   82% {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(-50%) translateY(calc(-100% - 32px));
+    transform: translateY(calc(-100% - 32px));
   }
 }
