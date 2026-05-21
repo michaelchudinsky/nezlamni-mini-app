@@ -77,6 +77,68 @@ type TaskMeta = {
   action: string;
 };
 
+type WaterItem = {
+  code: string;
+  title: string;
+  description: string;
+};
+
+type FoodItem = {
+  code: string;
+  title: string;
+  description: string;
+  points: number;
+};
+
+const WATER_ITEMS: WaterItem[] = [
+  {
+    code: "water_wakeup",
+    title: "Після пробудження",
+    description: "Запусти день зі склянки води.",
+  },
+  {
+    code: "water_breakfast",
+    title: "Перед сніданком",
+    description: "Допоможи апетиту бути спокійнішим.",
+  },
+  {
+    code: "water_lunch",
+    title: "Перед обідом",
+    description: "Підтримай контроль порцій вдень.",
+  },
+  {
+    code: "water_dinner",
+    title: "Перед вечерею",
+    description: "Зменш ризик переїдання ввечері.",
+  },
+  {
+    code: "water_daily_norm",
+    title: "Денна норма",
+    description: "Закрий свою норму води за день.",
+  },
+];
+
+const FOOD_ITEMS: FoodItem[] = [
+  {
+    code: "food_three_meals",
+    title: "3 основні прийоми їжі",
+    description: "Сніданок, обід і вечеря без хаотичного добирання їжі.",
+    points: 4,
+  },
+  {
+    code: "food_no_snacks",
+    title: "Без перекусів",
+    description: "Ніяких цукерок, горішків, яблук чи кави з молоком між їжею.",
+    points: 3,
+  },
+  {
+    code: "food_dinner_before_20",
+    title: "Останній прийом до 20:00",
+    description: "Після 20:00 тільки вода або несолодкий чай.",
+    points: 3,
+  },
+];
+
 const TASK_META: Record<string, TaskMeta> = {
   water: {
     emoji: "💧",
@@ -132,6 +194,10 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("home");
+  const [isWaterModalOpen, setIsWaterModalOpen] = useState(false);
+  const [isWaterInfoOpen, setIsWaterInfoOpen] = useState(false);
+  const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
+  const [isFoodInfoOpen, setIsFoodInfoOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -345,6 +411,263 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     return Math.min(100, Math.max(0, Math.round(progress)));
   }
+
+  function getWaterCompletedCount() {
+    return WATER_ITEMS.filter((item) => completedTaskCodes.includes(item.code))
+      .length;
+  }
+
+  function getDailyWaterNorm() {
+    const currentWeight = profile?.current_weight || profile?.start_weight || 0;
+
+    if (!currentWeight) {
+      return "0";
+    }
+
+    return (currentWeight * 0.03).toFixed(1);
+  }
+
+  function getFoodCompletedCount() {
+    return FOOD_ITEMS.filter((item) => completedTaskCodes.includes(item.code))
+      .length;
+  }
+
+  function getFoodPointsEarned() {
+    return FOOD_ITEMS.reduce((sum, item) => {
+      return completedTaskCodes.includes(item.code) ? sum + item.points : sum;
+    }, 0);
+  }
+
+  async function completeWaterItem(item: WaterItem) {
+    if (!profile) return;
+
+    const todayDate = today();
+
+    if (completedTaskCodes.includes(item.code)) {
+      const { error: deleteLogError } = await supabase
+        .from("daily_logs")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("task_code", item.code)
+        .eq("event_day", todayDate);
+
+      if (deleteLogError) {
+        setMessage("Помилка скасування води: " + deleteLogError.message);
+        return;
+      }
+
+      const { data, error: updateProfileError } = await supabase
+        .from("profiles")
+        .update({
+          points_today: Math.max(0, profile.points_today - 1),
+          points_total: Math.max(0, profile.points_total - 1),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+
+      if (updateProfileError) {
+        setMessage(
+          "Помилка оновлення балів після скасування: " +
+            updateProfileError.message
+        );
+        return;
+      }
+
+      setProfile(data);
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.filter((code) => code !== item.code)
+      );
+      setMessage(`↩️ Скасовано: ${item.title} -1 бал`);
+      await fetchLeaderboard();
+      return;
+    }
+
+    const { data: existingLogs, error: existingLogsError } = await supabase
+      .from("daily_logs")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .eq("task_code", item.code)
+      .eq("event_day", todayDate);
+
+    if (existingLogsError) {
+      setMessage("Помилка перевірки води: " + existingLogsError.message);
+      return;
+    }
+
+    if (existingLogs && existingLogs.length > 0) {
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.includes(item.code) ? currentCodes : [...currentCodes, item.code]
+      );
+      setMessage("✅ Цей пункт води вже зараховано сьогодні");
+      return;
+    }
+
+    const { error: insertLogError } = await supabase.from("daily_logs").insert({
+      profile_id: profile.id,
+      task_code: item.code,
+      points: 1,
+      event_day: todayDate,
+    });
+
+    if (insertLogError) {
+      setMessage("Помилка запису води: " + insertLogError.message);
+      return;
+    }
+
+    let newStreak = profile.streak_current || 0;
+
+    const todayDateObj = new Date(todayDate);
+    const yesterday = new Date(todayDateObj);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yesterdayString = yesterday.toISOString().slice(0, 10);
+
+    if (profile.last_activity_date === yesterdayString) {
+      newStreak += 1;
+    } else if (profile.last_activity_date !== todayDate) {
+      newStreak = 1;
+    }
+
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({
+        points_today: profile.points_today + 1,
+        points_total: profile.points_total + 1,
+        streak_current: newStreak,
+        last_activity_date: todayDate,
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    if (updateProfileError) {
+      setMessage("Помилка оновлення балів за воду: " + updateProfileError.message);
+      return;
+    }
+
+    setProfile(data);
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
+    setMessage(`💧 Вода зарахована: ${item.title} +1 бал`);
+    await fetchLeaderboard();
+  }
+
+  async function completeFoodItem(item: FoodItem) {
+    if (!profile) return;
+
+    const todayDate = today();
+
+    if (completedTaskCodes.includes(item.code)) {
+      const { error: deleteLogError } = await supabase
+        .from("daily_logs")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("task_code", item.code)
+        .eq("event_day", todayDate);
+
+      if (deleteLogError) {
+        setMessage("Помилка скасування харчування: " + deleteLogError.message);
+        return;
+      }
+
+      const { data, error: updateProfileError } = await supabase
+        .from("profiles")
+        .update({
+          points_today: Math.max(0, profile.points_today - item.points),
+          points_total: Math.max(0, profile.points_total - item.points),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+
+      if (updateProfileError) {
+        setMessage(
+          "Помилка оновлення балів після скасування: " +
+            updateProfileError.message
+        );
+        return;
+      }
+
+      setProfile(data);
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.filter((code) => code !== item.code)
+      );
+      setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await fetchLeaderboard();
+      return;
+    }
+
+    const { data: existingLogs, error: existingLogsError } = await supabase
+      .from("daily_logs")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .eq("task_code", item.code)
+      .eq("event_day", todayDate);
+
+    if (existingLogsError) {
+      setMessage("Помилка перевірки харчування: " + existingLogsError.message);
+      return;
+    }
+
+    if (existingLogs && existingLogs.length > 0) {
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.includes(item.code) ? currentCodes : [...currentCodes, item.code]
+      );
+      setMessage("✅ Цей прийом їжі вже зараховано сьогодні");
+      return;
+    }
+
+    const { error: insertLogError } = await supabase.from("daily_logs").insert({
+      profile_id: profile.id,
+      task_code: item.code,
+      points: item.points,
+      event_day: todayDate,
+    });
+
+    if (insertLogError) {
+      setMessage("Помилка запису харчування: " + insertLogError.message);
+      return;
+    }
+
+    let newStreak = profile.streak_current || 0;
+
+    const todayDateObj = new Date(todayDate);
+    const yesterday = new Date(todayDateObj);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yesterdayString = yesterday.toISOString().slice(0, 10);
+
+    if (profile.last_activity_date === yesterdayString) {
+      newStreak += 1;
+    } else if (profile.last_activity_date !== todayDate) {
+      newStreak = 1;
+    }
+
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({
+        points_today: profile.points_today + item.points,
+        points_total: profile.points_total + item.points,
+        streak_current: newStreak,
+        last_activity_date: todayDate,
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    if (updateProfileError) {
+      setMessage(
+        "Помилка оновлення балів за харчування: " +
+          updateProfileError.message
+      );
+      return;
+    }
+
+    setProfile(data);
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
+    setMessage(`🥗 Харчування зараховано: ${item.title} +${item.points} бали`);
+    await fetchLeaderboard();
+  }
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
@@ -370,6 +693,16 @@ async function updateWeight() {
 }
   async function completeTask(task: Task) {
     if (!profile) return;
+
+    if (task.code.toLowerCase() === "water") {
+      setIsWaterModalOpen(true);
+      return;
+    }
+
+    if (task.code.toLowerCase() === "food") {
+      setIsFoodModalOpen(true);
+      return;
+    }
 
     const todayDate = today();
 
@@ -496,9 +829,26 @@ async function updateWeight() {
     );
   }
 
-  const completedCount = completedTaskCodes.length;
+  const waterCompletedCount = getWaterCompletedCount();
+  const isWaterCompleted = waterCompletedCount === WATER_ITEMS.length;
+  const foodCompletedCount = getFoodCompletedCount();
+  const foodPointsEarned = getFoodPointsEarned();
+  const isFoodCompleted = foodCompletedCount === FOOD_ITEMS.length;
+  const completedCount = tasks.filter((task) =>
+    task.code.toLowerCase() === "water"
+      ? isWaterCompleted
+      : task.code.toLowerCase() === "food"
+        ? isFoodCompleted
+        : completedTaskCodes.includes(task.code)
+  ).length;
   const weightProgress = getWeightProgress();
-  const nextTask = tasks.find((task) => !completedTaskCodes.includes(task.code));
+  const nextTask = tasks.find((task) =>
+    task.code.toLowerCase() === "water"
+      ? !isWaterCompleted
+      : task.code.toLowerCase() === "food"
+        ? !isFoodCompleted
+        : !completedTaskCodes.includes(task.code)
+  );
   const topUsers = leaderboard.slice(0, 3);
   const restUsers = leaderboard.slice(3, 10);
 
@@ -593,14 +943,38 @@ async function updateWeight() {
               <div className="space-y-3">
                 {tasks.map((task) => {
                   const meta = getTaskMeta(task);
-                  const isCompleted = completedTaskCodes.includes(task.code);
+                  const isWaterTask = task.code.toLowerCase() === "water";
+                  const isFoodTask = task.code.toLowerCase() === "food";
+                  const isCompleted = isWaterTask
+                    ? isWaterCompleted
+                    : isFoodTask
+                      ? isFoodCompleted
+                      : completedTaskCodes.includes(task.code);
+                  const pointsText = isWaterTask
+                    ? `+${waterCompletedCount}`
+                    : isFoodTask
+                      ? `+${foodPointsEarned}`
+                    : `+${task.points}`;
+                  const statusText = isWaterTask
+                    ? `${waterCompletedCount}/${WATER_ITEMS.length}`
+                    : isFoodTask
+                      ? `${foodCompletedCount}/${FOOD_ITEMS.length}`
+                    : isCompleted
+                      ? "✅"
+                      : "○";
+                  const progressPercent = isWaterTask
+                    ? (waterCompletedCount / WATER_ITEMS.length) * 100
+                    : isFoodTask
+                      ? (foodCompletedCount / FOOD_ITEMS.length) * 100
+                      : isCompleted
+                        ? 100
+                        : 0;
 
                   return (
                     <button
                       key={task.id}
                       onClick={() => completeTask(task)}
-                      disabled={isCompleted}
-                      className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+                      className={`relative w-full overflow-hidden rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
                         isCompleted
                           ? "border-green-500/40 bg-green-950/40 text-white"
                           : `border-zinc-800 bg-zinc-900 ${meta.glow}`
@@ -623,13 +997,19 @@ async function updateWeight() {
                         </div>
 
                         <div className="text-right">
-                          <p className="font-black text-green-300">
-                            +{task.points}
+                          <p className="text-2xl font-black text-green-300">
+                            {pointsText}
                           </p>
-                          <p className="text-xl">
-                            {isCompleted ? "✅" : "○"}
+                          <p className="text-sm text-zinc-400">
+                            {statusText}
                           </p>
                         </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-black/30">
+                        <div
+                          className={`h-full bg-gradient-to-r ${meta.accent}`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
                       </div>
                     </button>
                   );
@@ -971,6 +1351,305 @@ async function updateWeight() {
           </div>
         )}
       </div>
+
+      {isWaterModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/70 px-3 pb-3">
+          <div className="max-h-[75vh] w-full overflow-y-auto rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
+
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-green-400">
+                  Твоя денна норма:{" "}
+                  {getDailyWaterNorm()} л
+                </p>
+                <h2 className="text-3xl font-black">Вода</h2>
+              </div>
+              <button
+                onClick={() => setIsWaterModalOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-3xl bg-zinc-900 p-4">
+              <div className="mb-3 grid h-28 place-items-center rounded-2xl bg-gradient-to-br from-cyan-500/30 to-blue-700/30 text-6xl">
+                💧
+              </div>
+              <p className="text-sm leading-relaxed text-zinc-300">
+                Вода допомагає контролювати апетит і легше відрізняти голод
+                від спраги. Склянка води зранку та перед їжею допомагає
+                спокійніше тримати харчування і не переїдати.
+              </p>
+              <button
+                onClick={() => setIsWaterInfoOpen(true)}
+                className="mt-4 text-sm font-bold text-green-400"
+              >
+                Чому це важливо?
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
+              <div>
+                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-2xl font-black">
+                  {waterCompletedCount}/{WATER_ITEMS.length}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-zinc-400">Бали за воду</p>
+                <p className="text-2xl font-black text-green-400">
+                  +{waterCompletedCount}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {WATER_ITEMS.map((item) => {
+                const isCompleted = completedTaskCodes.includes(item.code);
+
+                return (
+                  <button
+                    key={item.code}
+                    onClick={() => completeWaterItem(item)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${
+                      isCompleted
+                        ? "border-green-500/40 bg-green-950/40"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-black ${
+                        isCompleted
+                          ? "bg-green-500 text-black"
+                          : "bg-zinc-800 text-zinc-300"
+                      }`}
+                    >
+                      {isCompleted ? "✓" : "+1"}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{item.title}</span>
+                      <span className="block text-sm text-zinc-400">
+                        {item.code === "water_daily_norm"
+                          ? `${item.description}: ${getDailyWaterNorm()} л`
+                          : item.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsWaterModalOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
+            >
+              Зберегти прогрес
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isWaterInfoOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-5">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-5">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <h2 className="text-2xl font-black">Навіщо пити воду?</h2>
+              <button
+                onClick={() => setIsWaterInfoOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 grid rounded-3xl bg-gradient-to-br from-cyan-500/30 to-blue-700/30 p-5 text-center">
+              <div className="mb-3 text-7xl">💧</div>
+              <p className="whitespace-nowrap text-[11px] font-black uppercase text-white sm:text-sm">
+                Вода камінь точить — а жир зникати дуже хоче!
+              </p>
+            </div>
+
+            <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
+              <p>
+                Жир горить тільки за умови достатньої гідратації — без води
+                тіло біохімічно блокує схуднення. Коли ти п&apos;єш свою норму
+                (30 мл на 1 кг ваги), організм розслабляється і зливає
+                застояні набряки, що дає мінус 1.5–3 кг уже за перший тиждень.
+                Склянка води за 20 хвилин до їжі заповнює шлунок і допомагає
+                не плутати спрагу з голодом, природно зменшуючи апетит.
+              </p>
+              <p>
+                <span className="font-bold text-white">
+                  Чому 80% норми потрібно випити до 16:00?
+                </span>
+                <br />
+                Тіло отримує воду в найактивнішу фазу дня, коли метаболізм та
+                лімфа працюють на максимум. Вечірній мінімум уберігає тебе від
+                ранкових набряків на обличчі та частих нічних походів у туалет,
+                забезпечуючи міцний сон, під час якого активно спалюється
+                підшкірний жир.
+              </p>
+              <p>
+                Регулярне пиття зранку на пустий шлунок та перед їжею — це не
+                магія, а залізна база для розгону обміну речовин і контролю
+                дисципліни!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isFoodModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/70 px-3 pb-3">
+          <div className="max-h-[75vh] w-full overflow-y-auto rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
+
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-green-400">
+                  3 прийоми їжі без перекусів
+                </p>
+                <h2 className="text-3xl font-black">Харчування</h2>
+              </div>
+              <button
+                onClick={() => setIsFoodModalOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-3xl bg-zinc-900 p-4">
+              <div className="mb-3 grid h-28 place-items-center rounded-2xl bg-gradient-to-br from-orange-400/30 to-rose-600/30 text-6xl">
+                🥗
+              </div>
+              <p className="text-sm leading-relaxed text-zinc-300">
+                Твоя задача — три чисті прийоми їжі без перекусів між ними.
+                Так тіло отримує паузи без їжі, а тобі легше тримати апетит і
+                дисципліну.
+              </p>
+              <button
+                onClick={() => setIsFoodInfoOpen(true)}
+                className="mt-4 text-sm font-bold text-green-400"
+              >
+                Чому це важливо?
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
+              <div>
+                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-2xl font-black">
+                  {foodCompletedCount}/{FOOD_ITEMS.length}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-zinc-400">Бали за харчування</p>
+                <p className="text-2xl font-black text-green-400">
+                  +{foodPointsEarned}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {FOOD_ITEMS.map((item) => {
+                const isCompleted = completedTaskCodes.includes(item.code);
+
+                return (
+                  <button
+                    key={item.code}
+                    onClick={() => completeFoodItem(item)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${
+                      isCompleted
+                        ? "border-green-500/40 bg-green-950/40"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-black ${
+                        isCompleted
+                          ? "bg-green-500 text-black"
+                          : "bg-zinc-800 text-zinc-300"
+                      }`}
+                    >
+                      {isCompleted ? "✓" : `+${item.points}`}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{item.title}</span>
+                      <span className="block text-sm text-zinc-400">
+                        {item.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsFoodModalOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
+            >
+              Зберегти прогрес
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isFoodInfoOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-5">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-5">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <h2 className="text-2xl font-black">
+                Навіщо їсти 3 рази на день без перекусів? 🤫
+              </h2>
+              <button
+                onClick={() => setIsFoodInfoOpen(false)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 grid rounded-3xl bg-gradient-to-br from-orange-400/30 to-rose-600/30 p-5 text-center">
+              <div className="mb-3 text-7xl">🥗</div>
+              <p className="whitespace-nowrap text-[11px] font-black uppercase text-white sm:text-sm">
+                3 прийоми — і ніяких перекусів!
+              </p>
+            </div>
+
+            <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
+              <p>
+                Кожен укус їжі, навіть маленька цукерка, горішок, кава з
+                молоком чи яблуко, викликає викид гормону інсуліну. Поки рівень
+                інсуліну в крові високий — жироспалювання чисто технічно
+                заблоковане, а тіло працює тільки на накопичення жиру.
+              </p>
+              <p>
+                Коли ти постійно перекушуєш, твій інсулін високий весь день.
+                Організм просто не має часу, щоб спалювати власні запаси. Чисті
+                3 прийоми їжі створюють «вікна харчової тиші», під час яких
+                інсулін падає, і тіло починає активно палити підшкірний жир. До
+                того ж, це дає відпочинок шлунку та уберігає від прихованих
+                калорій.
+              </p>
+              <p>
+                <span className="font-bold text-white">
+                  Чому остання вечеря строго до 20:00?
+                </span>
+                <br />
+                Ближче до ночі метаболізм уповільнюється, а чутливість до
+                вуглеводів падає. Якщо поїсти пізно, їжа не встигне
+                перетравитися і піде прямо в жирове депо. Рання вечеря гарантує,
+                що вночі під час сну у тебе буде низький рівень цукру, і
+                організм увімкне максимальний режим нічного жироспалювання.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
         <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
           <button
