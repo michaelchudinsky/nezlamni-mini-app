@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -71,40 +70,45 @@ type CompletedTaskLog = {
 
 type TaskMeta = {
   emoji: string;
-  symbol: string;
   title: string;
   description: string;
+  accent: string;
+  glow: string;
   action: string;
 };
 
 const TASK_META: Record<string, TaskMeta> = {
   water: {
-    emoji: "В",
-    symbol: "♢",
+    emoji: "💧",
     title: "Вода",
-    description: "Випито 2 літри",
-    action: "Виконати",
+    description: "Закрий норму води та дай тілу чисту енергію.",
+    accent: "from-cyan-500 to-blue-600",
+    glow: "shadow-cyan-500/20",
+    action: "Випив воду",
   },
   activity: {
-    emoji: "А",
-    symbol: "♞",
+    emoji: "⚡",
     title: "Активність",
-    description: "30 хвилин тренування",
-    action: "Виконати",
+    description: "Прогулянка, тренування або будь-який рух вперед.",
+    accent: "from-lime-400 to-emerald-600",
+    glow: "shadow-emerald-500/20",
+    action: "Я порухався",
   },
   food: {
-    emoji: "Х",
-    symbol: "♨",
-    title: "Харчування",
-    description: "Дотримано плану",
-    action: "Виконати",
+    emoji: "🥗",
+    title: "Контроль харчування",
+    description: "Обери нормальну їжу та не зривай свій темп.",
+    accent: "from-orange-400 to-rose-500",
+    glow: "shadow-orange-500/20",
+    action: "Харчування під контролем",
   },
   night: {
-    emoji: "Н",
-    symbol: "☾",
-    title: "Ніч",
-    description: "7-8 годин сну",
-    action: "Виконати",
+    emoji: "🌙",
+    title: "Ніч без їжі",
+    description: "Закрий вечір спокійно: без нічних перекусів.",
+    accent: "from-violet-500 to-indigo-600",
+    glow: "shadow-violet-500/20",
+    action: "Ніч витримав",
   },
 };
 
@@ -112,9 +116,10 @@ function getTaskMeta(task: Task) {
   return (
     TASK_META[task.code.toLowerCase()] || {
       emoji: "🔥",
-      symbol: "✦",
       title: task.title,
       description: task.description || "Виконай завдання та забери бали.",
+      accent: "from-zinc-500 to-zinc-700",
+      glow: "shadow-zinc-500/20",
       action: "Виконати",
     }
   );
@@ -323,40 +328,6 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     return "🥉 Новачок";
   }
-
-  function formatPoints(points: number) {
-    return new Intl.NumberFormat("uk-UA").format(points);
-  }
-
-  function getWeightProgress() {
-    if (
-      !profile?.start_weight ||
-      !profile.target_weight ||
-      !profile.current_weight ||
-      profile.start_weight === profile.target_weight
-    ) {
-      return 0;
-    }
-
-    return Math.min(
-      100,
-      Math.max(
-        0,
-        ((profile.start_weight - profile.current_weight) /
-          (profile.start_weight - profile.target_weight)) *
-          100
-      )
-    );
-  }
-
-  const xpCurrent = profile ? profile.points_total % 1000 : 620;
-  const xpGoal = 1000;
-  const xpProgress = Math.min(100, Math.max(0, (xpCurrent / xpGoal) * 100));
-  const displayName = profile?.first_name || "Соломіє";
-  const displayPoints = profile?.points_total || 1250;
-  const dailyMissionCount = Math.max(tasks.length, 4);
-  const topLeaderboard = leaderboard.slice(0, 3);
-  const restLeaderboard = leaderboard.slice(3, 8);
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
@@ -458,36 +429,30 @@ async function updateWeight() {
 
   if (!profile) {
     return (
-<main className="nezlamni-shell min-h-screen px-5 py-6 text-[#F5F5F5]">
-        Завантаження...
+<main className="min-h-screen bg-black text-white p-6 pb-24">        Завантаження...
       </main>
     );
   }
 
   if (!profile.start_weight || !profile.target_weight) {
     return (
-      <main className="nezlamni-shell vyshyvanka-edge min-h-screen px-5 py-6 text-[#F5F5F5]">
+      <main className="min-h-screen bg-black text-white p-6">
         <div className="max-w-md mx-auto">
-          <h1 className="gold-text text-4xl font-black tracking-[0.08em]">
-            NEZLAMNI
-          </h1>
-          <p className="muted-gold-text mb-6 mt-1 text-sm">
-            Сила. Дисципліна. Незламність.
-          </p>
+          <h1 className="text-3xl font-bold mb-6">NEZLAMNI 🔥</h1>
 
 
-          <div className="premium-card rounded-[28px] p-5 space-y-4">
-            <h2 className="text-xl font-black">Стартова анкета</h2>
+          <div className="bg-zinc-900 rounded-2xl p-5 space-y-4">
+            <h2 className="text-xl font-bold">Стартова анкета</h2>
 
             <input
-              className="w-full rounded-2xl border border-[#D4AF37]/20 bg-[#0D0D0F] p-3 text-[#F5F5F5] outline-none"
+              className="w-full rounded-xl p-3 bg-zinc-800"
               placeholder="Твоє імʼя"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
 
             <input
-              className="w-full rounded-2xl border border-[#D4AF37]/20 bg-[#0D0D0F] p-3 text-[#F5F5F5] outline-none"
+              className="w-full rounded-xl p-3 bg-zinc-800"
               placeholder="Точка А: твоя вага зараз"
               type="number"
               value={startWeight}
@@ -495,7 +460,7 @@ async function updateWeight() {
             />
 
             <input
-              className="w-full rounded-2xl border border-[#D4AF37]/20 bg-[#0D0D0F] p-3 text-[#F5F5F5] outline-none"
+              className="w-full rounded-xl p-3 bg-zinc-800"
               placeholder="Точка Б: бажана вага"
               type="number"
               value={targetWeight}
@@ -504,9 +469,9 @@ async function updateWeight() {
 
             <button
               onClick={saveProfile}
-              className="red-action w-full rounded-2xl p-3 font-black"
+              className="w-full bg-green-600 rounded-xl p-3 font-bold"
             >
-              Почати шлях
+              Почати шлях 💪
             </button>
           </div>
         </div>
@@ -515,528 +480,185 @@ async function updateWeight() {
   }
 
   return (
-    <main className="nezlamni-shell min-h-screen p-3 text-[#F5F5F5]">
-      <div className="app-frame vyshyvanka-edge relative mx-auto min-h-[calc(100vh-24px)] max-w-md overflow-hidden rounded-[18px] px-4 pb-28 pt-4">
-        {activeTab !== "home" && (
-        <header className="mb-4 flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="logo-ornament mt-2 h-[4.6rem] w-6 shrink-0" />
-            <div>
-            <h1 className="logo-gold text-[3.55rem] font-black leading-none">
-              NEZLAMNI
-            </h1>
-            <p className="mt-1 text-[1.02rem] text-[#F3D49A]">
-              Сила. Дисципліна. Незламність.
-            </p>
-            </div>
-          </div>
+    <main className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-md mx-auto">
+        <h1 className="text-4xl font-bold mb-6">NEZLAMNI 🔥</h1>
+        <p className="text-zinc-400 mb-4">
+  Активна вкладка: {activeTab}
+</p>
+
+{activeTab === "home" && (
+        <div className="bg-zinc-900 rounded-2xl p-4 mb-6 space-y-2">
           <button
-            aria-label="Сповіщення"
-            className="relative mt-3 grid h-12 w-12 place-items-center rounded-full border border-[#A67C52]/45 bg-[#08090A] text-xl text-[#D4AF37]"
-          >
-            ♧
-            <span className="absolute right-1.5 top-1.5 h-3 w-3 rounded-full bg-[#E63946]" />
-          </button>
-        </header>
-        )}
+  onClick={() => setShowWeightForm(!showWeightForm)}
+  className="w-full bg-zinc-800 rounded-xl p-3 mt-4 font-semibold"
+>
+  ✏️ Оновити вагу
+</button>
 
-        {activeTab !== "home" && message && (
-          <div className="dark-premium-card mb-4 rounded-2xl p-4 text-sm text-[#F2C94C]">
-            {message}
-          </div>
-        )}
+{showWeightForm && (
+  <div className="mt-4 space-y-3">
+    <input
+      className="w-full rounded-xl p-3 bg-zinc-800"
+      placeholder="Нова вага"
+      type="number"
+      value={newWeight}
+      onChange={(e) => setNewWeight(e.target.value)}
+    />
 
-        {activeTab === "home" && (
-          <section className="-mx-1 -mt-1">
-            <Image
-              src="/assets/reference-screen-placeholder.png"
-              alt=""
-              width={1024}
-              height={1535}
-              priority
-              className="h-auto w-full rounded-[16px] object-cover"
+    <button
+      onClick={updateWeight}
+      className="w-full bg-green-600 rounded-xl p-3 font-bold"
+    >
+      Зберегти
+    </button>
+  </div>
+  
+)}
+          <p>📊 Сьогодні: {profile.points_today || 0} балів</p>
+          <p>🏆 Всього: {profile.points_total || 0} балів</p>
+          <p>🔥 Серія: {profile.streak_current || 0} днів</p>
+          <p>🎮 Рівень: {getLevel()}</p>
+          <p>🗓 З нами: {getDaysWithUs()} днів</p>
+          <p>
+            ⚖️ {profile.start_weight} кг → {profile.current_weight} кг →{" "}
+            {profile.target_weight} кг
+          </p>
+
+          <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden mt-3">
+            <div
+              className="bg-green-500 h-4"
+              style={{
+                width: `${
+                  profile.start_weight &&
+                  profile.target_weight &&
+                  profile.current_weight
+                    ? Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          ((profile.start_weight - profile.current_weight) /
+                            (profile.start_weight - profile.target_weight)) *
+                            100
+                        )
+                      )
+                    : 0
+                }%`,
+              }}
             />
-          </section>
+          </div>
+        </div>
+)}
+        {message && (
+          <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
         )}
 
-        {false && profile && (
-          <section className="space-y-3">
-            <div className="home-user-card rounded-2xl p-3">
-              <div className="grid grid-cols-[6.6rem_minmax(0,1fr)_4.9rem] items-center gap-3">
-                <div className="avatar-ring relative h-[6.6rem] w-[6.6rem] shrink-0 rounded-full p-2">
-                  <Image
-                    src="/assets/nezlamni-avatar.png"
-                    alt=""
-                    width={150}
-                    height={150}
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                  <div className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-lg text-[#D4AF37]">
-                    ◌
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1 py-2">
-                  <p className="whitespace-nowrap text-lg font-medium">
-                    Привіт, {displayName}!
-                  </p>
-                  <p className="mt-3 flex items-center gap-2 whitespace-nowrap text-sm text-[#EAC46D]">
-                    <Image
-                      src="/assets/icon-placeholder-reference.png"
-                      alt=""
-                      width={42}
-                      height={42}
-                      className="h-5 w-5 object-contain"
-                    />
-                    Рівень 7. Козачка
-                  </p>
-                  <div className="mt-5 flex items-center gap-3">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#2A2A2E]">
-                      <div
-                        className="h-full rounded-full bg-[#E63946]"
-                        style={{ width: `${xpProgress}%` }}
-                      />
-                    </div>
-                    <span className="whitespace-nowrap text-xs text-[#F0D8A1]">
-                      {xpCurrent} / {xpGoal} XP
-                    </span>
-                  </div>
-                </div>
-                <div className="flex w-[4.5rem] shrink-0 flex-col items-center">
-                  <div className="trident-badge h-[3.65rem] w-[3.65rem] overflow-hidden">
-                    <Image
-                      src="/assets/icon-placeholder-reference.png"
-                      alt=""
-                      width={42}
-                      height={42}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                  <p className="mt-1 text-2xl font-black leading-none text-[#F2C94C]">
-                    {profile?.streak_current || 7}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-[#F0D8A1]">
-                    <span className="text-[#E63946]">🔥</span>
-                    стрік
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <p className="text-sm font-semibold text-green-400">
+              Щоденні місії
+            </p>
+            <h2 className="text-2xl font-black">Забери свої бали</h2>
+          </div>
+          <div className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300">
+            {completedTaskCodes.length}/{tasks.length}
+          </div>
+        </div>
 
-            <div className="premium-card overflow-hidden rounded-xl p-0">
-              <div className="flex min-h-[4.6rem] items-stretch justify-between">
-                <div className="score-card-symbol grid w-[7.4rem] place-items-center">
-                  <Image
-                    src="/assets/icon-placeholder-reference.png"
-                    alt=""
-                    width={42}
-                    height={42}
-                    className="h-14 w-14 object-contain"
-                  />
-                </div>
-                <div className="flex-1 px-4 py-3">
-                  <p className="section-title text-xs font-black">
-                    ТВОЇ БАЛИ
-                  </p>
-                  <p className="text-4xl font-light leading-tight text-[#F2CDA0]">
-                    {formatPoints(displayPoints)}
-                  </p>
-                </div>
-                <span className="flex items-center pr-4 text-3xl text-[#F2C94C]">
-                  ›
-                </span>
-              </div>
-            </div>
+        <div className="space-y-3 pb-24">
+          {tasks.map((task) => {
+            const meta = getTaskMeta(task);
+            const isCompleted = completedTaskCodes.includes(task.code);
 
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="section-title text-lg font-medium">
-                  СЬОГОДНІШНІ ЗАВДАННЯ
-                </h2>
-                <span className="rounded-full border border-[#A67C52]/40 px-3 py-1 text-xs text-[#D4AF37]">
-                  {completedTaskCodes.length}/{dailyMissionCount}
-                </span>
-              </div>
-
-              <div className="space-y-0 overflow-hidden rounded-xl border border-[#A67C52]/32">
-                {tasks.map((task) => {
-                  const meta = getTaskMeta(task);
-                  const isCompleted = completedTaskCodes.includes(task.code);
-
-                  return (
-                    <button
-                      key={task.id}
-                      onClick={() => completeTask(task)}
-                      disabled={isCompleted}
-                      className={`task-row flex w-full items-center gap-3 border-b border-[#A67C52]/14 px-4 py-3 text-left transition last:border-b-0 active:scale-[0.99] ${
-                        isCompleted
-                          ? "bg-[#8B1E3F]/28"
-                          : ""
-                      }`}
-                    >
-                      <div className="task-icon grid h-12 w-12 shrink-0 place-items-center rounded-full text-2xl">
-                        <Image
-                          src="/assets/icon-placeholder-reference.png"
-                          alt=""
-                          width={42}
-                          height={42}
-                          className="h-7 w-7 object-contain"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-lg font-medium leading-tight">{meta.title}</h3>
-                          <span className="text-xl font-medium text-[#F5E4C5]">
-                            +{task.points}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-sm text-[#B8A98A]">
-                          {meta.description}
-                        </p>
-                      </div>
-                      <span
-                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border ${
-                          isCompleted
-                            ? "border-[#E63946] bg-[#8B1E3F]/70 text-[#F4C7C9]"
-                            : "border-[#E63946] text-[#E63946]"
-                        }`}
-                      >
-                        ✓
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="relative min-h-[9.7rem] overflow-hidden rounded-xl border border-[#A67C52]/38 p-6">
-              <Image
-                src="/assets/nezlamni-hero.png"
-                alt=""
-                fill
-                sizes="(max-width: 480px) 100vw, 420px"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-black/20" />
-              <div className="relative max-w-[14rem]">
-                <p className="font-serif text-xl font-black leading-tight tracking-[0.03em] text-[#F2D8A4]">
-                  СИЛА РОДУ В ТОБІ
-                </p>
-                <p className="mt-3 text-sm text-[#F0D8A1]">
-                  Твій шлях — твоя легенда
-                </p>
-              </div>
-              <div className="absolute bottom-4 right-4 grid h-12 w-12 place-items-center rounded-full border border-[#D4AF37]/50 bg-[#0D0D0F]/70 text-3xl text-[#F2C94C]">
-                ›
-              </div>
-            </div>
-          </section>
-        )}
-
-        {activeTab === "leaderboard" && (
-          <section className="space-y-5">
-            <div className="flex items-center justify-between">
-              <button className="text-3xl text-[#F5F5F5]">‹</button>
-              <h2 className="text-xl font-medium">Рейтинг</h2>
-              <button className="flex items-center gap-2 rounded-xl border border-[#A67C52]/40 px-3 py-2 text-sm text-[#F2C94C]">
-                <span>▣</span>
-                Місяць
-                <span>⌄</span>
-              </button>
-            </div>
-
-            {leaderboard.length === 0 ? (
-              <div className="premium-card rounded-2xl p-5 text-[#B8A98A]">
-                Поки немає учасників
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 items-end gap-3 px-1 pt-4">
-                  {topLeaderboard.map((user, index) => (
-                    <div
-                      key={user.profile_id}
-                      className={`text-center ${index === 0 ? "order-2" : index === 1 ? "order-1" : "order-3"}`}
-                    >
-                      <div
-                        className={`mb-1 text-3xl leading-none ${
-                          index === 0
-                            ? "leader-crown-gold"
-                            : index === 1
-                              ? "leader-crown-silver"
-                              : "leader-crown-bronze"
-                        }`}
-                      >
-                        ♛
-                      </div>
-                      <div
-                        className={`avatar-ring relative mx-auto rounded-full border-2 p-1 ${
-                          index === 0
-                            ? "leader-ring-gold h-28 w-28"
-                            : index === 1
-                              ? "leader-ring-silver h-20 w-20"
-                              : "leader-ring-bronze h-20 w-20"
-                        }`}
-                      >
-                        <Image
-                          src="/assets/nezlamni-avatar.png"
-                          alt=""
-                          width={150}
-                          height={150}
-                          className="h-full w-full rounded-full object-cover"
-                        />
-                        <span
-                          className={`absolute bottom-0 right-0 grid h-7 w-7 place-items-center rounded-full text-sm font-black ${
-                            index === 0
-                              ? "bg-[#F2C94C] text-[#3A2508]"
-                              : index === 1
-                                ? "bg-[#D8D6D1] text-[#2A2A2E]"
-                                : "bg-[#D46A36] text-white"
-                          }`}
-                        >
-                          {index + 1}
-                        </span>
-                      </div>
-                      <p className="mt-2 truncate font-medium">{user.name}</p>
-                      <p className="text-xl text-[#F2C94C]">
-                        {formatPoints(user.points)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="leader-list overflow-hidden rounded-2xl">
-                  {restLeaderboard.map((user, index) => (
-                  <div
-                    key={user.profile_id}
-                    className={`flex items-center justify-between border-b border-[#A67C52]/14 px-3 py-2.5 last:border-b-0 ${
-                      index === 0 ? "bg-[#8B1E3F]/45" : "bg-[#0B0C0D]/70"
-                    }`}
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <span className="w-5 text-[#F2C94C]">{index + 4}</span>
-                      <span className="avatar-ring h-9 w-9 shrink-0 rounded-full p-0.5">
-                        <Image
-                          src="/assets/nezlamni-avatar.png"
-                          alt=""
-                          width={150}
-                          height={150}
-                          className="h-full w-full rounded-full object-cover"
-                        />
-                      </span>
-                      <span className="truncate font-medium">{user.name}</span>
-                    </span>
-                    <span className="shrink-0">{formatPoints(user.points)}</span>
-                  </div>
-                ))}
-                </div>
-              </>
-            )}
-          </section>
-        )}
-
-        {activeTab === "profile" && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <button className="text-3xl">‹</button>
-              <h2 className="text-xl font-medium">Профіль</h2>
-              <button className="text-2xl text-[#F2C94C]">⚙</button>
-            </div>
-
-            <div className="text-center">
-              <div className="avatar-ring relative mx-auto h-28 w-28 rounded-full p-2">
-                <Image
-                  src="/assets/nezlamni-avatar.png"
-                  alt=""
-                  width={150}
-                  height={150}
-                  className="h-full w-full rounded-full object-cover"
-                />
-                <div className="absolute bottom-1 right-1 grid h-8 w-8 place-items-center rounded-full border border-[#A67C52] bg-[#111] text-[#D4AF37]">
-                  ◉
-                </div>
-              </div>
-              <h2 className="mt-3 text-2xl font-medium">{displayName}</h2>
-              <p className="text-sm text-[#B8A98A]">
-                ♜ {getLevel()} · з нами {getDaysWithUs()} днів
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div className="dark-premium-card rounded-xl p-3 text-center">
-                <p className="text-xs text-[#F2C94C]">Рівень</p>
-                <p className="mt-1 text-2xl text-[#F2D8A4]">♜ 7</p>
-              </div>
-              <div className="dark-premium-card rounded-xl p-3 text-center">
-                <p className="text-xs text-[#F2C94C]">Стрік</p>
-                <p className="mt-1 text-2xl text-[#F2D8A4]">
-                  {profile.streak_current || 7}
-                </p>
-              </div>
-              <div className="dark-premium-card rounded-xl p-3 text-center">
-                <p className="text-xs text-[#F2C94C]">Бали</p>
-                <p className="mt-1 text-2xl text-[#F2D8A4]">
-                  {formatPoints(displayPoints)}
-                </p>
-              </div>
-            </div>
-
-            <div className="premium-card rounded-2xl p-4">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xs text-[#F2C94C]">Поточна вага</p>
-                  <p className="text-2xl text-[#F2D8A4]">
-                    {profile.current_weight} кг
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-[#F2C94C]">Ціль</p>
-                  <p className="text-2xl text-[#F2D8A4]">
-                    {profile.target_weight} кг
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-[#F2C94C]">Прогрес</p>
-                  <p className="text-2xl text-[#F2D8A4]">
-                    {Math.round(getWeightProgress())}%
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#2A2A2E]">
-                <div
-                  className="h-full rounded-full bg-[#E63946]"
-                  style={{ width: `${getWeightProgress()}%` }}
-                />
-              </div>
+            return (
               <button
-                onClick={() => setShowWeightForm(!showWeightForm)}
-                className="mt-4 w-full rounded-2xl border border-[#D4AF37]/25 p-3 font-black text-[#D4AF37]"
-              >
-                Оновити вагу
-              </button>
-
-              {showWeightForm && (
-                <div className="mt-4 space-y-3">
-                  <input
-                    className="w-full rounded-2xl border border-[#D4AF37]/20 bg-[#0D0D0F] p-3 text-[#F5F5F5] outline-none"
-                    placeholder="Нова вага"
-                    type="number"
-                    value={newWeight}
-                    onChange={(e) => setNewWeight(e.target.value)}
-                  />
-
-                  <button
-                    onClick={updateWeight}
-                    className="red-action w-full rounded-2xl p-3 font-black"
-                  >
-                    Зберегти
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-[#A67C52]/30">
-              {["Фото прогресу", "Статистика"].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center justify-between border-b border-[#A67C52]/14 bg-[#0B0C0D]/70 p-4 last:border-b-0"
-                >
-                  <span className="text-[#F2D8A4]">{item}</span>
-                  <span className="text-2xl text-[#F2C94C]">›</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="premium-card rounded-2xl p-4">
-              <p className="section-title text-sm font-black">ФОТО ПРОГРЕСУ</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {["до", "після"].map((label) => (
-                  <div
-                    key={label}
-                    className="avatar-portrait grid aspect-[3/4] place-items-end rounded-xl border border-[#A67C52]/24 p-3"
-                  >
-                    <span className="rounded-full bg-[#0D0D0F]/70 px-3 py-1 text-sm">
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {activeTab === "rewards" && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <button className="text-3xl">‹</button>
-              <h2 className="text-xl font-medium">Нагороди</h2>
-              <span />
-            </div>
-            <div className="premium-card rounded-2xl p-4">
-              <div className="flex items-center gap-4">
-                <div>
-                  <p className="text-sm text-[#F2C94C]">Наступна нагорода</p>
-                  <h3 className="mt-1 text-xl">Скриня хоробрості</h3>
-                  <p className="mt-2 text-sm text-[#F2D8A4]">
-                    {formatPoints(displayPoints)} / 2 000 балів
-                  </p>
-                  <div className="mt-2 h-2 w-40 overflow-hidden rounded-full bg-[#2A2A2E]">
-                    <div
-                      className="h-full rounded-full bg-[#E63946]"
-                      style={{
-                        width: `${Math.min(100, (displayPoints / 2000) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="grid h-20 flex-1 place-items-center rounded-xl border border-[#A67C52]/30 bg-[#111] text-5xl text-[#D4AF37]">
-                  ▣
-                </div>
-              </div>
-            </div>
-            <p className="section-title text-sm font-black">ДОСТУПНІ НАГОРОДИ</p>
-            {["Скриня хоробрості", "Сила предків", "Козацька воля", "Легенда роду"].map(
-              (reward) => (
-                <div
-                  key={reward}
-                  className="dark-premium-card flex items-center justify-between rounded-xl p-3"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="text-2xl text-[#D4AF37]">◈</span>
-                    <span>{reward}</span>
-                  </span>
-                  <span className="text-[#B8A98A]">▣</span>
-                </div>
-              )
-            )}
-          </section>
-        )}
-
-        <nav className={`fixed bottom-0 left-0 right-0 border-t border-[#D4AF37]/20 bg-[#0D0D0F]/95 px-3 py-3 backdrop-blur ${activeTab === "home" ? "hidden" : ""}`}>
-          <div className="mx-auto grid max-w-md grid-cols-4 gap-2 text-center text-[11px]">
-            {[
-              ["home", "⌂", "Головна"],
-              ["leaderboard", "♕", "Рейтинг"],
-              ["profile", "♙", "Профіль"],
-              ["rewards", "▣", "Нагороди"],
-            ].map(([tab, icon, label]) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`relative flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 ${
-                  activeTab === tab
-                    ? "nav-item-active"
-                    : "text-[#B8A98A]"
+                key={task.id}
+                onClick={() => completeTask(task)}
+                disabled={isCompleted}
+                className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+                  isCompleted
+                    ? "border-green-500/40 bg-green-950/40 text-white"
+                    : `border-zinc-800 bg-zinc-900 ${meta.glow}`
                 }`}
               >
-                <span className="text-2xl leading-none">{icon}</span>
-                {label}
-                {activeTab === tab && (
-                  <span className="absolute -bottom-3 h-0.5 w-10 rounded-full bg-[#E63946]" />
-                )}
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-3xl shadow-lg`}
+                  >
+                    {isCompleted ? "✓" : meta.emoji}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-black leading-tight">
+                        {meta.title}
+                      </h3>
+                      <span className="shrink-0 rounded-full bg-black/30 px-3 py-1 text-sm font-black text-green-300">
+                        +{task.points}
+                      </span>
+                    </div>
+
+                    <p className="mb-3 text-sm leading-snug text-zinc-300">
+                      {meta.description}
+                    </p>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-white">
+                        {isCompleted ? "Виконано сьогодні" : meta.action}
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-black ${
+                          isCompleted
+                            ? "bg-green-500 text-black"
+                            : "bg-zinc-800 text-zinc-300"
+                        }`}
+                      >
+                        {isCompleted ? "DONE" : "START"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </button>
-            ))}
-          </div>
-        </nav>
+            );
+          })}
+        </div>
+
       </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
+  <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
+<button onClick={() => setActiveTab("home")}>🏠<br />Головна</button>
+<button onClick={() => setActiveTab("leaderboard")}>🏆<br />Рейтинг</button>
+<button onClick={() => setActiveTab("profile")}>👤<br />Профіль</button>
+<button onClick={() => setActiveTab("rewards")}>🎁<br />Нагороди</button>
+  </div>
+  
+</div>
+{activeTab === "leaderboard" && (
+  <div className="bg-zinc-900 rounded-2xl p-4 mt-6">
+    <h2 className="text-2xl font-bold mb-4">
+      🏆 Рейтинг місяця
+    </h2>
+
+    {leaderboard.length === 0 ? (
+      <p className="text-zinc-400">Поки немає учасників</p>
+    ) : (
+      <div className="space-y-3">
+        {leaderboard.map((user, index) => (
+          <div
+            key={user.profile_id}
+            className="flex justify-between bg-zinc-800 rounded-xl p-3"
+          >
+            <span>
+              {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`} {user.name}
+            </span>
+
+            <span>{user.points} балів</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
     </main>
   );
 }
