@@ -566,10 +566,10 @@ async function updateWeight() {
                   </p>
                   <p className="mt-3 flex items-center gap-2 whitespace-nowrap text-sm text-[#EAC46D]">
                     <Image
-                      src="/assets/level-icon.png"
+                      src="/assets/icon-placeholder-reference.png"
                       alt=""
-                      width={256}
-                      height={256}
+                      width={42}
+                      height={42}
                       className="h-5 w-5 object-contain"
                     />
                     Рівень 7. Козачка
@@ -589,10 +589,10 @@ async function updateWeight() {
                 <div className="flex w-[4.5rem] shrink-0 flex-col items-center">
                   <div className="trident-badge h-[3.65rem] w-[3.65rem] overflow-hidden">
                     <Image
-                      src="/assets/home-badge-reference.png"
+                      src="/assets/icon-placeholder-reference.png"
                       alt=""
-                      width={118}
-                      height={118}
+                      width={42}
+                      height={42}
                       className="h-full w-full object-contain"
                     />
                   </div>
@@ -611,11 +611,11 @@ async function updateWeight() {
               <div className="flex min-h-[4.6rem] items-stretch justify-between">
                 <div className="score-card-symbol grid w-[7.4rem] place-items-center">
                   <Image
-                    src="/assets/points-ornament.png"
+                    src="/assets/icon-placeholder-reference.png"
                     alt=""
-                    width={944}
-                    height={925}
-                    className="h-14 w-16 object-contain"
+                    width={42}
+                    height={42}
+                    className="h-14 w-14 object-contain"
                   />
                 </div>
                 <div className="flex-1 px-4 py-3">
@@ -659,7 +659,13 @@ async function updateWeight() {
                       }`}
                     >
                       <div className="task-icon grid h-12 w-12 shrink-0 place-items-center rounded-full text-2xl">
-                        {meta.symbol}
+                        <Image
+                          src="/assets/icon-placeholder-reference.png"
+                          alt=""
+                          width={42}
+                          height={42}
+                          className="h-7 w-7 object-contain"
+                        />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
