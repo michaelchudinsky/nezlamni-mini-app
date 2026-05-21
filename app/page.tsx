@@ -90,6 +90,13 @@ type FoodItem = {
   points: number;
 };
 
+type ActivityItem = {
+  code: string;
+  title: string;
+  description: string;
+  points: number;
+};
+
 const WATER_ITEMS: WaterItem[] = [
   {
     code: "water_wakeup",
@@ -123,7 +130,7 @@ const FOOD_ITEMS: FoodItem[] = [
     code: "food_three_meals",
     title: "3 основні прийоми їжі",
     description: "Сніданок, обід і вечеря без хаотичного добирання їжі.",
-    points: 4,
+    points: 3,
   },
   {
     code: "food_no_snacks",
@@ -135,6 +142,40 @@ const FOOD_ITEMS: FoodItem[] = [
     code: "food_dinner_before_20",
     title: "Останній прийом до 20:00",
     description: "Після 20:00 тільки вода або несолодкий чай.",
+    points: 2,
+  },
+  {
+    code: "food_protein_armor",
+    title: "Білкова броня",
+    description:
+      "Додай білок у кожен основний прийом їжі: яйця, рибу, мʼясо, сир або бобові.",
+    points: 2,
+  },
+];
+
+const ACTIVITY_ITEMS: ActivityItem[] = [
+  {
+    code: "activity_walk_30",
+    title: "Прогулянка 30 хв",
+    description: "Приблизно 3000 кроків у спокійному або швидкому темпі.",
+    points: 2,
+  },
+  {
+    code: "activity_walk_60_pro",
+    title: "Прогулянка PRO 60 хв",
+    description: "Приблизно 6000 кроків — сильний рівень денного руху.",
+    points: 2,
+  },
+  {
+    code: "activity_walk_90_pro",
+    title: "Прогулянка PRO 90 хв",
+    description: "Приблизно 9000 кроків — потужний рівень витривалості.",
+    points: 3,
+  },
+  {
+    code: "activity_workout_20",
+    title: "Тренування / Зарядка 20+ хв",
+    description: "Силова, йога, домашня зарядка або будь-який свідомий рух.",
     points: 3,
   },
 ];
@@ -150,16 +191,16 @@ const TASK_META: Record<string, TaskMeta> = {
   },
   activity: {
     emoji: "⚡",
-    title: "Активність",
-    description: "Прогулянка, тренування або будь-який рух вперед.",
+    title: "Активність і рух",
+    description: "Рухай тіло, розганяй енергію і тримай темп.",
     accent: "from-lime-400 to-emerald-600",
     glow: "shadow-emerald-500/20",
     action: "Я порухався",
   },
   food: {
     emoji: "🥗",
-    title: "Контроль харчування",
-    description: "Обери нормальну їжу та не зривай свій темп.",
+    title: "Харчування / Білкова броня",
+    description: "Білок, режим і чистий день без перекусів.",
     accent: "from-orange-400 to-rose-500",
     glow: "shadow-orange-500/20",
     action: "Харчування під контролем",
@@ -198,6 +239,8 @@ export default function Home() {
   const [isWaterInfoOpen, setIsWaterInfoOpen] = useState(false);
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
   const [isFoodInfoOpen, setIsFoodInfoOpen] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [isActivityInfoOpen, setIsActivityInfoOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -438,6 +481,17 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     }, 0);
   }
 
+  function getActivityCompletedCount() {
+    return ACTIVITY_ITEMS.filter((item) => completedTaskCodes.includes(item.code))
+      .length;
+  }
+
+  function getActivityPointsEarned() {
+    return ACTIVITY_ITEMS.reduce((sum, item) => {
+      return completedTaskCodes.includes(item.code) ? sum + item.points : sum;
+    }, 0);
+  }
+
   async function completeWaterItem(item: WaterItem) {
     if (!profile) return;
 
@@ -668,6 +722,123 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setMessage(`🥗 Харчування зараховано: ${item.title} +${item.points} бали`);
     await fetchLeaderboard();
   }
+
+  async function completeActivityItem(item: ActivityItem) {
+    if (!profile) return;
+
+    const todayDate = today();
+
+    if (completedTaskCodes.includes(item.code)) {
+      const { error: deleteLogError } = await supabase
+        .from("daily_logs")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("task_code", item.code)
+        .eq("event_day", todayDate);
+
+      if (deleteLogError) {
+        setMessage("Помилка скасування активності: " + deleteLogError.message);
+        return;
+      }
+
+      const { data, error: updateProfileError } = await supabase
+        .from("profiles")
+        .update({
+          points_today: Math.max(0, profile.points_today - item.points),
+          points_total: Math.max(0, profile.points_total - item.points),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+
+      if (updateProfileError) {
+        setMessage(
+          "Помилка оновлення балів після скасування: " +
+            updateProfileError.message
+        );
+        return;
+      }
+
+      setProfile(data);
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.filter((code) => code !== item.code)
+      );
+      setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await fetchLeaderboard();
+      return;
+    }
+
+    const { data: existingLogs, error: existingLogsError } = await supabase
+      .from("daily_logs")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .eq("task_code", item.code)
+      .eq("event_day", todayDate);
+
+    if (existingLogsError) {
+      setMessage("Помилка перевірки активності: " + existingLogsError.message);
+      return;
+    }
+
+    if (existingLogs && existingLogs.length > 0) {
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.includes(item.code) ? currentCodes : [...currentCodes, item.code]
+      );
+      setMessage("✅ Ця активність вже зарахована сьогодні");
+      return;
+    }
+
+    const { error: insertLogError } = await supabase.from("daily_logs").insert({
+      profile_id: profile.id,
+      task_code: item.code,
+      points: item.points,
+      event_day: todayDate,
+    });
+
+    if (insertLogError) {
+      setMessage("Помилка запису активності: " + insertLogError.message);
+      return;
+    }
+
+    let newStreak = profile.streak_current || 0;
+
+    const todayDateObj = new Date(todayDate);
+    const yesterday = new Date(todayDateObj);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yesterdayString = yesterday.toISOString().slice(0, 10);
+
+    if (profile.last_activity_date === yesterdayString) {
+      newStreak += 1;
+    } else if (profile.last_activity_date !== todayDate) {
+      newStreak = 1;
+    }
+
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({
+        points_today: profile.points_today + item.points,
+        points_total: profile.points_total + item.points,
+        streak_current: newStreak,
+        last_activity_date: todayDate,
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    if (updateProfileError) {
+      setMessage(
+        "Помилка оновлення балів за активність: " +
+          updateProfileError.message
+      );
+      return;
+    }
+
+    setProfile(data);
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
+    setMessage(`⚡ Активність зарахована: ${item.title} +${item.points} бали`);
+    await fetchLeaderboard();
+  }
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
@@ -701,6 +872,11 @@ async function updateWeight() {
 
     if (task.code.toLowerCase() === "food") {
       setIsFoodModalOpen(true);
+      return;
+    }
+
+    if (task.code.toLowerCase() === "activity") {
+      setIsActivityModalOpen(true);
       return;
     }
 
@@ -834,12 +1010,17 @@ async function updateWeight() {
   const foodCompletedCount = getFoodCompletedCount();
   const foodPointsEarned = getFoodPointsEarned();
   const isFoodCompleted = foodCompletedCount === FOOD_ITEMS.length;
+  const activityCompletedCount = getActivityCompletedCount();
+  const activityPointsEarned = getActivityPointsEarned();
+  const isActivityCompleted = activityCompletedCount === ACTIVITY_ITEMS.length;
   const completedCount = tasks.filter((task) =>
     task.code.toLowerCase() === "water"
       ? isWaterCompleted
       : task.code.toLowerCase() === "food"
         ? isFoodCompleted
-        : completedTaskCodes.includes(task.code)
+        : task.code.toLowerCase() === "activity"
+          ? isActivityCompleted
+          : completedTaskCodes.includes(task.code)
   ).length;
   const weightProgress = getWeightProgress();
   const nextTask = tasks.find((task) =>
@@ -847,7 +1028,9 @@ async function updateWeight() {
       ? !isWaterCompleted
       : task.code.toLowerCase() === "food"
         ? !isFoodCompleted
-        : !completedTaskCodes.includes(task.code)
+        : task.code.toLowerCase() === "activity"
+          ? !isActivityCompleted
+          : !completedTaskCodes.includes(task.code)
   );
   const topUsers = leaderboard.slice(0, 3);
   const restUsers = leaderboard.slice(3, 10);
@@ -945,30 +1128,39 @@ async function updateWeight() {
                   const meta = getTaskMeta(task);
                   const isWaterTask = task.code.toLowerCase() === "water";
                   const isFoodTask = task.code.toLowerCase() === "food";
+                  const isActivityTask = task.code.toLowerCase() === "activity";
                   const isCompleted = isWaterTask
                     ? isWaterCompleted
                     : isFoodTask
                       ? isFoodCompleted
-                      : completedTaskCodes.includes(task.code);
+                      : isActivityTask
+                        ? isActivityCompleted
+                        : completedTaskCodes.includes(task.code);
                   const pointsText = isWaterTask
                     ? `+${waterCompletedCount}`
                     : isFoodTask
                       ? `+${foodPointsEarned}`
-                    : `+${task.points}`;
+                      : isActivityTask
+                        ? `+${activityPointsEarned}`
+                        : `+${task.points}`;
                   const statusText = isWaterTask
                     ? `${waterCompletedCount}/${WATER_ITEMS.length}`
                     : isFoodTask
                       ? `${foodCompletedCount}/${FOOD_ITEMS.length}`
-                    : isCompleted
-                      ? "✅"
-                      : "○";
+                      : isActivityTask
+                        ? `${activityCompletedCount}/${ACTIVITY_ITEMS.length}`
+                        : isCompleted
+                          ? "✅"
+                          : "○";
                   const progressPercent = isWaterTask
                     ? (waterCompletedCount / WATER_ITEMS.length) * 100
                     : isFoodTask
                       ? (foodCompletedCount / FOOD_ITEMS.length) * 100
-                      : isCompleted
-                        ? 100
-                        : 0;
+                      : isActivityTask
+                        ? (activityCompletedCount / ACTIVITY_ITEMS.length) * 100
+                        : isCompleted
+                          ? 100
+                          : 0;
 
                   return (
                     <button
@@ -1509,9 +1701,11 @@ async function updateWeight() {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-green-400">
-                  3 прийоми їжі без перекусів
+                  3 прийоми, білок і без перекусів
                 </p>
-                <h2 className="text-3xl font-black">Харчування</h2>
+                <h2 className="text-3xl font-black">
+                  Харчування і білкова броня
+                </h2>
               </div>
               <button
                 onClick={() => setIsFoodModalOpen(false)}
@@ -1526,9 +1720,9 @@ async function updateWeight() {
                 🥗
               </div>
               <p className="text-sm leading-relaxed text-zinc-300">
-                Твоя задача — три чисті прийоми їжі без перекусів між ними.
-                Так тіло отримує паузи без їжі, а тобі легше тримати апетит і
-                дисципліну.
+                Твоя задача — три чисті прийоми їжі без перекусів між ними та з
+                білком у кожному прийомі. Так тіло отримує паузи без їжі, а
+                тобі легше тримати ситість, апетит і дисципліну.
               </p>
               <button
                 onClick={() => setIsFoodInfoOpen(true)}
@@ -1644,6 +1838,146 @@ async function updateWeight() {
                 перетравитися і піде прямо в жирове депо. Рання вечеря гарантує,
                 що вночі під час сну у тебе буде низький рівень цукру, і
                 організм увімкне максимальний режим нічного жироспалювання.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isActivityModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/70 px-3 pb-3">
+          <div className="max-h-[75vh] w-full overflow-y-auto rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
+
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-green-400">
+                  Прогулянка PRO і тренування
+                </p>
+                <h2 className="text-3xl font-black">Активність і рух</h2>
+              </div>
+              <button
+                onClick={() => setIsActivityModalOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-3xl bg-zinc-900 p-4">
+              <div className="mb-3 grid h-28 place-items-center rounded-2xl bg-gradient-to-br from-lime-400/30 to-emerald-600/30 text-6xl">
+                ⚡
+              </div>
+              <p className="text-sm leading-relaxed text-zinc-300">
+                Прогулянка допомагає тілу витрачати більше енергії без
+                жорсткого спорту. Якщо є сили — додай тренування або зарядку на
+                20 хвилин, щоб зміцнити тіло і тримати темп.
+              </p>
+              <button
+                onClick={() => setIsActivityInfoOpen(true)}
+                className="mt-4 text-sm font-bold text-green-400"
+              >
+                Чому це важливо?
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
+              <div>
+                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-2xl font-black">
+                  {activityCompletedCount}/{ACTIVITY_ITEMS.length}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-zinc-400">Бали за активність</p>
+                <p className="text-2xl font-black text-green-400">
+                  +{activityPointsEarned}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {ACTIVITY_ITEMS.map((item) => {
+                const isCompleted = completedTaskCodes.includes(item.code);
+
+                return (
+                  <button
+                    key={item.code}
+                    onClick={() => completeActivityItem(item)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${
+                      isCompleted
+                        ? "border-green-500/40 bg-green-950/40"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-black ${
+                        isCompleted
+                          ? "bg-green-500 text-black"
+                          : "bg-zinc-800 text-zinc-300"
+                      }`}
+                    >
+                      {isCompleted ? "✓" : `+${item.points}`}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{item.title}</span>
+                      <span className="block text-sm text-zinc-400">
+                        {item.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsActivityModalOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
+            >
+              Зберегти прогрес
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isActivityInfoOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-5">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-5">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <h2 className="text-2xl font-black">
+                Навіщо рухатися щодня? ⚡
+              </h2>
+              <button
+                onClick={() => setIsActivityInfoOpen(false)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 grid rounded-3xl bg-gradient-to-br from-lime-400/30 to-emerald-600/30 p-5 text-center">
+              <div className="mb-3 text-7xl">⚡</div>
+              <p className="whitespace-nowrap text-[11px] font-black uppercase text-white sm:text-sm">
+                Рух пішов — жир поплив!
+              </p>
+            </div>
+
+            <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
+              <p>
+                Активність допомагає створити дефіцит енергії без жорсткого
+                голоду. Коли ти ходиш, тренуєшся або просто більше рухаєшся
+                протягом дня, тіло витрачає більше калорій і легше використовує
+                жирові запаси.
+              </p>
+              <p>
+                Силові вправи та зарядка допомагають зберігати мʼязи, а мʼязи —
+                це твій живий двигун обміну речовин. Чим краще ти тримаєш
+                мʼязи, тим легше худнути без втрати сил і форми.
+              </p>
+              <p>
+                Навіть якщо немає ресурсу на важке тренування, прогулянка і
+                кроки вже працюють. Головне — не ідеальний спорт, а щоденний
+                рух, який робить тебе стабільнішим.
               </p>
             </div>
           </div>
