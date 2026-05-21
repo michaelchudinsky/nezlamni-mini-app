@@ -276,6 +276,7 @@ export default function Home() {
   const [isActivityInfoOpen, setIsActivityInfoOpen] = useState(false);
   const [isNightModalOpen, setIsNightModalOpen] = useState(false);
   const [isNightInfoOpen, setIsNightInfoOpen] = useState(false);
+  const [rewardToast, setRewardToast] = useState("");
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -620,6 +621,14 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     };
   }
 
+  function showRewardToast(points: number, label: string) {
+    setRewardToast(`+${points} ${points === 1 ? "бал" : "бали"} · ${label}`);
+
+    window.setTimeout(() => {
+      setRewardToast("");
+    }, 2200);
+  }
+
   async function completeWaterItem(item: WaterItem) {
     if (!profile) return;
 
@@ -731,6 +740,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setProfile(data);
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`💧 Вода зарахована: ${item.title} +1 бал`);
+    showRewardToast(1, item.title);
     await fetchLeaderboard();
   }
 
@@ -848,6 +858,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setProfile(data);
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`🥗 Харчування зараховано: ${item.title} +${item.points} бали`);
+    showRewardToast(item.points, item.title);
     await fetchLeaderboard();
   }
 
@@ -965,6 +976,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setProfile(data);
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`⚡ Активність зарахована: ${item.title} +${item.points} бали`);
+    showRewardToast(item.points, item.title);
     await fetchLeaderboard();
   }
 
@@ -1081,6 +1093,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setProfile(data);
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`🌙 Сон зараховано: ${item.title} +${item.points} бали`);
+    showRewardToast(item.points, item.title);
     await fetchLeaderboard();
   }
 async function updateWeight() {
@@ -1199,6 +1212,7 @@ async function updateWeight() {
     setProfile(data);
     setCompletedTaskCodes((currentCodes) => [...currentCodes, task.code]);
     setMessage(`🔥 Зараховано! ${task.title} +${task.points} балів`);
+    showRewardToast(task.points, task.title);
     await fetchLeaderboard();
   }
 
@@ -1341,6 +1355,12 @@ async function updateWeight() {
 
   return (
     <main className="min-h-screen bg-black p-5 pb-28 text-white">
+      {rewardToast && (
+        <div className="reward-toast fixed left-1/2 top-5 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-green-400/40 bg-green-500 px-5 py-4 text-center font-black text-black shadow-2xl shadow-green-500/30">
+          {rewardToast}
+        </div>
+      )}
+
       <div className="mx-auto max-w-md">
         {activeTab === "home" && (
           <div className="space-y-5">
