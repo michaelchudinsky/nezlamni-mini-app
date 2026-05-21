@@ -97,6 +97,13 @@ type ActivityItem = {
   points: number;
 };
 
+type NightItem = {
+  code: string;
+  title: string;
+  description: string;
+  points: number;
+};
+
 const WATER_ITEMS: WaterItem[] = [
   {
     code: "water_wakeup",
@@ -127,10 +134,11 @@ const WATER_ITEMS: WaterItem[] = [
 
 const FOOD_ITEMS: FoodItem[] = [
   {
-    code: "food_three_meals",
-    title: "3 основні прийоми їжі",
-    description: "Сніданок, обід і вечеря без хаотичного добирання їжі.",
-    points: 3,
+    code: "food_protein_armor",
+    title: "Білкова броня",
+    description:
+      "Додай білок у кожен основний прийом їжі: яйця, рибу, мʼясо, сир або бобові.",
+    points: 4,
   },
   {
     code: "food_no_snacks",
@@ -139,17 +147,16 @@ const FOOD_ITEMS: FoodItem[] = [
     points: 3,
   },
   {
-    code: "food_dinner_before_20",
-    title: "Останній прийом до 20:00",
-    description: "Після 20:00 тільки вода або несолодкий чай.",
+    code: "food_three_meals",
+    title: "3 основні прийоми їжі",
+    description: "Сніданок, обід і вечеря без хаотичного добирання їжі.",
     points: 2,
   },
   {
-    code: "food_protein_armor",
-    title: "Білкова броня",
-    description:
-      "Додай білок у кожен основний прийом їжі: яйця, рибу, мʼясо, сир або бобові.",
-    points: 2,
+    code: "food_dinner_before_20",
+    title: "Останній прийом до 20:00",
+    description: "Після 20:00 тільки вода або несолодкий чай.",
+    points: 1,
   },
 ];
 
@@ -158,7 +165,7 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     code: "activity_walk_30",
     title: "Прогулянка 30 хв",
     description: "Приблизно 3000 кроків у спокійному або швидкому темпі.",
-    points: 2,
+    points: 3,
   },
   {
     code: "activity_walk_60_pro",
@@ -170,7 +177,7 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     code: "activity_walk_90_pro",
     title: "Прогулянка PRO 90 хв",
     description: "Приблизно 9000 кроків — потужний рівень витривалості.",
-    points: 3,
+    points: 2,
   },
   {
     code: "activity_workout_20",
@@ -179,6 +186,30 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     points: 3,
   },
 ];
+
+const NIGHT_ITEMS: NightItem[] = [
+  {
+    code: "night_sleep_7",
+    title: "Сон 7+ годин",
+    description:
+      "Ранковий check-in за попередню ніч: спав/спала 7 годин або більше.",
+    points: 3,
+  },
+  {
+    code: "night_no_food_after_20",
+    title: "Без їжі після 20:00",
+    description:
+      "За попередній вечір і ніч: після 20:00 без їжі та калорійних напоїв.",
+    points: 2,
+  },
+];
+
+const TASK_ORDER: Record<string, number> = {
+  night: 0,
+  water: 1,
+  food: 2,
+  activity: 3,
+};
 
 const TASK_META: Record<string, TaskMeta> = {
   water: {
@@ -191,7 +222,7 @@ const TASK_META: Record<string, TaskMeta> = {
   },
   activity: {
     emoji: "⚡",
-    title: "Активність і рух",
+    title: "Активність",
     description: "Рухай тіло, розганяй енергію і тримай темп.",
     accent: "from-lime-400 to-emerald-600",
     glow: "shadow-emerald-500/20",
@@ -199,7 +230,7 @@ const TASK_META: Record<string, TaskMeta> = {
   },
   food: {
     emoji: "🥗",
-    title: "Харчування / Білкова броня",
+    title: "Харчування",
     description: "Білок, режим і чистий день без перекусів.",
     accent: "from-orange-400 to-rose-500",
     glow: "shadow-orange-500/20",
@@ -207,8 +238,8 @@ const TASK_META: Record<string, TaskMeta> = {
   },
   night: {
     emoji: "🌙",
-    title: "Ніч без їжі",
-    description: "Закрий вечір спокійно: без нічних перекусів.",
+    title: "Сон",
+    description: "7+ годин сну і спокійна ніч без їжі.",
     accent: "from-violet-500 to-indigo-600",
     glow: "shadow-violet-500/20",
     action: "Ніч витримав",
@@ -241,6 +272,8 @@ export default function Home() {
   const [isFoodInfoOpen, setIsFoodInfoOpen] = useState(false);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [isActivityInfoOpen, setIsActivityInfoOpen] = useState(false);
+  const [isNightModalOpen, setIsNightModalOpen] = useState(false);
+  const [isNightInfoOpen, setIsNightInfoOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -488,6 +521,17 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
   function getActivityPointsEarned() {
     return ACTIVITY_ITEMS.reduce((sum, item) => {
+      return completedTaskCodes.includes(item.code) ? sum + item.points : sum;
+    }, 0);
+  }
+
+  function getNightCompletedCount() {
+    return NIGHT_ITEMS.filter((item) => completedTaskCodes.includes(item.code))
+      .length;
+  }
+
+  function getNightPointsEarned() {
+    return NIGHT_ITEMS.reduce((sum, item) => {
       return completedTaskCodes.includes(item.code) ? sum + item.points : sum;
     }, 0);
   }
@@ -839,6 +883,122 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setMessage(`⚡ Активність зарахована: ${item.title} +${item.points} бали`);
     await fetchLeaderboard();
   }
+
+  async function completeNightItem(item: NightItem) {
+    if (!profile) return;
+
+    const todayDate = today();
+
+    if (completedTaskCodes.includes(item.code)) {
+      const { error: deleteLogError } = await supabase
+        .from("daily_logs")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("task_code", item.code)
+        .eq("event_day", todayDate);
+
+      if (deleteLogError) {
+        setMessage("Помилка скасування сну: " + deleteLogError.message);
+        return;
+      }
+
+      const { data, error: updateProfileError } = await supabase
+        .from("profiles")
+        .update({
+          points_today: Math.max(0, profile.points_today - item.points),
+          points_total: Math.max(0, profile.points_total - item.points),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+
+      if (updateProfileError) {
+        setMessage(
+          "Помилка оновлення балів після скасування: " +
+            updateProfileError.message
+        );
+        return;
+      }
+
+      setProfile(data);
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.filter((code) => code !== item.code)
+      );
+      setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await fetchLeaderboard();
+      return;
+    }
+
+    const { data: existingLogs, error: existingLogsError } = await supabase
+      .from("daily_logs")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .eq("task_code", item.code)
+      .eq("event_day", todayDate);
+
+    if (existingLogsError) {
+      setMessage("Помилка перевірки сну: " + existingLogsError.message);
+      return;
+    }
+
+    if (existingLogs && existingLogs.length > 0) {
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.includes(item.code) ? currentCodes : [...currentCodes, item.code]
+      );
+      setMessage("✅ Цей пункт вже зараховано сьогодні");
+      return;
+    }
+
+    const { error: insertLogError } = await supabase.from("daily_logs").insert({
+      profile_id: profile.id,
+      task_code: item.code,
+      points: item.points,
+      event_day: todayDate,
+    });
+
+    if (insertLogError) {
+      setMessage("Помилка запису сну: " + insertLogError.message);
+      return;
+    }
+
+    let newStreak = profile.streak_current || 0;
+
+    const todayDateObj = new Date(todayDate);
+    const yesterday = new Date(todayDateObj);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yesterdayString = yesterday.toISOString().slice(0, 10);
+
+    if (profile.last_activity_date === yesterdayString) {
+      newStreak += 1;
+    } else if (profile.last_activity_date !== todayDate) {
+      newStreak = 1;
+    }
+
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({
+        points_today: profile.points_today + item.points,
+        points_total: profile.points_total + item.points,
+        streak_current: newStreak,
+        last_activity_date: todayDate,
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    if (updateProfileError) {
+      setMessage(
+        "Помилка оновлення балів за сон: " + updateProfileError.message
+      );
+      return;
+    }
+
+    setProfile(data);
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
+    setMessage(`🌙 Сон зараховано: ${item.title} +${item.points} бали`);
+    await fetchLeaderboard();
+  }
 async function updateWeight() {
   if (!profile || !newWeight) return;
 
@@ -877,6 +1037,11 @@ async function updateWeight() {
 
     if (task.code.toLowerCase() === "activity") {
       setIsActivityModalOpen(true);
+      return;
+    }
+
+    if (task.code.toLowerCase() === "night") {
+      setIsNightModalOpen(true);
       return;
     }
 
@@ -1013,6 +1178,15 @@ async function updateWeight() {
   const activityCompletedCount = getActivityCompletedCount();
   const activityPointsEarned = getActivityPointsEarned();
   const isActivityCompleted = activityCompletedCount === ACTIVITY_ITEMS.length;
+  const nightCompletedCount = getNightCompletedCount();
+  const nightPointsEarned = getNightPointsEarned();
+  const isNightCompleted = nightCompletedCount === NIGHT_ITEMS.length;
+  const orderedTasks = [...tasks].sort((a, b) => {
+    const aOrder = TASK_ORDER[a.code.toLowerCase()] ?? 99;
+    const bOrder = TASK_ORDER[b.code.toLowerCase()] ?? 99;
+
+    return aOrder - bOrder;
+  });
   const completedCount = tasks.filter((task) =>
     task.code.toLowerCase() === "water"
       ? isWaterCompleted
@@ -1020,17 +1194,21 @@ async function updateWeight() {
         ? isFoodCompleted
         : task.code.toLowerCase() === "activity"
           ? isActivityCompleted
-          : completedTaskCodes.includes(task.code)
+          : task.code.toLowerCase() === "night"
+            ? isNightCompleted
+            : completedTaskCodes.includes(task.code)
   ).length;
   const weightProgress = getWeightProgress();
-  const nextTask = tasks.find((task) =>
+  const nextTask = orderedTasks.find((task) =>
     task.code.toLowerCase() === "water"
       ? !isWaterCompleted
       : task.code.toLowerCase() === "food"
         ? !isFoodCompleted
         : task.code.toLowerCase() === "activity"
           ? !isActivityCompleted
-          : !completedTaskCodes.includes(task.code)
+          : task.code.toLowerCase() === "night"
+            ? !isNightCompleted
+            : !completedTaskCodes.includes(task.code)
   );
   const topUsers = leaderboard.slice(0, 3);
   const restUsers = leaderboard.slice(3, 10);
@@ -1124,43 +1302,52 @@ async function updateWeight() {
               </div>
 
               <div className="space-y-3">
-                {tasks.map((task) => {
+                {orderedTasks.map((task) => {
                   const meta = getTaskMeta(task);
                   const isWaterTask = task.code.toLowerCase() === "water";
                   const isFoodTask = task.code.toLowerCase() === "food";
                   const isActivityTask = task.code.toLowerCase() === "activity";
+                  const isNightTask = task.code.toLowerCase() === "night";
                   const isCompleted = isWaterTask
                     ? isWaterCompleted
                     : isFoodTask
                       ? isFoodCompleted
                       : isActivityTask
                         ? isActivityCompleted
-                        : completedTaskCodes.includes(task.code);
+                        : isNightTask
+                          ? isNightCompleted
+                          : completedTaskCodes.includes(task.code);
                   const pointsText = isWaterTask
                     ? `+${waterCompletedCount}`
                     : isFoodTask
                       ? `+${foodPointsEarned}`
                       : isActivityTask
                         ? `+${activityPointsEarned}`
-                        : `+${task.points}`;
+                        : isNightTask
+                          ? `+${nightPointsEarned}`
+                          : `+${task.points}`;
                   const statusText = isWaterTask
                     ? `${waterCompletedCount}/${WATER_ITEMS.length}`
                     : isFoodTask
                       ? `${foodCompletedCount}/${FOOD_ITEMS.length}`
                       : isActivityTask
                         ? `${activityCompletedCount}/${ACTIVITY_ITEMS.length}`
-                        : isCompleted
-                          ? "✅"
-                          : "○";
+                        : isNightTask
+                          ? `${nightCompletedCount}/${NIGHT_ITEMS.length}`
+                          : isCompleted
+                            ? "✅"
+                            : "○";
                   const progressPercent = isWaterTask
                     ? (waterCompletedCount / WATER_ITEMS.length) * 100
                     : isFoodTask
                       ? (foodCompletedCount / FOOD_ITEMS.length) * 100
                       : isActivityTask
                         ? (activityCompletedCount / ACTIVITY_ITEMS.length) * 100
-                        : isCompleted
-                          ? 100
-                          : 0;
+                        : isNightTask
+                          ? (nightCompletedCount / NIGHT_ITEMS.length) * 100
+                          : isCompleted
+                            ? 100
+                            : 0;
 
                   return (
                     <button
@@ -1978,6 +2165,146 @@ async function updateWeight() {
                 Навіть якщо немає ресурсу на важке тренування, прогулянка і
                 кроки вже працюють. Головне — не ідеальний спорт, а щоденний
                 рух, який робить тебе стабільнішим.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isNightModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/70 px-3 pb-3">
+          <div className="max-h-[75vh] w-full overflow-y-auto rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
+
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-green-400">
+                  Check-in за попередню ніч
+                </p>
+                <h2 className="text-3xl font-black">Сон і відновлення</h2>
+              </div>
+              <button
+                onClick={() => setIsNightModalOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-3xl bg-zinc-900 p-4">
+              <div className="mb-3 grid h-28 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/30 to-indigo-600/30 text-6xl">
+                🌙
+              </div>
+              <p className="text-sm leading-relaxed text-zinc-300">
+                Це завдання ми рахуємо вранці за попередню ніч: як ти спав і чи
+                не їв після 20:00. Сон 7+ годин — база відновлення, контролю
+                апетиту і нормального жироспалювання.
+              </p>
+              <button
+                onClick={() => setIsNightInfoOpen(true)}
+                className="mt-4 text-sm font-bold text-green-400"
+              >
+                Чому це важливо?
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
+              <div>
+                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-2xl font-black">
+                  {nightCompletedCount}/{NIGHT_ITEMS.length}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-zinc-400">Бали за сон</p>
+                <p className="text-2xl font-black text-green-400">
+                  +{nightPointsEarned}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {NIGHT_ITEMS.map((item) => {
+                const isCompleted = completedTaskCodes.includes(item.code);
+
+                return (
+                  <button
+                    key={item.code}
+                    onClick={() => completeNightItem(item)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${
+                      isCompleted
+                        ? "border-green-500/40 bg-green-950/40"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-black ${
+                        isCompleted
+                          ? "bg-green-500 text-black"
+                          : "bg-zinc-800 text-zinc-300"
+                      }`}
+                    >
+                      {isCompleted ? "✓" : `+${item.points}`}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{item.title}</span>
+                      <span className="block text-sm text-zinc-400">
+                        {item.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsNightModalOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
+            >
+              Зберегти прогрес
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isNightInfoOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-5">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-950 p-5">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <h2 className="text-2xl font-black">
+                Навіщо спати 7+ годин? 🌙
+              </h2>
+              <button
+                onClick={() => setIsNightInfoOpen(false)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 grid rounded-3xl bg-gradient-to-br from-violet-500/30 to-indigo-600/30 p-5 text-center">
+              <div className="mb-3 text-7xl">🌙</div>
+              <p className="whitespace-nowrap text-[11px] font-black uppercase text-white sm:text-sm">
+                Сон міцний — апетит ручний!
+              </p>
+            </div>
+
+            <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
+              <p>
+                Сон 7+ годин допомагає тримати під контролем гормони апетиту.
+                Коли сну мало, організм частіше просить солодке, швидкі калорії
+                та перекуси, бо шукає енергію будь-яким способом.
+              </p>
+              <p>
+                Під час якісного сну тіло відновлює нервову систему, мʼязи та
+                гормональний баланс. Це напряму впливає на дисципліну
+                наступного дня: легше не зриватися, легше рухатися і легше
+                тримати харчування.
+              </p>
+              <p>
+                Ніч без їжі після 20:00 підсилює цей ефект: травлення не
+                заважає відновленню, інсулін нижчий, а тіло спокійніше
+                переходить у режим нічного жироспалювання.
               </p>
             </div>
           </div>
