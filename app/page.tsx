@@ -211,6 +211,8 @@ const TASK_ORDER: Record<string, number> = {
   activity: 3,
 };
 
+const DAILY_POINTS_MAX = 30;
+
 const TASK_META: Record<string, TaskMeta> = {
   water: {
     emoji: "💧",
@@ -534,6 +536,34 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     return NIGHT_ITEMS.reduce((sum, item) => {
       return completedTaskCodes.includes(item.code) ? sum + item.points : sum;
     }, 0);
+  }
+
+  function getDayStatus(points: number) {
+    if (points >= 27) {
+      return {
+        title: "Легендарний день",
+        description: "Максимальна дисципліна. День майже закритий ідеально.",
+      };
+    }
+
+    if (points >= 20) {
+      return {
+        title: "Сильний день",
+        description: "Ти тримаєш темп і вже зробив головне для прогресу.",
+      };
+    }
+
+    if (points >= 10) {
+      return {
+        title: "Нормальний день",
+        description: "База є. Ще кілька дій — і день стане сильним.",
+      };
+    }
+
+    return {
+      title: "Почни з малого",
+      description: "Закрий один простий пункт і запусти рух дня.",
+    };
   }
 
   async function completeWaterItem(item: WaterItem) {
@@ -1181,6 +1211,16 @@ async function updateWeight() {
   const nightCompletedCount = getNightCompletedCount();
   const nightPointsEarned = getNightPointsEarned();
   const isNightCompleted = nightCompletedCount === NIGHT_ITEMS.length;
+  const dayPoints =
+    waterCompletedCount +
+    foodPointsEarned +
+    activityPointsEarned +
+    nightPointsEarned;
+  const dayProgress = Math.min(
+    100,
+    Math.round((dayPoints / DAILY_POINTS_MAX) * 100)
+  );
+  const dayStatus = getDayStatus(dayPoints);
   const orderedTasks = [...tasks].sort((a, b) => {
     const aOrder = TASK_ORDER[a.code.toLowerCase()] ?? 99;
     const bOrder = TASK_ORDER[b.code.toLowerCase()] ?? 99;
@@ -1243,7 +1283,7 @@ async function updateWeight() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-zinc-400">Привіт,</p>
                   <h2 className="truncate text-2xl font-black">
-                    {profile.first_name || "друже"}!
+                    {profile.first_name || "друже"}
                   </h2>
                   <p className="mt-1 text-sm font-semibold text-green-400">
                     {getLevel()}
@@ -1283,6 +1323,34 @@ async function updateWeight() {
                   {profile.points_total || 0}
                 </p>
               </div>
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold text-green-400">
+                    Прогрес дня
+                  </p>
+                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-black">
+                    {dayPoints}/{DAILY_POINTS_MAX}
+                  </p>
+                  <p className="text-xs font-bold text-zinc-400">балів</p>
+                </div>
+              </div>
+
+              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{ width: `${dayProgress}%` }}
+                />
+              </div>
+
+              <p className="mt-3 text-sm text-zinc-400">
+                {dayStatus.description}
+              </p>
             </section>
 
             <section>
