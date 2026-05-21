@@ -192,7 +192,7 @@ const NIGHT_ITEMS: NightItem[] = [
     code: "night_sleep_7",
     title: "Сон 7+ годин",
     description:
-      "Ранковий check-in за попередню ніч: спав/спала 7 годин або більше.",
+      "Ранковий check за попередню ніч: спав/спала 7 годин або більше.",
     points: 3,
   },
   {
@@ -563,6 +563,60 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     return {
       title: "Почни з малого",
       description: "Закрий один простий пункт і запусти рух дня.",
+    };
+  }
+
+  function getTodayFocus() {
+    if (!isNightCompleted) {
+      return {
+        title: "Закрий нічний check",
+        description: "Почни день із сну 7+ годин і попередньої ночі без їжі.",
+        action: "Відкрити сон",
+        onClick: () => setIsNightModalOpen(true),
+      };
+    }
+
+    if (waterCompletedCount < WATER_ITEMS.length) {
+      return {
+        title: "Добери воду",
+        description: "Один пункт води швидко додасть бал і підтримає апетит.",
+        action: "Відкрити воду",
+        onClick: () => setIsWaterModalOpen(true),
+      };
+    }
+
+    if (!completedTaskCodes.includes("food_protein_armor")) {
+      return {
+        title: "Додай білкову броню",
+        description: "Білок у прийомах їжі тримає ситість і захищає мʼязи.",
+        action: "Відкрити харчування",
+        onClick: () => setIsFoodModalOpen(true),
+      };
+    }
+
+    if (!isFoodCompleted) {
+      return {
+        title: "Дотисни харчування",
+        description: "Без перекусів і режим їжі зроблять день набагато сильнішим.",
+        action: "Відкрити харчування",
+        onClick: () => setIsFoodModalOpen(true),
+      };
+    }
+
+    if (!isActivityCompleted) {
+      return {
+        title: "Додай рух",
+        description: "Прогулянка або зарядка піднімуть день ближче до 30 балів.",
+        action: "Відкрити активність",
+        onClick: () => setIsActivityModalOpen(true),
+      };
+    }
+
+    return {
+      title: "День закрито сильно",
+      description: "Ти забрав максимум бази. Тримай темп і не перегоряй.",
+      action: "Подивитись нагороди",
+      onClick: () => setActiveTab("rewards"),
     };
   }
 
@@ -1221,6 +1275,49 @@ async function updateWeight() {
     Math.round((dayPoints / DAILY_POINTS_MAX) * 100)
   );
   const dayStatus = getDayStatus(dayPoints);
+  const todayFocus = getTodayFocus();
+  const taskSummaries = [
+    {
+      code: "night",
+      meta: TASK_META.night,
+      points: nightPointsEarned,
+      maxPoints: 5,
+      progress: nightCompletedCount,
+      total: NIGHT_ITEMS.length,
+      isCompleted: isNightCompleted,
+      onClick: () => setIsNightModalOpen(true),
+    },
+    {
+      code: "water",
+      meta: TASK_META.water,
+      points: waterCompletedCount,
+      maxPoints: 5,
+      progress: waterCompletedCount,
+      total: WATER_ITEMS.length,
+      isCompleted: isWaterCompleted,
+      onClick: () => setIsWaterModalOpen(true),
+    },
+    {
+      code: "food",
+      meta: TASK_META.food,
+      points: foodPointsEarned,
+      maxPoints: 10,
+      progress: foodCompletedCount,
+      total: FOOD_ITEMS.length,
+      isCompleted: isFoodCompleted,
+      onClick: () => setIsFoodModalOpen(true),
+    },
+    {
+      code: "activity",
+      meta: TASK_META.activity,
+      points: activityPointsEarned,
+      maxPoints: 10,
+      progress: activityCompletedCount,
+      total: ACTIVITY_ITEMS.length,
+      isCompleted: isActivityCompleted,
+      onClick: () => setIsActivityModalOpen(true),
+    },
+  ];
   const orderedTasks = [...tasks].sort((a, b) => {
     const aOrder = TASK_ORDER[a.code.toLowerCase()] ?? 99;
     const bOrder = TASK_ORDER[b.code.toLowerCase()] ?? 99;
@@ -1239,17 +1336,6 @@ async function updateWeight() {
             : completedTaskCodes.includes(task.code)
   ).length;
   const weightProgress = getWeightProgress();
-  const nextTask = orderedTasks.find((task) =>
-    task.code.toLowerCase() === "water"
-      ? !isWaterCompleted
-      : task.code.toLowerCase() === "food"
-        ? !isFoodCompleted
-        : task.code.toLowerCase() === "activity"
-          ? !isActivityCompleted
-          : task.code.toLowerCase() === "night"
-            ? !isNightCompleted
-            : !completedTaskCodes.includes(task.code)
-  );
   const topUsers = leaderboard.slice(0, 3);
   const restUsers = leaderboard.slice(3, 10);
 
@@ -1351,6 +1437,22 @@ async function updateWeight() {
               <p className="mt-3 text-sm text-zinc-400">
                 {dayStatus.description}
               </p>
+            </section>
+
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Фокус сьогодні
+              </p>
+              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
+              <p className="mt-2 text-sm text-zinc-300">
+                {todayFocus.description}
+              </p>
+              <button
+                onClick={todayFocus.onClick}
+                className="mt-4 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
+              >
+                {todayFocus.action}
+              </button>
             </section>
 
             <section>
@@ -1666,29 +1768,99 @@ async function updateWeight() {
               </span>
             </header>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-center">
-              <div className="mx-auto mb-4 grid h-28 w-28 place-items-center rounded-full border-8 border-green-500/40 text-5xl">
-                {nextTask ? getTaskMeta(nextTask).emoji : "✅"}
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold text-green-400">
+                    Прогрес дня
+                  </p>
+                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-black">
+                    {dayPoints}/{DAILY_POINTS_MAX}
+                  </p>
+                  <p className="text-xs font-bold text-zinc-400">балів</p>
+                </div>
               </div>
-              <p className="font-black text-green-400">
-                {nextTask ? `+${nextTask.points} балів` : "День закрито"}
+
+              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{ width: `${dayProgress}%` }}
+                />
+              </div>
+
+              <p className="mt-3 text-sm text-zinc-400">
+                {dayStatus.description}
               </p>
-              <h2 className="mt-2 text-3xl font-black">
-                {nextTask ? getTaskMeta(nextTask).title : "Все виконано"}
-              </h2>
-              <p className="mt-2 text-sm text-zinc-400">
-                {nextTask
-                  ? getTaskMeta(nextTask).description
-                  : "Сьогодні ти забрав усі доступні бали."}
+            </section>
+
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Фокус сьогодні
               </p>
-              {nextTask && (
-                <button
-                  onClick={() => completeTask(nextTask)}
-                  className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
-                >
-                  Завдання виконано
-                </button>
-              )}
+              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
+              <p className="mt-2 text-sm text-zinc-300">
+                {todayFocus.description}
+              </p>
+              <button
+                onClick={todayFocus.onClick}
+                className="mt-4 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
+              >
+                {todayFocus.action}
+              </button>
+            </section>
+
+            <section className="space-y-3">
+              {taskSummaries.map((task) => {
+                const progressPercent = (task.points / task.maxPoints) * 100;
+
+                return (
+                  <button
+                    key={task.code}
+                    onClick={task.onClick}
+                    className={`relative w-full overflow-hidden rounded-2xl border p-4 text-left ${
+                      task.isCompleted
+                        ? "border-green-500/40 bg-green-950/40"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${task.meta.accent} text-3xl`}
+                      >
+                        {task.isCompleted ? "✓" : task.meta.emoji}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-black leading-tight">
+                          {task.meta.title}
+                        </h3>
+                        <p className="truncate text-sm text-zinc-400">
+                          {task.progress}/{task.total} пунктів
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-green-300">
+                          +{task.points}
+                        </p>
+                        <p className="text-xs text-zinc-400">
+                          з {task.maxPoints}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="absolute bottom-0 left-0 h-1 w-full bg-black/30">
+                      <div
+                        className={`h-full bg-gradient-to-r ${task.meta.accent}`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
             </section>
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
@@ -2247,7 +2419,7 @@ async function updateWeight() {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-green-400">
-                  Check-in за попередню ніч
+                  Check за попередню ніч
                 </p>
                 <h2 className="text-3xl font-black">Сон і відновлення</h2>
               </div>
