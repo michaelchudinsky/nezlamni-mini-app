@@ -2488,7 +2488,7 @@ async function updateWeight() {
       {isWaterModalOpen && (
         <div className="fixed inset-0 z-40 flex items-end bg-black/75 px-3 pb-3">
           <div className="pointer-events-none absolute inset-x-0 top-8 text-center text-sm font-black text-white">
-            Збережи прогрес ↓
+            Збережи прогрес 👇🏻
           </div>
 
           <div className="flex h-[80vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-zinc-800 bg-zinc-950 shadow-2xl">
