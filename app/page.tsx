@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -1637,20 +1638,13 @@ async function updateWeight() {
 Почати шлях            </button>
           </div>
 
-          <section className="relative overflow-hidden rounded-[2rem] border border-amber-500/30 bg-[radial-gradient(circle_at_78%_42%,rgba(245,158,11,0.45),transparent_24%),linear-gradient(90deg,#020202_0%,#09090b_42%,#3f2412_100%)] p-5 shadow-2xl shadow-amber-950/30">
-            <div className="absolute inset-y-0 left-0 w-16 bg-[repeating-linear-gradient(45deg,rgba(220,38,38,0.5)_0_2px,transparent_2px_9px)] opacity-40" />
-            <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_70%_38%,rgba(251,191,36,0.45),transparent_34%)]" />
-            <div className="absolute bottom-0 right-3 h-28 w-20 rounded-t-full bg-black/55 shadow-2xl shadow-black" />
-
-            <div className="relative min-h-32">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">
-                твій старт
-              </p>
-              <h2 className="mt-4 max-w-[15rem] text-3xl font-black leading-tight text-amber-100">
-                Стань кращою версією себе
-              </h2>
-            </div>
-          </section>
+          <Image
+            src="/start-motivation.png"
+            alt="Стань кращою версією себе"
+            width={1681}
+            height={936}
+            className="aspect-[16/9] w-full rounded-[2rem] border border-amber-500/30 object-cover shadow-2xl shadow-amber-950/30"
+          />
         </div>
       </main>
     );
