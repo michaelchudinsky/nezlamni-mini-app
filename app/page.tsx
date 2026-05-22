@@ -159,7 +159,7 @@ const FOOD_ITEMS: FoodItem[] = [
   },
   {
     code: "food_dinner_before_20",
-    title: "Останній прийом до 20:00",
+    title: "Останній прийом їжі до 20:00",
     description: "Після 20:00 тільки вода або несолодкий чай.",
     points: 1,
   },
@@ -705,6 +705,15 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     }, 2200);
   }
 
+  function isDuplicateLogError(error: unknown) {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "23505"
+    );
+  }
+
   async function completeWaterItem(item: WaterItem) {
     if (!profile) return;
 
@@ -779,6 +788,17 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     });
 
     if (insertLogError) {
+      if (isDuplicateLogError(insertLogError)) {
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes(item.code)
+            ? currentCodes
+            : [...currentCodes, item.code]
+        );
+        setMessage("✅ Цей пункт води вже зараховано сьогодні");
+        await syncProfileStats(profile.id);
+        return;
+      }
+
       setMessage("Помилка запису води: " + insertLogError.message);
       return;
     }
@@ -896,6 +916,17 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     });
 
     if (insertLogError) {
+      if (isDuplicateLogError(insertLogError)) {
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes(item.code)
+            ? currentCodes
+            : [...currentCodes, item.code]
+        );
+        setMessage("✅ Цей пункт харчування вже зараховано сьогодні");
+        await syncProfileStats(profile.id);
+        return;
+      }
+
       setMessage("Помилка запису харчування: " + insertLogError.message);
       return;
     }
@@ -1016,6 +1047,17 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     });
 
     if (insertLogError) {
+      if (isDuplicateLogError(insertLogError)) {
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes(item.code)
+            ? currentCodes
+            : [...currentCodes, item.code]
+        );
+        setMessage("✅ Ця активність вже зарахована сьогодні");
+        await syncProfileStats(profile.id);
+        return;
+      }
+
       setMessage("Помилка запису активності: " + insertLogError.message);
       return;
     }
@@ -1136,6 +1178,17 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     });
 
     if (insertLogError) {
+      if (isDuplicateLogError(insertLogError)) {
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes(item.code)
+            ? currentCodes
+            : [...currentCodes, item.code]
+        );
+        setMessage("✅ Цей пункт сну вже зараховано сьогодні");
+        await syncProfileStats(profile.id);
+        return;
+      }
+
       setMessage("Помилка запису сну: " + insertLogError.message);
       return;
     }
@@ -1258,6 +1311,17 @@ async function updateWeight() {
     });
 
     if (insertLogError) {
+      if (isDuplicateLogError(insertLogError)) {
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes(task.code)
+            ? currentCodes
+            : [...currentCodes, task.code]
+        );
+        setMessage("✅ Це завдання вже виконано сьогодні");
+        await syncProfileStats(profile.id);
+        return;
+      }
+
       setMessage("Помилка запису завдання: " + insertLogError.message);
       return;
     }
