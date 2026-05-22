@@ -289,16 +289,26 @@ export default function Home() {
 const [newWeight, setNewWeight] = useState("");
 const [showWeightForm, setShowWeightForm] = useState(false);
 
+  const showLoadError = useCallback((context: string, error: unknown) => {
+    console.error(`[NEZLAMNI] ${context}`, error);
+    setMessage("Не вдалося завантажити дані. Спробуй оновити застосунок.");
+  }, []);
+
+  const showSaveError = useCallback((context: string, error: unknown) => {
+    console.error(`[NEZLAMNI] ${context}`, error);
+    setMessage("Не вдалося зберегти. Спробуй ще раз.");
+  }, []);
+
   const fetchTasks = useCallback(async () => {
     const { data, error } = await supabase.from("tasks").select("*");
 
     if (error) {
-      setMessage("Помилка завантаження завдань: " + error.message);
+      showLoadError("fetch tasks", error);
       return;
     }
 
     setTasks(data || []);
-  }, []);
+  }, [showLoadError]);
 
 const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
   const telegramId = tgUser?.id?.toString() || "demo_user_1";
@@ -310,7 +320,7 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
     .maybeSingle();
 
   if (selectError) {
-    setMessage("Помилка профілю: " + selectError.message);
+    showLoadError("get profile", selectError);
     return null;
   }
 
@@ -329,13 +339,13 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
     .single();
 
   if (insertError) {
-    setMessage("Помилка створення профілю: " + insertError.message);
+    showSaveError("create profile", insertError);
     return null;
   }
 
   setProfile(created);
   return created as Profile;
-}, []);
+}, [showLoadError, showSaveError]);
 
 const fetchLeaderboard = useCallback(async () => {
   const startOfMonth = new Date();
@@ -349,7 +359,7 @@ const fetchLeaderboard = useCallback(async () => {
     .gte("event_day", monthStart);
 
   if (error) {
-    setMessage("Помилка рейтингу: " + error.message);
+    showLoadError("fetch leaderboard", error);
     return;
   }
 
@@ -382,7 +392,7 @@ const fetchLeaderboard = useCallback(async () => {
     .slice(0, 10);
 
   setLeaderboard(sorted);
-}, []);
+}, [showLoadError]);
 
 const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
   const { data, error } = await supabase
@@ -392,7 +402,7 @@ const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
     .eq("event_day", today());
 
   if (error) {
-    setMessage("Помилка завантаження прогресу дня: " + error.message);
+    showLoadError("fetch completed task codes", error);
     return;
   }
 
@@ -401,7 +411,7 @@ const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
   );
 
   setCompletedTaskCodes(completedCodes || []);
-}, []);
+}, [showLoadError]);
 
 const init = useCallback(async (tgUser: TelegramUser | null) => {
   await fetchTasks();
@@ -443,7 +453,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .single();
 
     if (error) {
-      setMessage("Помилка збереження профілю: " + error.message);
+      showSaveError("save profile", error);
       return;
     }
 
@@ -462,7 +472,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .eq("profile_id", profileId);
 
     if (logsError) {
-      setMessage("Помилка перерахунку балів: " + logsError.message);
+      showLoadError("sync profile stats logs", logsError);
       return null;
     }
 
@@ -504,7 +514,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .single();
 
     if (updateError) {
-      setMessage("Помилка синхронізації профілю: " + updateError.message);
+      showSaveError("sync profile stats update", updateError);
       return null;
     }
 
@@ -728,7 +738,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .eq("event_day", todayDate);
 
       if (deleteLogError) {
-        setMessage("Помилка скасування води: " + deleteLogError.message);
+        showSaveError("cancel water item", deleteLogError);
         return;
       }
 
@@ -743,10 +753,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .single();
 
       if (updateProfileError) {
-        setMessage(
-          "Помилка оновлення балів після скасування: " +
-            updateProfileError.message
-        );
+        showSaveError("update profile after water cancel", updateProfileError);
         return;
       }
 
@@ -768,7 +775,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .eq("event_day", todayDate);
 
     if (existingLogsError) {
-      setMessage("Помилка перевірки води: " + existingLogsError.message);
+      showLoadError("check water item", existingLogsError);
       return;
     }
 
@@ -799,7 +806,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         return;
       }
 
-      setMessage("Помилка запису води: " + insertLogError.message);
+      showSaveError("save water item", insertLogError);
       return;
     }
 
@@ -830,7 +837,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .single();
 
     if (updateProfileError) {
-      setMessage("Помилка оновлення балів за воду: " + updateProfileError.message);
+      showSaveError("update profile after water item", updateProfileError);
       return;
     }
 
@@ -856,7 +863,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .eq("event_day", todayDate);
 
       if (deleteLogError) {
-        setMessage("Помилка скасування харчування: " + deleteLogError.message);
+        showSaveError("cancel food item", deleteLogError);
         return;
       }
 
@@ -871,10 +878,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .single();
 
       if (updateProfileError) {
-        setMessage(
-          "Помилка оновлення балів після скасування: " +
-            updateProfileError.message
-        );
+        showSaveError("update profile after food cancel", updateProfileError);
         return;
       }
 
@@ -896,7 +900,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .eq("event_day", todayDate);
 
     if (existingLogsError) {
-      setMessage("Помилка перевірки харчування: " + existingLogsError.message);
+      showLoadError("check food item", existingLogsError);
       return;
     }
 
@@ -927,7 +931,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         return;
       }
 
-      setMessage("Помилка запису харчування: " + insertLogError.message);
+      showSaveError("save food item", insertLogError);
       return;
     }
 
@@ -958,10 +962,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .single();
 
     if (updateProfileError) {
-      setMessage(
-        "Помилка оновлення балів за харчування: " +
-          updateProfileError.message
-      );
+      showSaveError("update profile after food item", updateProfileError);
       return;
     }
 
@@ -987,7 +988,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .eq("event_day", todayDate);
 
       if (deleteLogError) {
-        setMessage("Помилка скасування активності: " + deleteLogError.message);
+        showSaveError("cancel activity item", deleteLogError);
         return;
       }
 
@@ -1002,10 +1003,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .single();
 
       if (updateProfileError) {
-        setMessage(
-          "Помилка оновлення балів після скасування: " +
-            updateProfileError.message
-        );
+        showSaveError("update profile after activity cancel", updateProfileError);
         return;
       }
 
@@ -1027,7 +1025,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .eq("event_day", todayDate);
 
     if (existingLogsError) {
-      setMessage("Помилка перевірки активності: " + existingLogsError.message);
+      showLoadError("check activity item", existingLogsError);
       return;
     }
 
@@ -1058,7 +1056,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         return;
       }
 
-      setMessage("Помилка запису активності: " + insertLogError.message);
+      showSaveError("save activity item", insertLogError);
       return;
     }
 
@@ -1089,10 +1087,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .single();
 
     if (updateProfileError) {
-      setMessage(
-        "Помилка оновлення балів за активність: " +
-          updateProfileError.message
-      );
+      showSaveError("update profile after activity item", updateProfileError);
       return;
     }
 
@@ -1118,7 +1113,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .eq("event_day", todayDate);
 
       if (deleteLogError) {
-        setMessage("Помилка скасування сну: " + deleteLogError.message);
+        showSaveError("cancel sleep item", deleteLogError);
         return;
       }
 
@@ -1133,10 +1128,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         .single();
 
       if (updateProfileError) {
-        setMessage(
-          "Помилка оновлення балів після скасування: " +
-            updateProfileError.message
-        );
+        showSaveError("update profile after sleep cancel", updateProfileError);
         return;
       }
 
@@ -1158,7 +1150,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .eq("event_day", todayDate);
 
     if (existingLogsError) {
-      setMessage("Помилка перевірки сну: " + existingLogsError.message);
+      showLoadError("check sleep item", existingLogsError);
       return;
     }
 
@@ -1189,7 +1181,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         return;
       }
 
-      setMessage("Помилка запису сну: " + insertLogError.message);
+      showSaveError("save sleep item", insertLogError);
       return;
     }
 
@@ -1220,9 +1212,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       .single();
 
     if (updateProfileError) {
-      setMessage(
-        "Помилка оновлення балів за сон: " + updateProfileError.message
-      );
+      showSaveError("update profile after sleep item", updateProfileError);
       return;
     }
 
@@ -1246,7 +1236,7 @@ async function updateWeight() {
     .single();
 
   if (error) {
-    setMessage("Помилка оновлення ваги: " + error.message);
+    showSaveError("update weight", error);
     return;
   }
 
@@ -1294,7 +1284,7 @@ async function updateWeight() {
       .eq("event_day", todayDate);
 
     if (existingLogsError) {
-      setMessage("Помилка перевірки завдання: " + existingLogsError.message);
+      showLoadError("check task", existingLogsError);
       return;
     }
 
@@ -1322,7 +1312,7 @@ async function updateWeight() {
         return;
       }
 
-      setMessage("Помилка запису завдання: " + insertLogError.message);
+      showSaveError("save task", insertLogError);
       return;
     }
 
@@ -1353,7 +1343,7 @@ async function updateWeight() {
       .single();
 
     if (updateProfileError) {
-      setMessage("Помилка оновлення балів: " + updateProfileError.message);
+      showSaveError("update profile after task", updateProfileError);
       return;
     }
 
