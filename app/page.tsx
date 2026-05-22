@@ -1604,27 +1604,6 @@ async function updateWeight() {
         <div className="max-w-md mx-auto space-y-5">
           <h1 className="text-3xl font-bold">NEZLAMNI 🔥</h1>
 
-          <section className="relative overflow-hidden rounded-[2rem] border border-green-500/30 bg-[radial-gradient(circle_at_25%_20%,rgba(34,197,94,0.28),transparent_30%),linear-gradient(135deg,#052e1b,#09090b_55%,#111827)] p-5 shadow-2xl shadow-green-950/30">
-            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-green-400/20 blur-2xl" />
-            <div className="absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl" />
-
-            <div className="relative min-h-44">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-green-300">
-                Твій старт
-              </p>
-              <h2 className="mt-3 max-w-[14rem] text-3xl font-black leading-tight">
-                Стань кращою версією себе
-              </h2>
-              <p className="mt-3 max-w-[15rem] text-sm leading-relaxed text-zinc-300">
-                Заповни анкету і почни 30 днів дисципліни, сили та контролю.
-              </p>
-
-              <div className="absolute bottom-0 right-0 grid h-24 w-24 place-items-center rounded-full border border-green-400/30 bg-black/35 text-5xl shadow-xl">
-                🔥
-              </div>
-            </div>
-          </section>
-
           <div className="bg-zinc-900 rounded-2xl p-5 space-y-4">
             <h2 className="text-xl font-bold">Стартова анкета</h2>
 
@@ -1655,9 +1634,13 @@ async function updateWeight() {
               onClick={saveProfile}
               className="w-full bg-green-600 rounded-xl p-3 font-bold"
             >
-              Почати шлях 
+              До перемоги 
             </button>
           </div>
+
+          <p className="text-center text-lg font-black text-green-300">
+            Стань кращою версією себе
+          </p>
         </div>
       </main>
     );
