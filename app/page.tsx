@@ -230,8 +230,8 @@ const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
 const START_INTRO_SLIDES: OnboardingSlide[] = [
   {
     eyebrow: "Ласкаво просимо",
-    title: "NEZLAMNI — це твій 30-денний шлях до контролю.",
-    text: "Ми не обіцяємо магію. Ми даємо систему: маленькі щоденні дії, які повертають тобі тіло, енергію і віру в себе.",
+    title: "NEZLAMNI — це твій 30-денний шлях до перемоги і контролю.",
+    text: "Це не магія. Це система: маленькі щоденні дії, які повертають тобі тіло, енергію, віру в себе і в свої сили.",
     bullets: [
       "Без хаосу і зривів",
       "З балами за кожну дію",
@@ -240,8 +240,8 @@ const START_INTRO_SLIDES: OnboardingSlide[] = [
   },
   {
     eyebrow: "Як це працює",
-    title: "Кожен день ти збираєш 4 бази схуднення.",
-    text: "Вода, харчування з білком, рух і сон. Відмічай виконане протягом дня, отримуй бали і тримай streak.",
+    title: "Кожен день ти збираєш 4 сили схуднення.",
+    text: "Вода, харчування, рух і сон. Відмічай виконане протягом дня, отримуй бали і тримай streak (стабільність).",
     bullets: [
       "Максимум 30 балів на день",
       "Пункти можна додавати поступово",
@@ -250,11 +250,11 @@ const START_INTRO_SLIDES: OnboardingSlide[] = [
   },
   {
     eyebrow: "Твій результат",
-    title: "Ти стаєш не ідеальною. Ти стаєш незламною.",
+    title: "Ти стаєш не ідеальним. Ти стаєш незламним.",
     text: "Через 30 днів ти побачиш не тільки цифру на вагах, а нову дисципліну: менше хаосу, більше сили, більше поваги до себе.",
     bullets: [
       "Стартуй з анкети",
-      "Вкажи вагу і ціль",
+      "Вкажи поточну вагу і ціль",
       "Почни перший день сьогодні",
     ],
   },
@@ -1548,7 +1548,7 @@ async function updateWeight() {
     if (hasSeenStartIntro === null) {
       return (
         <main className="min-h-screen bg-black p-6 text-white">
-          Завантаження...
+          Заряжаємось...
         </main>
       );
     }
@@ -1559,7 +1559,7 @@ async function updateWeight() {
           <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-md flex-col justify-between">
             <header className="pt-4">
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
-                Mini App
+                Power of control
               </p>
               <h1 className="mt-2 text-4xl font-black">NEZLAMNI 🔥</h1>
               <p className="mt-1 text-sm text-zinc-400">
@@ -1612,7 +1612,7 @@ async function updateWeight() {
                 className="w-full rounded-2xl bg-green-600 p-4 text-base font-black"
               >
                 {startIntroStep === START_INTRO_SLIDES.length - 1
-                  ? "Хочу стати незламною"
+                  ? "Хочу стати незламним"
                   : "Далі"}
               </button>
             </footer>
@@ -1639,7 +1639,7 @@ async function updateWeight() {
 
             <input
               className="w-full rounded-xl p-3 bg-zinc-800"
-              placeholder="Точка А: твоя вага зараз"
+              placeholder="Точка А: твоя вага зараз "
               type="number"
               value={startWeight}
               onChange={(e) => setStartWeight(e.target.value)}
@@ -1647,7 +1647,7 @@ async function updateWeight() {
 
             <input
               className="w-full rounded-xl p-3 bg-zinc-800"
-              placeholder="Точка Б: бажана вага"
+              placeholder="Точка Б: бажана вага "
               type="number"
               value={targetWeight}
               onChange={(e) => setTargetWeight(e.target.value)}
@@ -1846,7 +1846,7 @@ async function updateWeight() {
                 </p>
                 <button
                   onClick={openOnboarding}
-                  className="mt-3 rounded-full border border-green-500/30 bg-green-950/30 px-4 py-2 text-xs font-black text-green-300"
+                  className="help-pulse mt-3 rounded-full border border-green-500/30 bg-green-950/30 px-4 py-2 text-xs font-black text-green-300"
                 >
                   Як це працює?
                 </button>
@@ -1864,7 +1864,7 @@ async function updateWeight() {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-zinc-400">Привіт,</p>
+                  <p className="text-sm text-zinc-400">Вітаємо,</p>
                   <h2 className="truncate text-2xl font-black">
                     {profile.first_name || "друже"}
                   </h2>
