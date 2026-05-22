@@ -109,6 +109,13 @@ type NightItem = {
   points: number;
 };
 
+type OnboardingSlide = {
+  eyebrow: string;
+  title: string;
+  text: string;
+  bullets: string[];
+};
+
 const WATER_ITEMS: WaterItem[] = [
   {
     code: "water_wakeup",
@@ -217,6 +224,52 @@ const TASK_ORDER: Record<string, number> = {
 };
 
 const DAILY_POINTS_MAX = 30;
+const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
+
+const ONBOARDING_SLIDES: OnboardingSlide[] = [
+  {
+    eyebrow: "30 днів сили",
+    title: "Ти не худнеш на силі волі. Ти збираєш день.",
+    text: "NEZLAMNI допомагає щодня тримати просту базу: вода, білок, рух і сон. Без хаосу, без самобичування, маленькими перемогами.",
+    bullets: [
+      "Отримуй бали за дії",
+      "Тримай streak і темп",
+      "Бач свій прогрес щодня",
+    ],
+  },
+  {
+    eyebrow: "Як працюють бали",
+    title: "Максимум за день — 30 балів",
+    text: "Не треба бути ідеальною. Просто забирай свої пункти протягом дня і повертайся, коли виконала ще один крок.",
+    bullets: [
+      "Сон і ніч без їжі — до 5",
+      "Вода — до 5",
+      "Харчування і білок — до 10",
+      "Активність — до 10",
+    ],
+  },
+  {
+    eyebrow: "Коли що відмічати",
+    title: "Відмічай одразу після дії",
+    text: "Так легше не забути і чесно бачити день. Якщо натиснула випадково — пункт можна скасувати.",
+    bullets: [
+      "Зранку: сон за минулу ніч і перша вода",
+      "Після їжі: харчування без перекусів",
+      "Після прогулянки: активність",
+      "Ввечері: закрий воду і нічний режим",
+    ],
+  },
+  {
+    eyebrow: "Кроки без стресу",
+    title: "Кроки можна рахувати телефоном",
+    text: "Підійде будь-який простий спосіб. Головне — не точність до кроку, а чесний рух.",
+    bullets: [
+      "iPhone: Здоровʼя / Apple Health",
+      "Android: Google Fit або Samsung Health",
+      "Годинник, браслет або 30 хв ≈ 3000 кроків",
+    ],
+  },
+];
 
 const TASK_META: Record<string, TaskMeta> = {
   water: {
@@ -284,6 +337,8 @@ export default function Home() {
   const [rewardToast, setRewardToast] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
   const [isFeedbackSaving, setIsFeedbackSaving] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -438,6 +493,19 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     return () => window.clearTimeout(timer);
   }, [init]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const hasSeenOnboarding =
+        window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1";
+
+      if (!hasSeenOnboarding) {
+        setIsOnboardingOpen(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function saveProfile() {
     if (!profile) return;
@@ -724,6 +792,26 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       "code" in error &&
       error.code === "23505"
     );
+  }
+
+  function openOnboarding() {
+    setOnboardingStep(0);
+    setIsOnboardingOpen(true);
+  }
+
+  function closeOnboarding() {
+    window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
+    setIsOnboardingOpen(false);
+    setOnboardingStep(0);
+  }
+
+  function showNextOnboardingStep() {
+    if (onboardingStep >= ONBOARDING_SLIDES.length - 1) {
+      closeOnboarding();
+      return;
+    }
+
+    setOnboardingStep((currentStep) => currentStep + 1);
   }
 
   async function completeWaterItem(item: WaterItem) {
@@ -1523,12 +1611,86 @@ async function updateWeight() {
   const weightProgress = getWeightProgress();
   const topUsers = leaderboard.slice(0, 3);
   const restUsers = leaderboard.slice(3, 10);
+  const onboardingSlide = ONBOARDING_SLIDES[onboardingStep];
 
   return (
     <main className="min-h-screen bg-black p-5 pb-28 text-white">
       {rewardToast && (
         <div className="reward-toast fixed inset-x-8 top-4 z-[60] mx-auto max-w-xs rounded-xl border border-green-400/40 bg-green-500 px-4 py-3 text-center text-sm font-black text-white shadow-xl shadow-green-500/30">
           {rewardToast}
+        </div>
+      )}
+
+      {isOnboardingOpen && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/80 px-4 pb-4">
+          <section className="mx-auto w-full max-w-md rounded-[2rem] border border-green-500/30 bg-zinc-950 p-5 shadow-2xl shadow-green-950/40">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-green-400">
+                  {onboardingSlide.eyebrow}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {onboardingStep + 1}/{ONBOARDING_SLIDES.length}
+                </p>
+              </div>
+
+              <button
+                onClick={closeOnboarding}
+                className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-bold text-zinc-300"
+              >
+                Пропустити
+              </button>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-black p-5">
+              <h2 className="text-3xl font-black leading-tight">
+                {onboardingSlide.title}
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+                {onboardingSlide.text}
+              </p>
+
+              <div className="mt-5 space-y-2">
+                {onboardingSlide.bullets.map((bullet) => (
+                  <div
+                    key={bullet}
+                    className="flex items-center gap-3 rounded-2xl bg-black/40 p-3"
+                  >
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-green-500 text-sm font-black text-black">
+                      ✓
+                    </span>
+                    <span className="text-sm font-bold text-white">
+                      {bullet}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <div className="flex gap-2">
+                {ONBOARDING_SLIDES.map((slide, index) => (
+                  <span
+                    key={slide.title}
+                    className={`h-2 rounded-full transition-all ${
+                      index === onboardingStep
+                        ? "w-7 bg-green-400"
+                        : "w-2 bg-zinc-700"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={showNextOnboardingStep}
+                className="rounded-full bg-green-600 px-6 py-3 text-sm font-black text-white"
+              >
+                {onboardingStep === ONBOARDING_SLIDES.length - 1
+                  ? "Почати день"
+                  : "Далі"}
+              </button>
+            </div>
+          </section>
         </div>
       )}
 
@@ -1544,6 +1706,12 @@ async function updateWeight() {
                 <p className="mt-1 text-sm text-zinc-400">
                   Сила. Дисципліна. Незламність.
                 </p>
+                <button
+                  onClick={openOnboarding}
+                  className="mt-3 rounded-full border border-green-500/30 bg-green-950/30 px-4 py-2 text-xs font-black text-green-300"
+                >
+                  Як це працює?
+                </button>
               </div>
 
               <button className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-zinc-900 text-xl">
