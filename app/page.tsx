@@ -1638,9 +1638,19 @@ async function updateWeight() {
             </button>
           </div>
 
-          <p className="text-center text-lg font-black text-green-300">
-            Стань кращою версією себе
-          </p>
+          <section className="relative overflow-hidden rounded-[2rem] border border-green-500/30 bg-[radial-gradient(circle_at_20%_25%,rgba(34,197,94,0.3),transparent_32%),linear-gradient(135deg,#052e1b,#09090b_58%,#111827)] p-5 shadow-2xl shadow-green-950/30">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-green-400/20 blur-2xl" />
+            <div className="absolute -bottom-8 left-4 h-20 w-20 rounded-full bg-emerald-500/10 blur-2xl" />
+
+            <div className="relative flex min-h-28 items-center justify-between gap-4">
+              <h2 className="max-w-[13rem] text-3xl font-black leading-tight">
+                Стань кращою версією себе
+              </h2>
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-green-400/30 bg-black/35 text-4xl shadow-xl">
+                🔥
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     );
