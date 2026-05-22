@@ -1642,11 +1642,11 @@ async function updateWeight() {
             <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-green-400/20 blur-2xl" />
             <div className="absolute -bottom-8 left-4 h-20 w-20 rounded-full bg-emerald-500/10 blur-2xl" />
 
-            <div className="relative flex min-h-28 items-center justify-between gap-4">
-              <h2 className="max-w-[13rem] text-3xl font-black leading-tight">
+            <div className="relative flex min-h-24 items-center justify-between gap-4">
+              <h2 className="whitespace-nowrap text-x0.2 font-black leading-tight">
                 Стань кращою версією себе
               </h2>
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-green-400/30 bg-black/35 text-4xl shadow-xl">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-green-400/30 bg-black/35 text-3xl shadow-xl">
                 🔥
               </div>
             </div>
