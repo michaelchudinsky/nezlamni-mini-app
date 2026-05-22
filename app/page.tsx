@@ -224,7 +224,6 @@ const TASK_ORDER: Record<string, number> = {
 };
 
 const DAILY_POINTS_MAX = 30;
-const START_INTRO_STORAGE_KEY = "nezlamni_v2_start_intro_seen";
 const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
 
 const START_INTRO_SLIDES: OnboardingSlide[] = [
@@ -373,9 +372,7 @@ export default function Home() {
   const [isFeedbackSaving, setIsFeedbackSaving] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [hasSeenStartIntro, setHasSeenStartIntro] = useState<boolean | null>(
-    null
-  );
+  const [isStartIntroDone, setIsStartIntroDone] = useState(false);
   const [startIntroStep, setStartIntroStep] = useState(0);
 
   const [name, setName] = useState("");
@@ -540,16 +537,6 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       if (!hasSeenOnboarding) {
         setIsOnboardingOpen(true);
       }
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setHasSeenStartIntro(
-        window.localStorage.getItem(START_INTRO_STORAGE_KEY) === "1"
-      );
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -864,9 +851,8 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
   function showNextStartIntroStep() {
     if (startIntroStep >= START_INTRO_SLIDES.length - 1) {
-      window.localStorage.setItem(START_INTRO_STORAGE_KEY, "1");
       window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
-      setHasSeenStartIntro(true);
+      setIsStartIntroDone(true);
       setStartIntroStep(0);
       return;
     }
@@ -1545,15 +1531,7 @@ async function updateWeight() {
   if (!profile.start_weight || !profile.target_weight) {
     const startIntroSlide = START_INTRO_SLIDES[startIntroStep];
 
-    if (hasSeenStartIntro === null) {
-      return (
-        <main className="min-h-screen bg-black p-6 text-white">
-          Заряжаємось...
-        </main>
-      );
-    }
-
-    if (!hasSeenStartIntro) {
+    if (!isStartIntroDone) {
       return (
         <main className="min-h-screen bg-black p-5 text-white">
           <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-md flex-col justify-between">
