@@ -1537,7 +1537,7 @@ async function updateWeight() {
         <main className="min-h-screen bg-black p-5 text-white">
           <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-md flex-col justify-between">
             <header className="pt-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-red-400">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
                 Power of control
               </p>
               <h1 className="mt-2 text-4xl font-black">NEZLAMNI 🔥</h1>
@@ -1546,8 +1546,8 @@ async function updateWeight() {
               </p>
             </header>
 
-            <section className="rounded-[2rem] border border-red-500/30 bg-zinc-950 p-5 shadow-2xl shadow-red-950/30">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-400">
+            <section className="rounded-[2rem] border border-green-500/30 bg-zinc-950 p-5 shadow-2xl shadow-green-950/30">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-green-400">
                 {startIntroSlide.eyebrow}
               </p>
               <h2 className="mt-3 text-3xl font-black leading-tight">
@@ -1563,7 +1563,7 @@ async function updateWeight() {
                     key={bullet}
                     className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3"
                   >
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-red-600 text-sm font-black text-white">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-green-500 text-sm font-black text-black">
                       ✓
                     </span>
                     <span className="text-sm font-bold">{bullet}</span>
@@ -1579,7 +1579,7 @@ async function updateWeight() {
                     key={slide.title}
                     className={`h-2 rounded-full transition-all ${
                       index === startIntroStep
-                        ? "w-8 bg-red-500"
+                        ? "w-8 bg-green-400"
                         : "w-2 bg-zinc-700"
                     }`}
                   />
@@ -1588,7 +1588,7 @@ async function updateWeight() {
 
               <button
                 onClick={showNextStartIntroStep}
-                className="w-full rounded-2xl bg-red-700 p-4 text-base font-black shadow-lg shadow-red-950/40"
+                className="w-full rounded-2xl bg-green-600 p-4 text-base font-black"
               >
                 {startIntroStep === START_INTRO_SLIDES.length - 1
                   ? "Хочу стати незламною"
@@ -1633,9 +1633,9 @@ async function updateWeight() {
 
             <button
               onClick={saveProfile}
-              className="w-full bg-red-700 rounded-xl p-3 font-bold shadow-lg shadow-red-950/40"
+              className="w-full bg-green-600 rounded-xl p-3 font-bold"
             >
-Почати шлях            </button>
+Почати свій шлях            </button>
           </div>
 
           <Image
