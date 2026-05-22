@@ -282,6 +282,8 @@ export default function Home() {
   const [isNightModalOpen, setIsNightModalOpen] = useState(false);
   const [isNightInfoOpen, setIsNightInfoOpen] = useState(false);
   const [rewardToast, setRewardToast] = useState("");
+  const [feedbackText, setFeedbackText] = useState("");
+  const [isFeedbackSaving, setIsFeedbackSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -1246,6 +1248,36 @@ async function updateWeight() {
 
   setMessage("⚖️ Вага оновлена!");
 }
+
+  async function submitFeedback() {
+    if (!profile || isFeedbackSaving) return;
+
+    const text = feedbackText.trim();
+
+    if (text.length < 3) {
+      setMessage("Напиши хоча б кілька слів, щоб ми зрозуміли думку.");
+      return;
+    }
+
+    setIsFeedbackSaving(true);
+
+    const { error } = await supabase.from("feedback_messages").insert({
+      profile_id: profile.id,
+      message: text,
+      screen: activeTab,
+    });
+
+    setIsFeedbackSaving(false);
+
+    if (error) {
+      showSaveError("submit feedback", error);
+      return;
+    }
+
+    setFeedbackText("");
+    setMessage("Дякуємо! Коментар збережено.");
+  }
+
   async function completeTask(task: Task) {
     if (!profile) return;
 
@@ -1737,6 +1769,38 @@ async function updateWeight() {
               >
                 Перейти до завдань
               </button>
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Коментар розробникам
+              </p>
+              <h2 className="mt-1 text-2xl font-black">Що покращити?</h2>
+              <p className="mt-2 text-sm text-zinc-400">
+                Напиши, якщо щось незручно, незрозуміло або зламалось.
+              </p>
+
+              <textarea
+                value={feedbackText}
+                onChange={(event) => setFeedbackText(event.target.value)}
+                maxLength={1000}
+                rows={4}
+                placeholder="Наприклад: не зрозумів, як зарахувати воду..."
+                className="mt-4 w-full resize-none rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-green-500"
+              />
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-xs text-zinc-500">
+                  {feedbackText.trim().length}/1000
+                </span>
+                <button
+                  onClick={submitFeedback}
+                  disabled={isFeedbackSaving || feedbackText.trim().length < 3}
+                  className="rounded-full bg-green-600 px-5 py-3 text-sm font-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                >
+                  {isFeedbackSaving ? "Зберігаю..." : "Надіслати"}
+                </button>
+              </div>
             </section>
           </div>
         )}
