@@ -224,7 +224,41 @@ const TASK_ORDER: Record<string, number> = {
 };
 
 const DAILY_POINTS_MAX = 30;
+const START_INTRO_STORAGE_KEY = "nezlamni_v2_start_intro_seen";
 const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
+
+const START_INTRO_SLIDES: OnboardingSlide[] = [
+  {
+    eyebrow: "Ласкаво просимо",
+    title: "NEZLAMNI — це твій 30-денний шлях до контролю.",
+    text: "Ми не обіцяємо магію. Ми даємо систему: маленькі щоденні дії, які повертають тобі тіло, енергію і віру в себе.",
+    bullets: [
+      "Без хаосу і зривів",
+      "З балами за кожну дію",
+      "З відчуттям: я знову керую собою",
+    ],
+  },
+  {
+    eyebrow: "Як це працює",
+    title: "Кожен день ти збираєш 4 бази схуднення.",
+    text: "Вода, харчування з білком, рух і сон. Відмічай виконане протягом дня, отримуй бали і тримай streak.",
+    bullets: [
+      "Максимум 30 балів на день",
+      "Пункти можна додавати поступово",
+      "Випадковий вибір можна скасувати",
+    ],
+  },
+  {
+    eyebrow: "Твій результат",
+    title: "Ти стаєш не ідеальною. Ти стаєш незламною.",
+    text: "Через 30 днів ти побачиш не тільки цифру на вагах, а нову дисципліну: менше хаосу, більше сили, більше поваги до себе.",
+    bullets: [
+      "Стартуй з анкети",
+      "Вкажи вагу і ціль",
+      "Почни перший день сьогодні",
+    ],
+  },
+];
 
 const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
@@ -339,6 +373,10 @@ export default function Home() {
   const [isFeedbackSaving, setIsFeedbackSaving] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [hasSeenStartIntro, setHasSeenStartIntro] = useState<boolean | null>(
+    null
+  );
+  const [startIntroStep, setStartIntroStep] = useState(0);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -502,6 +540,16 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       if (!hasSeenOnboarding) {
         setIsOnboardingOpen(true);
       }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setHasSeenStartIntro(
+        window.localStorage.getItem(START_INTRO_STORAGE_KEY) === "1"
+      );
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -812,6 +860,18 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     }
 
     setOnboardingStep((currentStep) => currentStep + 1);
+  }
+
+  function showNextStartIntroStep() {
+    if (startIntroStep >= START_INTRO_SLIDES.length - 1) {
+      window.localStorage.setItem(START_INTRO_STORAGE_KEY, "1");
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
+      setHasSeenStartIntro(true);
+      setStartIntroStep(0);
+      return;
+    }
+
+    setStartIntroStep((currentStep) => currentStep + 1);
   }
 
   async function completeWaterItem(item: WaterItem) {
@@ -1483,6 +1543,84 @@ async function updateWeight() {
   }
 
   if (!profile.start_weight || !profile.target_weight) {
+    const startIntroSlide = START_INTRO_SLIDES[startIntroStep];
+
+    if (hasSeenStartIntro === null) {
+      return (
+        <main className="min-h-screen bg-black p-6 text-white">
+          Завантаження...
+        </main>
+      );
+    }
+
+    if (!hasSeenStartIntro) {
+      return (
+        <main className="min-h-screen bg-black p-5 text-white">
+          <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-md flex-col justify-between">
+            <header className="pt-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
+                Mini App
+              </p>
+              <h1 className="mt-2 text-4xl font-black">NEZLAMNI 🔥</h1>
+              <p className="mt-1 text-sm text-zinc-400">
+                Сила. Дисципліна. Незламність.
+              </p>
+            </header>
+
+            <section className="rounded-[2rem] border border-green-500/30 bg-zinc-950 p-5 shadow-2xl shadow-green-950/30">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-green-400">
+                {startIntroSlide.eyebrow}
+              </p>
+              <h2 className="mt-3 text-3xl font-black leading-tight">
+                {startIntroSlide.title}
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+                {startIntroSlide.text}
+              </p>
+
+              <div className="mt-6 space-y-2">
+                {startIntroSlide.bullets.map((bullet) => (
+                  <div
+                    key={bullet}
+                    className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3"
+                  >
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-green-500 text-sm font-black text-black">
+                      ✓
+                    </span>
+                    <span className="text-sm font-bold">{bullet}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <footer className="pb-3">
+              <div className="mb-4 flex justify-center gap-2">
+                {START_INTRO_SLIDES.map((slide, index) => (
+                  <span
+                    key={slide.title}
+                    className={`h-2 rounded-full transition-all ${
+                      index === startIntroStep
+                        ? "w-8 bg-green-400"
+                        : "w-2 bg-zinc-700"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={showNextStartIntroStep}
+                className="w-full rounded-2xl bg-green-600 p-4 text-base font-black"
+              >
+                {startIntroStep === START_INTRO_SLIDES.length - 1
+                  ? "Хочу стати незламною"
+                  : "Далі"}
+              </button>
+            </footer>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="min-h-screen bg-black text-white p-6">
         <div className="max-w-md mx-auto">
