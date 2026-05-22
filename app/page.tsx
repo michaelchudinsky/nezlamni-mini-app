@@ -68,6 +68,11 @@ type CompletedTaskLog = {
   task_code: string;
 };
 
+type DailyLogStats = {
+  points: number | null;
+  event_day: string | null;
+};
+
 type TaskMeta = {
   emoji: string;
   title: string;
@@ -450,6 +455,63 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     return new Date().toISOString().slice(0, 10);
   }
 
+  async function syncProfileStats(profileId: string) {
+    const { data: logs, error: logsError } = await supabase
+      .from("daily_logs")
+      .select("points, event_day")
+      .eq("profile_id", profileId);
+
+    if (logsError) {
+      setMessage("Помилка перерахунку балів: " + logsError.message);
+      return null;
+    }
+
+    const dailyLogs = (logs || []) as DailyLogStats[];
+    const todayDate = today();
+    const pointsTotal = dailyLogs.reduce(
+      (sum, log) => sum + (log.points || 0),
+      0
+    );
+    const pointsToday = dailyLogs
+      .filter((log) => log.event_day === todayDate)
+      .reduce((sum, log) => sum + (log.points || 0), 0);
+    const activeDays = Array.from(
+      new Set(dailyLogs.map((log) => log.event_day).filter(Boolean))
+    ).sort() as string[];
+    const lastActivityDate = activeDays.at(-1) || null;
+    let streakCurrent = 0;
+
+    if (lastActivityDate) {
+      const activeDaySet = new Set(activeDays);
+      const cursor = new Date(`${lastActivityDate}T00:00:00`);
+
+      while (activeDaySet.has(cursor.toISOString().slice(0, 10))) {
+        streakCurrent += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+    }
+
+    const { data: updatedProfile, error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        points_today: pointsToday,
+        points_total: pointsTotal,
+        streak_current: streakCurrent,
+        last_activity_date: lastActivityDate,
+      })
+      .eq("id", profileId)
+      .select()
+      .single();
+
+    if (updateError) {
+      setMessage("Помилка синхронізації профілю: " + updateError.message);
+      return null;
+    }
+
+    setProfile(updatedProfile);
+    return updatedProfile as Profile;
+  }
+
   function getDaysWithUs() {
     if (!profile?.registration_date) return 1;
 
@@ -684,6 +746,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         currentCodes.filter((code) => code !== item.code)
       );
       setMessage(`↩️ Скасовано: ${item.title} -1 бал`);
+      await syncProfileStats(profile.id);
       await fetchLeaderboard();
       return;
     }
@@ -755,6 +818,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`💧 Вода зарахована: ${item.title} +1 бал`);
     showRewardToast(1);
+    await syncProfileStats(profile.id);
     await fetchLeaderboard();
   }
 
@@ -799,6 +863,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         currentCodes.filter((code) => code !== item.code)
       );
       setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await syncProfileStats(profile.id);
       await fetchLeaderboard();
       return;
     }
@@ -873,6 +938,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`🥗 Харчування зараховано: ${item.title} +${item.points} бали`);
     showRewardToast(item.points);
+    await syncProfileStats(profile.id);
     await fetchLeaderboard();
   }
 
@@ -917,6 +983,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         currentCodes.filter((code) => code !== item.code)
       );
       setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await syncProfileStats(profile.id);
       await fetchLeaderboard();
       return;
     }
@@ -991,6 +1058,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`⚡ Активність зарахована: ${item.title} +${item.points} бали`);
     showRewardToast(item.points);
+    await syncProfileStats(profile.id);
     await fetchLeaderboard();
   }
 
@@ -1035,6 +1103,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         currentCodes.filter((code) => code !== item.code)
       );
       setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await syncProfileStats(profile.id);
       await fetchLeaderboard();
       return;
     }
@@ -1108,6 +1177,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`🌙 Сон зараховано: ${item.title} +${item.points} бали`);
     showRewardToast(item.points);
+    await syncProfileStats(profile.id);
     await fetchLeaderboard();
   }
 async function updateWeight() {
@@ -1227,6 +1297,7 @@ async function updateWeight() {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, task.code]);
     setMessage(`🔥 Зараховано! ${task.title} +${task.points} балів`);
     showRewardToast(task.points);
+    await syncProfileStats(profile.id);
     await fetchLeaderboard();
   }
 
