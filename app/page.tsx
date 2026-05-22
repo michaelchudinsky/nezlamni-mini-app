@@ -2486,8 +2486,13 @@ async function updateWeight() {
       </div>
 
       {isWaterModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/70 px-3 pb-3">
-          <div className="max-h-[75vh] w-full overflow-y-auto rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+        <div className="fixed inset-0 z-40 flex items-end bg-black/75 px-3 pb-3">
+          <div className="pointer-events-none absolute inset-x-0 top-8 text-center text-sm font-black text-white">
+            Збережи прогрес ↓
+          </div>
+
+          <div className="flex h-[80vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-zinc-800 bg-zinc-950 shadow-2xl">
+            <div className="overflow-y-auto p-5 pb-4">
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
 
             <div className="mb-5 flex items-start justify-between gap-4">
@@ -2504,6 +2509,16 @@ async function updateWeight() {
               >
                 ×
               </button>
+            </div>
+
+            <div className="mb-4 rounded-2xl border border-green-500/25 bg-green-950/20 p-4">
+              <p className="text-sm font-black text-green-300">
+                Можна повертатися протягом дня
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                Відмічай воду поступово. Натиснула випадково — натисни ще раз,
+                щоб скасувати пункт.
+              </p>
             </div>
 
             <div className="mb-4 rounded-3xl bg-zinc-900 p-4">
@@ -2576,10 +2591,11 @@ async function updateWeight() {
 
             <button
               onClick={() => setIsWaterModalOpen(false)}
-              className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black"
+              className="sticky bottom-0 mt-5 w-full rounded-2xl bg-green-600 p-4 font-black shadow-lg shadow-green-950/40"
             >
               Зберегти прогрес
             </button>
+            </div>
           </div>
         </div>
       )}
