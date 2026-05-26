@@ -40,6 +40,8 @@ type LeaderboardUser = {
   status: ProfileStatus;
 };
 
+type LeaderboardMode = "month" | "newcomers";
+
 type TelegramUser = {
   id?: number | string;
   first_name?: string | null;
@@ -61,16 +63,19 @@ type TelegramWindow = Window & {
 type LeaderboardLog = {
   profile_id: string;
   points: number | null;
+  event_day: string | null;
   profiles:
     | {
         first_name: string | null;
         telegram_id: string | null;
         points_total: number | null;
+        registration_date: string | null;
       }
     | {
         first_name: string | null;
         telegram_id: string | null;
         points_total: number | null;
+        registration_date: string | null;
       }[]
     | null;
 };
@@ -339,6 +344,45 @@ const TASK_ORDER: Record<string, number> = {
 const DAILY_POINTS_MAX = 30;
 const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
 
+function getMonthValue(date = new Date()) {
+  return date.toISOString().slice(0, 7);
+}
+
+function getMonthRange(monthValue: string) {
+  const start = new Date(`${monthValue}-01T00:00:00`);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+  end.setDate(end.getDate() - 1);
+
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+  };
+}
+
+function shiftMonth(monthValue: string, shift: number) {
+  const date = new Date(`${monthValue}-01T00:00:00`);
+  date.setMonth(date.getMonth() + shift);
+
+  return getMonthValue(date);
+}
+
+function addDaysToDate(dateValue: string, days: number) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  date.setDate(date.getDate() + days);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function getMonthLabel(monthValue: string) {
+  const date = new Date(`${monthValue}-01T00:00:00`);
+
+  return new Intl.DateTimeFormat("uk-UA", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
 const START_INTRO_SLIDES: OnboardingSlide[] = [
   {
     eyebrow: "Ласкаво просимо",
@@ -469,6 +513,9 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [completedTaskCodes, setCompletedTaskCodes] = useState<string[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [leaderboardMode, setLeaderboardMode] =
+    useState<LeaderboardMode>("month");
+  const [leaderboardMonth, setLeaderboardMonth] = useState(getMonthValue());
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("home");
@@ -560,15 +607,20 @@ function getProfileStatusByPoints(total: number) {
 }
 
 const fetchLeaderboard = useCallback(async () => {
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-
-  const monthStart = startOfMonth.toISOString().slice(0, 10);
+  const { start: monthStart, end: monthEnd } = getMonthRange(leaderboardMonth);
+  const newcomerRegistrationStart = addDaysToDate(monthStart, -29);
+  const newcomerRegistrationEnd = addDaysToDate(monthEnd, -29);
 
   const { data, error } = await supabase
     .from("daily_logs")
-    .select("profile_id, points, profiles(first_name, telegram_id, points_total)")
-    .gte("event_day", monthStart);
+    .select(
+      "profile_id, points, event_day, profiles(first_name, telegram_id, points_total, registration_date)"
+    )
+    .gte(
+      "event_day",
+      leaderboardMode === "newcomers" ? newcomerRegistrationStart : monthStart
+    )
+    .lte("event_day", monthEnd);
 
   if (error) {
     showLoadError("fetch leaderboard", error);
@@ -587,6 +639,28 @@ const fetchLeaderboard = useCallback(async () => {
       `User ${profileData?.telegram_id || ""}`;
     const totalPoints = profileData?.points_total || 0;
     const status = getProfileStatusByPoints(totalPoints);
+    const registrationDate = profileData?.registration_date || null;
+
+    if (leaderboardMode === "newcomers") {
+      if (!registrationDate || !log.event_day) return;
+
+      const first30EndDate = addDaysToDate(registrationDate, 29);
+      const isFirst30EndingInSelectedMonth =
+        first30EndDate >= monthStart && first30EndDate <= monthEnd;
+      const isLogInsideFirst30Days =
+        log.event_day >= registrationDate && log.event_day <= first30EndDate;
+      const isRegistrationInExpectedRange =
+        registrationDate >= newcomerRegistrationStart &&
+        registrationDate <= newcomerRegistrationEnd;
+
+      if (
+        !isRegistrationInExpectedRange ||
+        !isFirst30EndingInSelectedMonth ||
+        !isLogInsideFirst30Days
+      ) {
+        return;
+      }
+    }
 
     const existing = map.get(profileId);
 
@@ -608,7 +682,7 @@ const fetchLeaderboard = useCallback(async () => {
     .slice(0, 10);
 
   setLeaderboard(sorted);
-}, [showLoadError]);
+}, [leaderboardMode, leaderboardMonth, showLoadError]);
 
 const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
   const { data, error } = await supabase
@@ -652,6 +726,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     return () => window.clearTimeout(timer);
   }, [init]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    void fetchLeaderboard();
+  }, [fetchLeaderboard, profile]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -2309,10 +2389,72 @@ async function updateWeight() {
                 ‹
               </button>
               <h1 className="text-2xl font-black">Рейтинг</h1>
-              <div className="rounded-full bg-zinc-900 px-3 py-2 text-sm text-zinc-300">
-                Місяць
-              </div>
+              <span />
             </header>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="grid grid-cols-2 rounded-2xl bg-zinc-950 p-1 text-sm font-black">
+                <button
+                  onClick={() => setLeaderboardMode("month")}
+                  className={`rounded-xl px-3 py-2 ${
+                    leaderboardMode === "month"
+                      ? "bg-green-500 text-zinc-950"
+                      : "text-zinc-400"
+                  }`}
+                >
+                  Місяць
+                </button>
+                <button
+                  onClick={() => setLeaderboardMode("newcomers")}
+                  className={`rounded-xl px-3 py-2 ${
+                    leaderboardMode === "newcomers"
+                      ? "bg-green-500 text-zinc-950"
+                      : "text-zinc-400"
+                  }`}
+                >
+                  Новачки
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <button
+                  onClick={() =>
+                    setLeaderboardMonth((currentMonth) =>
+                      shiftMonth(currentMonth, -1)
+                    )
+                  }
+                  className="grid h-10 w-10 place-items-center rounded-full bg-zinc-800 text-xl"
+                >
+                  ‹
+                </button>
+                <div className="text-center">
+                  <p className="text-xs font-bold uppercase text-green-400">
+                    {leaderboardMode === "month"
+                      ? "Рейтинг місяця"
+                      : "Перші 30 днів"}
+                  </p>
+                  <p className="text-lg font-black capitalize">
+                    {getMonthLabel(leaderboardMonth)}
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setLeaderboardMonth((currentMonth) =>
+                      shiftMonth(currentMonth, 1)
+                    )
+                  }
+                  className="grid h-10 w-10 place-items-center rounded-full bg-zinc-800 text-xl"
+                >
+                  ›
+                </button>
+              </div>
+
+              <p className="mt-3 text-center text-xs leading-relaxed text-zinc-500">
+                {leaderboardMode === "month"
+                  ? "Місця рахуються за календарний місяць."
+                  : "Тут учасниці, у яких у цьому місяці завершується перші 30 днів."}
+              </p>
+            </section>
 
             {topUsers.length > 0 && (
               <section className="grid grid-cols-3 items-end gap-3">
@@ -2337,7 +2479,11 @@ async function updateWeight() {
             )}
 
             {leaderboard.length === 0 ? (
-              <p className="text-zinc-400">Поки немає учасників</p>
+              <p className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
+                {leaderboardMode === "month"
+                  ? "Поки немає учасників у цьому місяці."
+                  : "Поки немає новачків, у яких перші 30 днів завершуються в цьому місяці."}
+              </p>
             ) : (
               <div className="space-y-2 rounded-3xl border border-zinc-800 bg-zinc-900 p-3">
                 {restUsers.map((user, index) => (
