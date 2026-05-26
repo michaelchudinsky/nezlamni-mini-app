@@ -137,6 +137,73 @@ type ReminderOption = {
   description: string;
 };
 
+type ProfileStatus = {
+  title: string;
+  points: number;
+  icon: string;
+  description: string;
+  bonus: string;
+};
+
+const PROFILE_STATUSES: ProfileStatus[] = [
+  {
+    title: "Новачок",
+    points: 0,
+    icon: "🥉",
+    description: "Перший крок у системі. Головне — почати і не зникнути.",
+    bonus: "Стартовий доступ до базових завдань",
+  },
+  {
+    title: "Боєць",
+    points: 100,
+    icon: "🥈",
+    description: "Ти вже не просто дивишся. Ти почала діяти щодня.",
+    bonus: "Перший статус у профілі",
+  },
+  {
+    title: "Воїн",
+    points: 300,
+    icon: "🥇",
+    description: "Дисципліна стає помітною. Ти тримаєш темп.",
+    bonus: "Підсилення в рейтингу статусом",
+  },
+  {
+    title: "Незламний",
+    points: 700,
+    icon: "⚔️",
+    description: "Ти вже маєш характер системної людини.",
+    bonus: "Відкриття майбутніх бонусів спільноти",
+  },
+  {
+    title: "Легенда",
+    points: 1500,
+    icon: "🔥",
+    description: "Твій шлях видно по діях, а не по словах.",
+    bonus: "Майбутній бейдж у публічному профілі",
+  },
+  {
+    title: "Командир",
+    points: 3000,
+    icon: "👑",
+    description: "Ти можеш вести за собою інших і бути прикладом.",
+    bonus: "Майбутній доступ до лідерських челенджів",
+  },
+  {
+    title: "Титан",
+    points: 6000,
+    icon: "🛡️",
+    description: "Стабільність стала твоєю силою, а не випадковістю.",
+    bonus: "Майбутній premium-бонус",
+  },
+  {
+    title: "Світлоносний",
+    points: 10000,
+    icon: "☀️",
+    description: "Фінальний статус сили, дисципліни і прикладу для інших.",
+    bonus: "Особливий статус легенди NEZLAMNI",
+  },
+];
+
 const REMINDER_OPTIONS: ReminderOption[] = [
   {
     key: "reminder_morning_enabled",
@@ -681,17 +748,36 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   }
 
   function getLevel() {
+    const status = getCurrentProfileStatus();
+
+    return `${status.icon} ${status.title}`;
+  }
+
+  function getCurrentProfileStatus() {
     const total = profile?.points_total || 0;
 
-    if (total >= 10000) return "☀️ Світлоносний";
-    if (total >= 6000) return "🛡️ Титан";
-    if (total >= 3000) return "👑 Командир";
-    if (total >= 1500) return "🔥 Легенда";
-    if (total >= 700) return "⚔️ Незламний";
-    if (total >= 300) return "🥇 Воїн";
-    if (total >= 100) return "🥈 Боєць";
+    return [...PROFILE_STATUSES]
+      .reverse()
+      .find((status) => total >= status.points) || PROFILE_STATUSES[0];
+  }
 
-    return "🥉 Новачок";
+  function getNextProfileStatus() {
+    const total = profile?.points_total || 0;
+
+    return PROFILE_STATUSES.find((status) => status.points > total) || null;
+  }
+
+  function getProfileStatusProgress() {
+    const total = profile?.points_total || 0;
+    const currentStatus = getCurrentProfileStatus();
+    const nextStatus = getNextProfileStatus();
+
+    if (!nextStatus) return 100;
+
+    const distance = nextStatus.points - currentStatus.points;
+    const earned = total - currentStatus.points;
+
+    return Math.min(100, Math.max(0, Math.round((earned / distance) * 100)));
   }
 
   function getWeightProgress() {
@@ -836,7 +922,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     return {
       title: "День закрито сильно",
       description: "Ти забрав максимум бази. Тримай темп і не перегоряй.",
-      action: "Подивитись нагороди",
+      action: "Подивитись статус",
       onClick: () => setActiveTab("rewards"),
     };
   }
@@ -1771,6 +1857,9 @@ async function updateWeight() {
   );
   const dayStatus = getDayStatus(dayPoints);
   const todayFocus = getTodayFocus();
+  const currentProfileStatus = getCurrentProfileStatus();
+  const nextProfileStatus = getNextProfileStatus();
+  const profileStatusProgress = getProfileStatusProgress();
   const taskSummaries = [
     {
       code: "night",
@@ -2589,54 +2678,98 @@ async function updateWeight() {
               >
                 ‹
               </button>
-              <h1 className="text-2xl font-black">Нагороди</h1>
+              <h1 className="text-2xl font-black">Статуси</h1>
               <span />
             </header>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
               <p className="text-sm font-bold text-green-400">
-                Наступна нагорода
+                Твій статус профілю
               </p>
-              <div className="mt-3 flex items-center justify-between gap-4">
+              <div className="mt-3 flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black">Скриня хоробрості</h2>
-                  <p className="text-sm text-zinc-400">
-                    {profile.points_total || 0} / 2 000 балів
+                  <h2 className="text-3xl font-black">
+                    {currentProfileStatus.icon} {currentProfileStatus.title}
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                    {currentProfileStatus.description}
                   </p>
                 </div>
-                <div className="text-5xl">🎁</div>
+                <div className="text-right">
+                  <p className="text-3xl font-black">
+                    {profile.points_total || 0}
+                  </p>
+                  <p className="text-xs font-bold text-zinc-400">балів</p>
+                </div>
               </div>
               <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
                 <div
                   className="h-full rounded-full bg-green-500"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      ((profile.points_total || 0) / 2000) * 100
-                    )}%`,
-                  }}
+                  style={{ width: `${profileStatusProgress}%` }}
                 />
               </div>
+              {nextProfileStatus ? (
+                <p className="mt-3 text-sm text-zinc-400">
+                  До статусу {nextProfileStatus.icon} {nextProfileStatus.title}:{" "}
+                  {Math.max(
+                    0,
+                    nextProfileStatus.points - (profile.points_total || 0)
+                  )}{" "}
+                  балів
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-green-300">
+                  Максимальний статус відкрито. Це рівень легенди.
+                </p>
+              )}
             </section>
 
             <section className="space-y-3">
-              {[
-                ["Скриня хоробрості", "2 000 балів"],
-                ["Сила предків", "5 000 балів"],
-                ["Козацька воля", "10 000 балів"],
-                ["Легенда роду", "20 000 балів"],
-              ].map(([title, price]) => (
+              {PROFILE_STATUSES.map((status) => {
+                const isUnlocked = (profile.points_total || 0) >= status.points;
+                const isCurrent = status.title === currentProfileStatus.title;
+
+                return (
                 <div
-                  key={title}
-                  className="flex items-center justify-between rounded-2xl bg-zinc-900 p-4"
+                  key={status.title}
+                  className={`rounded-2xl border p-4 ${
+                    isCurrent
+                      ? "border-green-500/40 bg-green-950/30"
+                      : "border-zinc-800 bg-zinc-900"
+                  }`}
                 >
-                  <div>
-                    <p className="font-bold">{title}</p>
-                    <p className="text-sm text-zinc-400">{price}</p>
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-2xl ${
+                        isUnlocked ? "bg-green-500/15" : "bg-zinc-800"
+                      }`}
+                    >
+                      {status.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-black">{status.title}</p>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] font-black ${
+                            isUnlocked
+                              ? "bg-green-500/15 text-green-300"
+                              : "bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          {isUnlocked ? "відкрито" : `${status.points} балів`}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm leading-snug text-zinc-400">
+                        {status.description}
+                      </p>
+                      <p className="mt-2 text-xs font-bold text-green-300">
+                        Бонус: {status.bonus}
+                      </p>
+                    </div>
                   </div>
-                  <span>🔒</span>
                 </div>
-              ))}
+                );
+              })}
             </section>
           </div>
         )}
