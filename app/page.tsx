@@ -36,6 +36,8 @@ type LeaderboardUser = {
   profile_id: string;
   name: string;
   points: number;
+  totalPoints: number;
+  status: ProfileStatus;
 };
 
 type TelegramUser = {
@@ -63,10 +65,12 @@ type LeaderboardLog = {
     | {
         first_name: string | null;
         telegram_id: string | null;
+        points_total: number | null;
       }
     | {
         first_name: string | null;
         telegram_id: string | null;
+        points_total: number | null;
       }[]
     | null;
 };
@@ -549,6 +553,12 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
   return created as Profile;
 }, [showLoadError, showSaveError]);
 
+function getProfileStatusByPoints(total: number) {
+  return [...PROFILE_STATUSES]
+    .reverse()
+    .find((status) => total >= status.points) || PROFILE_STATUSES[0];
+}
+
 const fetchLeaderboard = useCallback(async () => {
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -557,7 +567,7 @@ const fetchLeaderboard = useCallback(async () => {
 
   const { data, error } = await supabase
     .from("daily_logs")
-    .select("profile_id, points, profiles(first_name, telegram_id)")
+    .select("profile_id, points, profiles(first_name, telegram_id, points_total)")
     .gte("event_day", monthStart);
 
   if (error) {
@@ -575,6 +585,8 @@ const fetchLeaderboard = useCallback(async () => {
     const name =
       profileData?.first_name ||
       `User ${profileData?.telegram_id || ""}`;
+    const totalPoints = profileData?.points_total || 0;
+    const status = getProfileStatusByPoints(totalPoints);
 
     const existing = map.get(profileId);
 
@@ -585,6 +597,8 @@ const fetchLeaderboard = useCallback(async () => {
         profile_id: profileId,
         name,
         points: log.points || 0,
+        totalPoints,
+        status,
       });
     }
   });
@@ -756,9 +770,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   function getCurrentProfileStatus() {
     const total = profile?.points_total || 0;
 
-    return [...PROFILE_STATUSES]
-      .reverse()
-      .find((status) => total >= status.points) || PROFILE_STATUSES[0];
+    return getProfileStatusByPoints(total);
   }
 
   function getNextProfileStatus() {
@@ -2315,6 +2327,9 @@ async function updateWeight() {
                       {user.name.slice(0, 1)}
                     </div>
                     <p className="font-bold">{user.name}</p>
+                    <p className="text-xs font-bold text-green-300">
+                      {user.status.icon} {user.status.title}
+                    </p>
                     <p className="text-green-400">{user.points}</p>
                   </div>
                 ))}
@@ -2331,12 +2346,107 @@ async function updateWeight() {
                     className="flex items-center justify-between rounded-2xl bg-zinc-800/70 p-3"
                   >
                     <span className="text-zinc-400">{index + 4}</span>
-                    <span className="flex-1 px-3">{user.name}</span>
+                    <span className="min-w-0 flex-1 px-3">
+                      <span className="block font-bold">{user.name}</span>
+                      <span className="block text-xs text-zinc-400">
+                        {user.status.icon} {user.status.title}
+                      </span>
+                    </span>
                     <span className="font-bold">{user.points}</span>
                   </div>
                 ))}
               </div>
             )}
+
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Твій наступний статус
+              </p>
+              <div className="mt-3 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black">
+                    {currentProfileStatus.icon} {currentProfileStatus.title}
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                    {currentProfileStatus.description}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black">
+                    {profile.points_total || 0}
+                  </p>
+                  <p className="text-xs text-zinc-400">всього</p>
+                </div>
+              </div>
+
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{ width: `${profileStatusProgress}%` }}
+                />
+              </div>
+
+              {nextProfileStatus ? (
+                <div className="mt-4 rounded-2xl bg-zinc-950/60 p-4">
+                  <p className="text-sm font-bold text-zinc-300">
+                    Далі: {nextProfileStatus.icon} {nextProfileStatus.title}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {nextProfileStatus.description}
+                  </p>
+                  <p className="mt-2 text-xs font-bold text-green-300">
+                    Потрібно ще{" "}
+                    {Math.max(
+                      0,
+                      nextProfileStatus.points - (profile.points_total || 0)
+                    )}{" "}
+                    балів
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-green-300">
+                  Максимальний статус відкрито.
+                </p>
+              )}
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-lg font-black">Усі статуси</h2>
+              {PROFILE_STATUSES.map((status) => {
+                const isUnlocked = (profile.points_total || 0) >= status.points;
+                const isCurrent = status.title === currentProfileStatus.title;
+
+                return (
+                  <div
+                    key={status.title}
+                    className={`flex items-start gap-3 rounded-2xl border p-4 ${
+                      isCurrent
+                        ? "border-green-500/40 bg-green-950/30"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <div
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl ${
+                        isUnlocked ? "bg-green-500/15" : "bg-zinc-800"
+                      }`}
+                    >
+                      {status.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-black">{status.title}</p>
+                        <span className="text-xs font-bold text-zinc-400">
+                          {status.points} балів
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        {status.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
           </div>
         )}
 
