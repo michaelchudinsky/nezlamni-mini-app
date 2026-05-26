@@ -166,7 +166,7 @@ const PROFILE_STATUSES: ProfileStatus[] = [
     title: "Боєць",
     points: 100,
     icon: "🥈",
-    description: "Ти вже не просто дивишся. Ти почала діяти щодня.",
+    description: "Ти вже не просто дивишся. Ти почав діяти щодня.",
     bonus: "Перший статус у профілі",
   },
   {
@@ -322,7 +322,7 @@ const NIGHT_ITEMS: NightItem[] = [
     code: "night_sleep_7",
     title: "Сон 7+ годин",
     description:
-      "Ранковий check за попередню ніч: спав/спала 7 годин або більше.",
+      "Ранковий check за попередню ніч: спав 7 годин або більше.",
     points: 3,
   },
   {
@@ -406,7 +406,7 @@ const START_INTRO_SLIDES: OnboardingSlide[] = [
   },
   {
     eyebrow: "Твій результат",
-    title: "Ти стаєш не ідеальною. Ти стаєш незламною.",
+    title: "Ти стаєш не ідеальним. Ти стаєш незламним.",
     text: "Через 30 днів ти побачиш не тільки цифру на вагах, а нову дисципліну: менше хаосу, більше сили, більше поваги до себе.",
     bullets: [
       "Стартуй з анкети",
@@ -430,7 +430,7 @@ const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
     eyebrow: "Як працюють бали",
     title: "Максимум за день — 30 балів",
-    text: "Не треба бути ідеальною. Просто забирай свої пункти протягом дня і повертайся, коли виконала ще один крок.",
+    text: "Не треба бути ідеальним. Просто забирай свої пункти протягом дня і повертайся, коли виконав ще один крок.",
     bullets: [
       "Сон і ніч без їжі — до 5",
       "Вода — до 5",
@@ -1868,7 +1868,7 @@ async function updateWeight() {
                 className="w-full rounded-2xl bg-green-600 p-4 text-base font-black"
               >
                 {startIntroStep === START_INTRO_SLIDES.length - 1
-                  ? "Хочу стати незламною"
+                  ? "Хочу стати незламним"
                   : "Далі"}
               </button>
             </footer>
@@ -2412,7 +2412,7 @@ async function updateWeight() {
                       : "text-zinc-400"
                   }`}
                 >
-                  Новачки
+                  Перші 30 днів
                 </button>
               </div>
 
@@ -2452,7 +2452,7 @@ async function updateWeight() {
               <p className="mt-3 text-center text-xs leading-relaxed text-zinc-500">
                 {leaderboardMode === "month"
                   ? "Місця рахуються за календарний місяць."
-                  : "Тут учасниці, у яких у цьому місяці завершується перші 30 днів."}
+                  : "Тут учасники, у яких у цьому місяці завершуються перші 30 днів."}
               </p>
             </section>
 
@@ -2482,7 +2482,7 @@ async function updateWeight() {
               <p className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
                 {leaderboardMode === "month"
                   ? "Поки немає учасників у цьому місяці."
-                  : "Поки немає новачків, у яких перші 30 днів завершуються в цьому місяці."}
+                  : "Поки немає учасників, у яких перші 30 днів завершуються в цьому місяці."}
               </p>
             ) : (
               <div className="space-y-2 rounded-3xl border border-zinc-800 bg-zinc-900 p-3">
@@ -2617,7 +2617,7 @@ async function updateWeight() {
                 {profile.first_name || "User"}
               </h2>
               <p className="text-sm text-zinc-400">
-                Учасниця з {profile.registration_date || today()} ·{" "}
+                Учасник з {profile.registration_date || today()} ·{" "}
                 {getDaysWithUs()} днів з нами
               </p>
             </section>
@@ -3051,7 +3051,7 @@ async function updateWeight() {
                 Бонуси, марафони і преміум
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                Тут зʼявляться корисні продукти для учасниць: доступи,
+                Тут зʼявляться корисні продукти для учасників: доступи,
                 марафони, подарунки за бали та преміум-можливості.
               </p>
             </section>
@@ -3148,7 +3148,7 @@ async function updateWeight() {
                 Можна повертатися протягом дня
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                Відмічай воду поступово протягом дня. Натиснула випадково — натисни ще раз,
+                Відмічай воду поступово протягом дня. Натиснув випадково — натисни ще раз,
                 щоб скасувати пункт.
               </p>
             </div>
@@ -3310,7 +3310,7 @@ async function updateWeight() {
                 Можна повертатися протягом дня
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                Відмічай харчування ввечері. Натиснула випадково — натисни ще
+                Відмічай харчування ввечері. Натиснув випадково — натисни ще
                 раз, щоб скасувати пункт.
               </p>
             </div>
@@ -3471,7 +3471,7 @@ async function updateWeight() {
                 Можна повертатися протягом дня
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                Відмічай рух після прогулянки або тренування. Натиснула
+                Відмічай рух після прогулянки або тренування. Натиснув
                 випадково — натисни ще раз, щоб скасувати пункт.
               </p>
             </div>
@@ -3623,7 +3623,7 @@ async function updateWeight() {
                 Ранковий check за попередню ніч
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                Відмічай сон і ніч без їжі, вранці. Натиснула випадково —
+                Відмічай сон і ніч без їжі, вранці. Натиснув випадково —
                 натисни ще раз, щоб скасувати пункт.
               </p>
             </div>

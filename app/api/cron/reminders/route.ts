@@ -54,7 +54,7 @@ const REMINDERS: ReminderConfig[] = [
     texts: [
       "Доброго ранку, {name}. Відміть сон, випий воду і забери силу першого кроку.",
       "Новий день починається з дисципліни: сон, вода, фокус. Ти вже в грі.",
-      "Прокинулась — час увімкнути режим незламності. Сон і перша вода чекають.",
+      "Прокинувся — час увімкнути режим незламності. Сон і перша вода чекають.",
       "Сьогодні не треба ідеально. Треба почати: відміть сон і випий воду.",
       "Твоя перемога починається з ранку. Один check — і день уже під контролем.",
     ],
@@ -112,7 +112,7 @@ function getLocalDateParts(timeZone: string) {
 
 function pickReminderText(reminder: ReminderConfig, profile: Profile) {
   const index = Math.floor(Math.random() * reminder.texts.length);
-  const name = profile.first_name || "Незламна";
+  const name = profile.first_name || "Незламний";
 
   return reminder.texts[index].replace("{name}", name);
 }

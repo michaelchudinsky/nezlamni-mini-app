@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const firstName = profile.first_name || "Незламна";
+  const firstName = profile.first_name || "Незламний";
   const text = [
     `Привіт, ${firstName}!`,
     "Це тестове нагадування NEZLAMNI.",
