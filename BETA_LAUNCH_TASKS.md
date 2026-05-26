@@ -143,5 +143,5 @@
 - [x] Добавить защиту от дублей напоминаний за день
   - SQL подготовлен: `supabase/migrations/202605260002_create_reminder_deliveries.sql`
 - [x] Не отправлять утреннее/дневное напоминание, если нужные пункты уже закрыты
-- [ ] Выполнить SQL для `reminder_deliveries` в Supabase SQL Editor
+- [x] Выполнить SQL для `reminder_deliveries` в Supabase SQL Editor
 - [ ] Добавить тестовую отправку напоминания самому себе после деплоя
