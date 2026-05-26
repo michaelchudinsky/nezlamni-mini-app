@@ -24,6 +24,12 @@ type Profile = {
   target_weight: number | null;
   last_activity_date: string | null;
   registration_date: string | null;
+  reminders_enabled?: boolean | null;
+  reminder_morning_enabled?: boolean | null;
+  reminder_water_enabled?: boolean | null;
+  reminder_activity_enabled?: boolean | null;
+  reminder_sleep_enabled?: boolean | null;
+  timezone?: string | null;
 };
 
 type LeaderboardUser = {
@@ -116,6 +122,42 @@ type OnboardingSlide = {
   text: string;
   bullets: string[];
 };
+
+type ReminderSettingKey =
+  | "reminders_enabled"
+  | "reminder_morning_enabled"
+  | "reminder_water_enabled"
+  | "reminder_activity_enabled"
+  | "reminder_sleep_enabled";
+
+type ReminderOption = {
+  key: ReminderSettingKey;
+  title: string;
+  description: string;
+};
+
+const REMINDER_OPTIONS: ReminderOption[] = [
+  {
+    key: "reminder_morning_enabled",
+    title: "Ранковий старт",
+    description: "Нагадати відкрити день, сон і першу воду.",
+  },
+  {
+    key: "reminder_water_enabled",
+    title: "Вода до 16:00",
+    description: "Нагадати добрати 80% норми води вдень.",
+  },
+  {
+    key: "reminder_activity_enabled",
+    title: "Рух ввечері",
+    description: "Нагадати про прогулянку або тренування.",
+  },
+  {
+    key: "reminder_sleep_enabled",
+    title: "Сон і ніч без їжі",
+    description: "Нагадати завершити їжу до 20:00 і лягти вчасно.",
+  },
+];
 
 const WATER_ITEMS: WaterItem[] = [
   {
@@ -859,6 +901,28 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     }
 
     setStartIntroStep((currentStep) => currentStep + 1);
+  }
+
+  async function updateReminderSetting(
+    key: ReminderSettingKey,
+    value: boolean
+  ) {
+    if (!profile) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ [key]: value })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    if (error) {
+      showSaveError("update reminder setting", error);
+      return;
+    }
+
+    setProfile(data as Profile);
+    setMessage(value ? "Нагадування увімкнено." : "Нагадування вимкнено.");
   }
 
   async function completeWaterItem(item: WaterItem) {
@@ -2249,6 +2313,76 @@ async function updateWeight() {
                   </button>
                 </div>
               )}
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold text-green-400">
+                    Нагадування
+                  </p>
+                  <h2 className="mt-1 text-xl font-black">
+                    Бот підтримає дисципліну
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Це буде писати той самий Telegram-бот, через який
+                    відкривається Mini App.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() =>
+                    updateReminderSetting(
+                      "reminders_enabled",
+                      !(profile.reminders_enabled ?? true)
+                    )
+                  }
+                  className={`rounded-full px-4 py-2 text-sm font-black ${
+                    profile.reminders_enabled ?? true
+                      ? "bg-green-500 text-zinc-950"
+                      : "bg-zinc-800 text-zinc-400"
+                  }`}
+                >
+                  {profile.reminders_enabled ?? true ? "Увімк." : "Вимк."}
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {REMINDER_OPTIONS.map((option) => {
+                  const isEnabled = profile[option.key] ?? true;
+
+                  return (
+                    <button
+                      key={option.key}
+                      onClick={() =>
+                        updateReminderSetting(option.key, !isEnabled)
+                      }
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl bg-zinc-800/80 p-4 text-left"
+                    >
+                      <span>
+                        <span className="block font-bold">{option.title}</span>
+                        <span className="mt-1 block text-sm text-zinc-400">
+                          {option.description}
+                        </span>
+                      </span>
+                      <span
+                        className={`grid h-8 w-14 shrink-0 place-items-center rounded-full text-xs font-black ${
+                          isEnabled
+                            ? "bg-green-500 text-zinc-950"
+                            : "bg-zinc-700 text-zinc-400"
+                        }`}
+                      >
+                        {isEnabled ? "ON" : "OFF"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-4 text-xs text-zinc-500">
+                Наступний крок: підключити токен Telegram-бота і розклад
+                відправки.
+              </p>
             </section>
 
             <div className="space-y-3">
