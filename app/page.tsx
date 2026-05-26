@@ -2641,6 +2641,58 @@ async function updateWeight() {
           </div>
         )}
 
+        {activeTab === "shop" && (
+          <div className="space-y-5">
+            <header className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab("home")}
+                className="text-2xl"
+              >
+                ‹
+              </button>
+              <h1 className="text-2xl font-black">Shop</h1>
+              <span className="text-2xl">🛍️</span>
+            </header>
+
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Скоро в NEZLAMNI
+              </p>
+              <h2 className="mt-1 text-2xl font-black">
+                Бонуси, марафони і преміум
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                Тут зʼявляться корисні продукти для учасниць: доступи,
+                марафони, подарунки за бали та преміум-можливості.
+              </p>
+            </section>
+
+            <section className="grid gap-3">
+              {[
+                ["🎟️", "Марафон 30 днів", "Запуск після бета-тесту"],
+                ["🎁", "Подарунки за бали", "Обмін балів на бонуси"],
+                ["⭐", "Premium", "Додаткові інструменти і підтримка"],
+              ].map(([icon, title, description]) => (
+                <div
+                  key={title}
+                  className="flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4"
+                >
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-800 text-2xl">
+                    {icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-black">{title}</p>
+                    <p className="text-sm text-zinc-400">{description}</p>
+                  </div>
+                  <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-black text-zinc-400">
+                    soon
+                  </span>
+                </div>
+              ))}
+            </section>
+          </div>
+        )}
+
         {activeTab === "photo" && (
           <div className="space-y-5">
             <header className="flex items-center justify-between">
@@ -3308,40 +3360,36 @@ async function updateWeight() {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3">
-        <div className="max-w-md mx-auto grid grid-cols-4 gap-2 text-xs text-center">
-          <button
-            onClick={() => setActiveTab("home")}
-            className={activeTab === "home" ? "text-green-400" : "text-zinc-400"}
-          >
-            🏠<br />Головна
-          </button>
-          <button
-            onClick={() => setActiveTab("leaderboard")}
-            className={
-              activeTab === "leaderboard" ? "text-green-400" : "text-zinc-400"
-            }
-          >
-            🏆<br />Рейтинг
-          </button>
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={
-              activeTab === "profile" || activeTab === "photo"
-                ? "text-green-400"
-                : "text-zinc-400"
-            }
-          >
-            👤<br />Профіль
-          </button>
-          <button
-            onClick={() => setActiveTab("rewards")}
-            className={
-              activeTab === "rewards" ? "text-green-400" : "text-zinc-400"
-            }
-          >
-            🎁<br />Нагороди
-          </button>
+      <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-4 pt-2 backdrop-blur">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1 text-center">
+          {[
+            { tab: "home", icon: "🏠", label: "Головна" },
+            { tab: "tasks", icon: "✅", label: "Завдання" },
+            { tab: "leaderboard", icon: "🏆", label: "Рейтинг" },
+            { tab: "profile", icon: "👤", label: "Профіль" },
+            { tab: "shop", icon: "🛍️", label: "Shop" },
+          ].map((item) => {
+            const isActive =
+              activeTab === item.tab ||
+              (item.tab === "profile" && activeTab === "photo");
+
+            return (
+              <button
+                key={item.tab}
+                onClick={() => setActiveTab(item.tab)}
+                className={`rounded-2xl px-1 py-2 text-[11px] font-bold transition ${
+                  isActive
+                    ? "bg-green-500/15 text-green-300"
+                    : "text-zinc-400"
+                }`}
+              >
+                <span className="block text-2xl leading-none">
+                  {item.icon}
+                </span>
+                <span className="mt-1 block leading-tight">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </main>
