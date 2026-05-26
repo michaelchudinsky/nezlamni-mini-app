@@ -413,6 +413,7 @@ export default function Home() {
   const [rewardToast, setRewardToast] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
   const [isFeedbackSaving, setIsFeedbackSaving] = useState(false);
+  const [isReminderTestSending, setIsReminderTestSending] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [isStartIntroDone, setIsStartIntroDone] = useState(false);
@@ -923,6 +924,41 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     setProfile(data as Profile);
     setMessage(value ? "Нагадування увімкнено." : "Нагадування вимкнено.");
+  }
+
+  async function sendTestReminder() {
+    if (!profile || isReminderTestSending) return;
+
+    setIsReminderTestSending(true);
+
+    const response = await fetch("/api/telegram/test-reminder", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        profileId: profile.id,
+        telegramId: profile.telegram_id,
+      }),
+    });
+
+    setIsReminderTestSending(false);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+
+      if (data?.error === "TELEGRAM_BOT_TOKEN is not configured") {
+        setMessage("Спочатку додай TELEGRAM_BOT_TOKEN у змінні Vercel.");
+        return;
+      }
+
+      setMessage("Не вдалося надіслати тест. Перевір токен бота.");
+      return;
+    }
+
+    setMessage("Тестове нагадування надіслано в Telegram.");
   }
 
   async function completeWaterItem(item: WaterItem) {
@@ -2383,6 +2419,16 @@ async function updateWeight() {
                 Наступний крок: підключити токен Telegram-бота і розклад
                 відправки.
               </p>
+
+              <button
+                onClick={sendTestReminder}
+                disabled={isReminderTestSending}
+                className="mt-4 w-full rounded-2xl bg-green-600 p-3 font-black text-white disabled:opacity-50"
+              >
+                {isReminderTestSending
+                  ? "Надсилаємо..."
+                  : "Надіслати тестове нагадування"}
+              </button>
             </section>
 
             <div className="space-y-3">
