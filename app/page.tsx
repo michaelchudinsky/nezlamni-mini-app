@@ -132,6 +132,7 @@ type ReminderSettingKey =
 
 type ReminderOption = {
   key: ReminderSettingKey;
+  time: string;
   title: string;
   description: string;
 };
@@ -139,18 +140,21 @@ type ReminderOption = {
 const REMINDER_OPTIONS: ReminderOption[] = [
   {
     key: "reminder_morning_enabled",
+    time: "08:00",
     title: "Ранковий старт",
-    description: "08:00 — сон за минулу ніч і перша вода.",
+    description: "Сон за минулу ніч + перша вода",
   },
   {
     key: "reminder_water_enabled",
+    time: "15:00",
     title: "Вода і рух",
-    description: "15:00 — добрати воду до 16:00 і запланувати рух.",
+    description: "Вода до 16:00 + прогулянка або зарядка",
   },
   {
     key: "reminder_sleep_enabled",
+    time: "21:00",
     title: "Нічний режим",
-    description: "21:00 — без їжі на ніч і сон 7+ годин.",
+    description: "Без їжі на ніч + сон 7+ годин",
   },
 ];
 
@@ -2353,11 +2357,10 @@ async function updateWeight() {
                     Нагадування
                   </p>
                   <h2 className="mt-1 text-xl font-black">
-                    Бот підтримає дисципліну
+                    Твій бот підтримає темп
                   </h2>
                   <p className="mt-1 text-sm text-zinc-400">
-                    Це буде писати той самий Telegram-бот, через який
-                    відкривається Mini App.
+                    Короткі повідомлення в Telegram у правильний момент дня.
                   </p>
                 </div>
 
@@ -2368,7 +2371,7 @@ async function updateWeight() {
                       !(profile.reminders_enabled ?? true)
                     )
                   }
-                  className={`rounded-full px-4 py-2 text-sm font-black ${
+                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-black ${
                     profile.reminders_enabled ?? true
                       ? "bg-green-500 text-zinc-950"
                       : "bg-zinc-800 text-zinc-400"
@@ -2388,16 +2391,34 @@ async function updateWeight() {
                       onClick={() =>
                         updateReminderSetting(option.key, !isEnabled)
                       }
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl bg-zinc-800/80 p-4 text-left"
+                      className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${
+                        isEnabled
+                          ? "border-green-500/25 bg-green-950/20"
+                          : "border-zinc-800 bg-zinc-800/80"
+                      }`}
                     >
-                      <span>
-                        <span className="block font-bold">{option.title}</span>
-                        <span className="mt-1 block text-sm text-zinc-400">
+                      <span className="grid h-12 w-16 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-sm font-black text-green-300">
+                        {option.time}
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="block font-bold">
+                            {option.title}
+                          </span>
+                          {isEnabled && (
+                            <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-black text-green-300">
+                              active
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-1 block text-sm leading-snug text-zinc-400">
                           {option.description}
                         </span>
                       </span>
+
                       <span
-                        className={`grid h-8 w-14 shrink-0 place-items-center rounded-full text-xs font-black ${
+                        className={`grid h-8 w-12 shrink-0 place-items-center rounded-full text-xs font-black ${
                           isEnabled
                             ? "bg-green-500 text-zinc-950"
                             : "bg-zinc-700 text-zinc-400"
@@ -2411,8 +2432,7 @@ async function updateWeight() {
               </div>
 
               <p className="mt-4 text-xs text-zinc-500">
-                Наступний крок: підключити токен Telegram-бота і розклад
-                відправки.
+                Можна вимкнути все одразу або залишити тільки потрібні моменти.
               </p>
 
               <button
