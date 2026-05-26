@@ -4,6 +4,11 @@ export async function POST(request: Request) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const appUrl =
+    process.env.TELEGRAM_MINI_APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (productionUrl ? `https://${productionUrl}` : new URL(request.url).origin);
 
   if (!botToken) {
     return Response.json(
@@ -65,6 +70,18 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         chat_id: telegramId,
         text,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Відкрити NEZLAMNI",
+                web_app: {
+                  url: appUrl,
+                },
+              },
+            ],
+          ],
+        },
       }),
     }
   );

@@ -140,22 +140,17 @@ const REMINDER_OPTIONS: ReminderOption[] = [
   {
     key: "reminder_morning_enabled",
     title: "Ранковий старт",
-    description: "Нагадати відкрити день, сон і першу воду.",
+    description: "08:00 — сон за минулу ніч і перша вода.",
   },
   {
     key: "reminder_water_enabled",
-    title: "Вода до 16:00",
-    description: "Нагадати добрати 80% норми води вдень.",
-  },
-  {
-    key: "reminder_activity_enabled",
-    title: "Рух ввечері",
-    description: "Нагадати про прогулянку або тренування.",
+    title: "Вода і рух",
+    description: "15:00 — добрати воду до 16:00 і запланувати рух.",
   },
   {
     key: "reminder_sleep_enabled",
-    title: "Сон і ніч без їжі",
-    description: "Нагадати завершити їжу до 20:00 і лягти вчасно.",
+    title: "Нічний режим",
+    description: "21:00 — без їжі на ніч і сон 7+ годин.",
   },
 ];
 
