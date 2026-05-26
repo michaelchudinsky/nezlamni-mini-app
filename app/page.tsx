@@ -15,6 +15,8 @@ type Task = {
 type Profile = {
   id: string;
   telegram_id: string;
+  telegram_username?: string | null;
+  show_telegram_contact?: boolean | null;
   first_name: string | null;
   points_today: number;
   points_total: number;
@@ -38,6 +40,11 @@ type LeaderboardUser = {
   points: number;
   totalPoints: number;
   status: ProfileStatus;
+  registrationDate: string | null;
+  telegramUsername: string | null;
+  showTelegramContact: boolean;
+  supportCount: number;
+  isSupportedByMe: boolean;
 };
 
 type LeaderboardMode = "month" | "newcomers";
@@ -45,6 +52,7 @@ type LeaderboardMode = "month" | "newcomers";
 type TelegramUser = {
   id?: number | string;
   first_name?: string | null;
+  username?: string | null;
 };
 
 type TelegramWebApp = {
@@ -68,12 +76,16 @@ type LeaderboardLog = {
     | {
         first_name: string | null;
         telegram_id: string | null;
+        telegram_username: string | null;
+        show_telegram_contact: boolean | null;
         points_total: number | null;
         registration_date: string | null;
       }
     | {
         first_name: string | null;
         telegram_id: string | null;
+        telegram_username: string | null;
+        show_telegram_contact: boolean | null;
         points_total: number | null;
         registration_date: string | null;
       }[]
@@ -87,6 +99,11 @@ type CompletedTaskLog = {
 type DailyLogStats = {
   points: number | null;
   event_day: string | null;
+};
+
+type ProfileSupport = {
+  target_profile_id: string;
+  supporter_profile_id: string;
 };
 
 type TaskMeta = {
@@ -516,6 +533,9 @@ export default function Home() {
   const [leaderboardMode, setLeaderboardMode] =
     useState<LeaderboardMode>("month");
   const [leaderboardMonth, setLeaderboardMonth] = useState(getMonthValue());
+  const [selectedPublicProfile, setSelectedPublicProfile] =
+    useState<LeaderboardUser | null>(null);
+  const [isSupportSaving, setIsSupportSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("home");
@@ -565,6 +585,7 @@ const [showWeightForm, setShowWeightForm] = useState(false);
 
 const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
   const telegramId = tgUser?.id?.toString() || "demo_user_1";
+  const telegramUsername = tgUser?.username || null;
 
   const { data: existing, error: selectError } = await supabase
     .from("profiles")
@@ -578,6 +599,20 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
   }
 
   if (existing) {
+    if (telegramUsername && existing.telegram_username !== telegramUsername) {
+      const { data: updated } = await supabase
+        .from("profiles")
+        .update({ telegram_username: telegramUsername })
+        .eq("id", existing.id)
+        .select()
+        .single();
+
+      if (updated) {
+        setProfile(updated);
+        return updated as Profile;
+      }
+    }
+
     setProfile(existing);
     return existing as Profile;
   }
@@ -587,6 +622,7 @@ const getOrCreateProfile = useCallback(async (tgUser: TelegramUser | null) => {
     .insert({
       telegram_id: telegramId,
       first_name: tgUser?.first_name || "User",
+      telegram_username: telegramUsername,
     })
     .select()
     .single();
@@ -614,7 +650,7 @@ const fetchLeaderboard = useCallback(async () => {
   const { data, error } = await supabase
     .from("daily_logs")
     .select(
-      "profile_id, points, event_day, profiles(first_name, telegram_id, points_total, registration_date)"
+      "profile_id, points, event_day, profiles(first_name, telegram_id, telegram_username, show_telegram_contact, points_total, registration_date)"
     )
     .gte(
       "event_day",
@@ -640,6 +676,8 @@ const fetchLeaderboard = useCallback(async () => {
     const totalPoints = profileData?.points_total || 0;
     const status = getProfileStatusByPoints(totalPoints);
     const registrationDate = profileData?.registration_date || null;
+    const telegramUsername = profileData?.telegram_username || null;
+    const showTelegramContact = profileData?.show_telegram_contact || false;
 
     if (leaderboardMode === "newcomers") {
       if (!registrationDate || !log.event_day) return;
@@ -673,16 +711,52 @@ const fetchLeaderboard = useCallback(async () => {
         points: log.points || 0,
         totalPoints,
         status,
+        registrationDate,
+        telegramUsername,
+        showTelegramContact,
+        supportCount: 0,
+        isSupportedByMe: false,
       });
     }
   });
 
-  const sorted = Array.from(map.values())
+  const sortedProfiles = Array.from(map.values());
+  const profileIds = sortedProfiles.map((user) => user.profile_id);
+
+  if (profileIds.length > 0) {
+    const { data: supports, error: supportsError } = await supabase
+      .from("profile_supports")
+      .select("target_profile_id, supporter_profile_id")
+      .in("target_profile_id", profileIds);
+
+    if (!supportsError) {
+      const supportRows = (supports || []) as ProfileSupport[];
+      const supportCounts = new Map<string, number>();
+
+      supportRows.forEach((support) => {
+        supportCounts.set(
+          support.target_profile_id,
+          (supportCounts.get(support.target_profile_id) || 0) + 1
+        );
+      });
+
+      sortedProfiles.forEach((user) => {
+        user.supportCount = supportCounts.get(user.profile_id) || 0;
+        user.isSupportedByMe = supportRows.some(
+          (support) =>
+            support.target_profile_id === user.profile_id &&
+            support.supporter_profile_id === profile?.id
+        );
+      });
+    }
+  }
+
+  const sorted = sortedProfiles
     .sort((a, b) => b.points - a.points)
     .slice(0, 10);
 
   setLeaderboard(sorted);
-}, [leaderboardMode, leaderboardMonth, showLoadError]);
+}, [leaderboardMode, leaderboardMonth, profile?.id, showLoadError]);
 
 const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
   const { data, error } = await supabase
@@ -1101,6 +1175,99 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     setProfile(data as Profile);
     setMessage(value ? "Нагадування увімкнено." : "Нагадування вимкнено.");
+  }
+
+  async function updateTelegramContactVisibility(value: boolean) {
+    if (!profile) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ show_telegram_contact: value })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    if (error) {
+      showSaveError("update telegram contact visibility", error);
+      return;
+    }
+
+    setProfile(data as Profile);
+    setMessage(
+      value
+        ? "Telegram-контакт відкрито у публічному профілі."
+        : "Telegram-контакт приховано."
+    );
+    await fetchLeaderboard();
+  }
+
+  async function toggleProfileSupport(user: LeaderboardUser) {
+    if (!profile || isSupportSaving || user.profile_id === profile.id) return;
+
+    setIsSupportSaving(true);
+
+    if (user.isSupportedByMe) {
+      const { error } = await supabase
+        .from("profile_supports")
+        .delete()
+        .eq("target_profile_id", user.profile_id)
+        .eq("supporter_profile_id", profile.id);
+
+      setIsSupportSaving(false);
+
+      if (error) {
+        showSaveError("remove profile support", error);
+        return;
+      }
+
+      updateLocalSupport(user.profile_id, false);
+      setMessage("Підтримку прибрано.");
+      return;
+    }
+
+    const { error } = await supabase.from("profile_supports").insert({
+      target_profile_id: user.profile_id,
+      supporter_profile_id: profile.id,
+    });
+
+    setIsSupportSaving(false);
+
+    if (error && !isDuplicateLogError(error)) {
+      showSaveError("add profile support", error);
+      return;
+    }
+
+    updateLocalSupport(user.profile_id, true);
+    setMessage("Підтримка додана.");
+  }
+
+  function updateLocalSupport(profileId: string, isSupported: boolean) {
+    setLeaderboard((currentUsers) =>
+      currentUsers.map((user) =>
+        user.profile_id === profileId
+          ? {
+              ...user,
+              isSupportedByMe: isSupported,
+              supportCount: Math.max(
+                0,
+                user.supportCount + (isSupported ? 1 : -1)
+              ),
+            }
+          : user
+      )
+    );
+    setSelectedPublicProfile((currentUser) =>
+      currentUser?.profile_id === profileId
+        ? {
+            ...currentUser,
+            isSupportedByMe: isSupported,
+            supportCount: Math.max(
+              0,
+              currentUser.supportCount + (isSupported ? 1 : -1)
+            ),
+          }
+        : currentUser
+    );
   }
 
   async function sendTestReminder() {
@@ -2459,8 +2626,9 @@ async function updateWeight() {
             {topUsers.length > 0 && (
               <section className="grid grid-cols-3 items-end gap-3">
                 {topUsers.map((user, index) => (
-                  <div
+                  <button
                     key={user.profile_id}
+                    onClick={() => setSelectedPublicProfile(user)}
                     className={`rounded-3xl border border-zinc-800 bg-zinc-900 p-3 text-center ${
                       index === 0 ? "pb-8" : "pb-4"
                     }`}
@@ -2473,7 +2641,10 @@ async function updateWeight() {
                       {user.status.icon} {user.status.title}
                     </p>
                     <p className="text-green-400">{user.points}</p>
-                  </div>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      🔥 {user.supportCount}
+                    </p>
+                  </button>
                 ))}
               </section>
             )}
@@ -2487,9 +2658,10 @@ async function updateWeight() {
             ) : (
               <div className="space-y-2 rounded-3xl border border-zinc-800 bg-zinc-900 p-3">
                 {restUsers.map((user, index) => (
-                  <div
+                  <button
                     key={user.profile_id}
-                    className="flex items-center justify-between rounded-2xl bg-zinc-800/70 p-3"
+                    onClick={() => setSelectedPublicProfile(user)}
+                    className="flex w-full items-center justify-between rounded-2xl bg-zinc-800/70 p-3 text-left"
                   >
                     <span className="text-zinc-400">{index + 4}</span>
                     <span className="min-w-0 flex-1 px-3">
@@ -2498,8 +2670,13 @@ async function updateWeight() {
                         {user.status.icon} {user.status.title}
                       </span>
                     </span>
-                    <span className="font-bold">{user.points}</span>
-                  </div>
+                    <span className="text-right">
+                      <span className="block font-bold">{user.points}</span>
+                      <span className="block text-xs text-zinc-500">
+                        🔥 {user.supportCount}
+                      </span>
+                    </span>
+                  </button>
                 ))}
               </div>
             )}
@@ -2620,6 +2797,44 @@ async function updateWeight() {
                 Учасник з {profile.registration_date || today()} ·{" "}
                 {getDaysWithUs()} днів з нами
               </p>
+            </section>
+
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold text-green-400">
+                    Публічний профіль
+                  </p>
+                  <h2 className="mt-1 text-xl font-black">
+                    Telegram-контакт
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                    За замовчуванням посилання приховане. Відкривай його тільки
+                    якщо хочеш, щоб інші учасники могли написати тобі.
+                  </p>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    {profile.telegram_username
+                      ? `@${profile.telegram_username}`
+                      : "Telegram username поки не знайдено"}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() =>
+                    updateTelegramContactVisibility(
+                      !(profile.show_telegram_contact ?? false)
+                    )
+                  }
+                  disabled={!profile.telegram_username}
+                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-black disabled:opacity-50 ${
+                    profile.show_telegram_contact
+                      ? "bg-green-500 text-zinc-950"
+                      : "bg-zinc-800 text-zinc-400"
+                  }`}
+                >
+                  {profile.show_telegram_contact ? "ON" : "OFF"}
+                </button>
+              </div>
             </section>
 
             <section className="grid grid-cols-3 gap-3">
@@ -3120,6 +3335,106 @@ async function updateWeight() {
           </div>
         )}
       </div>
+
+      {selectedPublicProfile && (
+        <div className="fixed inset-0 z-50 grid place-items-end bg-black/80 px-3 pb-3">
+          <div className="w-full max-w-md rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
+
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-green-400">
+                  Публічний профіль
+                </p>
+                <h2 className="mt-1 text-3xl font-black">
+                  {selectedPublicProfile.name}
+                </h2>
+                <p className="mt-1 text-sm font-bold text-green-300">
+                  {selectedPublicProfile.status.icon}{" "}
+                  {selectedPublicProfile.status.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPublicProfile(null)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-900 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <section className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-2xl bg-zinc-900 p-3">
+                <p className="text-xs text-zinc-400">Рейтинг</p>
+                <p className="text-xl font-black">
+                  {selectedPublicProfile.points}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-zinc-900 p-3">
+                <p className="text-xs text-zinc-400">Всього</p>
+                <p className="text-xl font-black">
+                  {selectedPublicProfile.totalPoints}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-zinc-900 p-3">
+                <p className="text-xs text-zinc-400">Підтримка</p>
+                <p className="text-xl font-black">
+                  🔥 {selectedPublicProfile.supportCount}
+                </p>
+              </div>
+            </section>
+
+            <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <p className="text-sm leading-relaxed text-zinc-300">
+                {selectedPublicProfile.status.description}
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">
+                Старт: {selectedPublicProfile.registrationDate || "не вказано"}
+              </p>
+            </section>
+
+            <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <p className="font-bold">Фото прогресу</p>
+              <p className="mt-1 text-sm text-zinc-400">
+                Фото будуть видимі тут тільки після окремої згоди учасника.
+              </p>
+            </section>
+
+            <div className="mt-4 grid gap-3">
+              {selectedPublicProfile.showTelegramContact &&
+                selectedPublicProfile.telegramUsername && (
+                  <a
+                    href={`https://t.me/${selectedPublicProfile.telegramUsername}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-2xl bg-zinc-800 p-4 text-center font-black"
+                  >
+                    Написати в Telegram
+                  </a>
+                )}
+
+              {profile?.id !== selectedPublicProfile.profile_id ? (
+                <button
+                  onClick={() => toggleProfileSupport(selectedPublicProfile)}
+                  disabled={isSupportSaving}
+                  className={`rounded-2xl p-4 font-black disabled:opacity-50 ${
+                    selectedPublicProfile.isSupportedByMe
+                      ? "bg-zinc-800 text-green-300"
+                      : "bg-green-600 text-white"
+                  }`}
+                >
+                  {selectedPublicProfile.isSupportedByMe
+                    ? "Підтримано"
+                    : "Підтримати"}
+                </button>
+              ) : (
+                <p className="rounded-2xl bg-zinc-900 p-4 text-center text-sm text-zinc-400">
+                  Це твій профіль у рейтингу.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isWaterModalOpen && (
         <div className="fixed inset-0 z-40 flex items-end bg-black/75 px-3 pb-3">
