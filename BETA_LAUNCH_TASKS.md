@@ -93,7 +93,7 @@
 - [x] Добавить настройку профиля: показывать Telegram-контакт только по желанию
   - SQL подготовлен: `supabase/migrations/202605260003_add_public_profile_settings.sql`
   - SQL подготовлен: `supabase/migrations/202605260004_create_profile_supports.sql`
-- [ ] Выполнить SQL для публичного профиля и поддержек в Supabase SQL Editor
+- [x] Выполнить SQL для публичного профиля и поддержек в Supabase SQL Editor
 - [x] Показывать статус профиля у участников рейтинга
 - [x] Показывать блок статусов и следующий статус после рейтинга
 
