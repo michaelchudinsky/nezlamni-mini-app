@@ -34,10 +34,18 @@ type RunReminderCronOptions = {
 
 type CronDiagnostic = {
   profileId: string;
-  reminderCode: ReminderCode;
+  reminderCode: ReminderCode | null;
   stage: "telegram" | "delivery";
   status?: number;
   message: string;
+};
+
+type CronRunStatus = "success" | "partial_failure" | "failure";
+
+type CronLogClient = {
+  from: (table: "reminder_cron_runs") => {
+    insert: (values: unknown) => Promise<{ error: { message: string } | null }>;
+  };
 };
 
 const WATER_CODES = [
@@ -211,10 +219,45 @@ async function readResponseText(response: Response) {
   }
 }
 
+function getCronRunStatus(sent: number, failed: number): CronRunStatus {
+  if (failed === 0) return "success";
+  if (sent > 0) return "partial_failure";
+
+  return "failure";
+}
+
+async function writeCronRunLog(
+  supabase: CronLogClient,
+  request: Request,
+  options: RunReminderCronOptions,
+  startedAt: number,
+  sent: number,
+  skipped: number,
+  failed: number,
+  diagnostics: CronDiagnostic[]
+) {
+  const triggerPath = new URL(request.url).pathname;
+  const status = getCronRunStatus(sent, failed);
+  const { error } = await supabase.from("reminder_cron_runs").insert({
+    trigger_path: triggerPath,
+    mode: options.forcedReminderCode ? "forced" : "hourly",
+    reminder_code: options.forcedReminderCode || null,
+    status,
+    sent_count: sent,
+    skipped_count: skipped,
+    failed_count: failed,
+    diagnostics,
+    duration_ms: Date.now() - startedAt,
+  });
+
+  return error?.message || null;
+}
+
 export async function runReminderCron(
   request: Request,
   options: RunReminderCronOptions = {}
 ) {
+  const startedAt = Date.now();
   const cronSecret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
 
@@ -243,7 +286,28 @@ export async function runReminderCron(
     .not("telegram_id", "is", null);
 
   if (profilesError) {
-    return Response.json({ error: profilesError.message }, { status: 500 });
+    const cronLogError = await writeCronRunLog(
+      supabase as unknown as CronLogClient,
+      request,
+      options,
+      startedAt,
+      0,
+      0,
+      1,
+      [
+        {
+          profileId: "system",
+          reminderCode: options.forcedReminderCode || null,
+          stage: "delivery",
+          message: profilesError.message,
+        },
+      ]
+    );
+
+    return Response.json(
+      { error: profilesError.message, cronLogError },
+      { status: 500 }
+    );
   }
 
   const appUrl = getAppUrl(request);
@@ -345,6 +409,17 @@ export async function runReminderCron(
     sent += 1;
   }
 
+  const cronLogError = await writeCronRunLog(
+    supabase as unknown as CronLogClient,
+    request,
+    options,
+    startedAt,
+    sent,
+    skipped,
+    failed,
+    diagnostics
+  );
+
   return Response.json({
     ok: true,
     mode: options.forcedReminderCode ? "forced" : "hourly",
@@ -353,5 +428,6 @@ export async function runReminderCron(
     skipped,
     failed,
     diagnostics,
+    cronLogError,
   });
 }
