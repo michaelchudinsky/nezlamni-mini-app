@@ -155,5 +155,11 @@
 - [x] Не отправлять утреннее/дневное напоминание, если нужные пункты уже закрыты
 - [x] Выполнить SQL для `reminder_deliveries` в Supabase SQL Editor
 - [ ] Добавить тестовую отправку напоминания самому себе после деплоя
-- [ ] Вернуть автоматический cron после решения лимита Vercel Hobby: Pro, внешний cron-сервис или 1 ежедневный запуск
+- [x] Перевести напоминания на внешний cron-сервис для 3 запусков в день
+  - Morning endpoint: `/api/cron/reminders/morning`
+  - Water endpoint: `/api/cron/reminders/water`
+  - Night endpoint: `/api/cron/reminders/daily`
+  - Рекомендуемый сервис: `cron-job.org`
+  - Расписание: 08:00, 15:00, 21:00 Europe/Kyiv
+- [ ] Настроить 3 jobs в `cron-job.org` после production deploy
 - [ ] В конце v2 добавить диагностику напоминаний: таблица cron-логов, ручной запуск проверки и причины пропуска сообщений
