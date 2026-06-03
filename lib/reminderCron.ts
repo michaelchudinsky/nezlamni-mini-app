@@ -32,6 +32,14 @@ type RunReminderCronOptions = {
   forcedReminderCode?: ReminderCode;
 };
 
+type CronDiagnostic = {
+  profileId: string;
+  reminderCode: ReminderCode;
+  stage: "telegram" | "delivery";
+  status?: number;
+  message: string;
+};
+
 const WATER_CODES = [
   "water_wakeup",
   "water_breakfast",
@@ -195,6 +203,14 @@ function getReminderForProfile(
   );
 }
 
+async function readResponseText(response: Response) {
+  try {
+    return (await response.text()).slice(0, 500);
+  } catch {
+    return "Unable to read response body";
+  }
+}
+
 export async function runReminderCron(
   request: Request,
   options: RunReminderCronOptions = {}
@@ -234,6 +250,7 @@ export async function runReminderCron(
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  const diagnostics: CronDiagnostic[] = [];
 
   for (const profile of (profiles || []) as Profile[]) {
     const timeZone = profile.timezone || "Europe/Kyiv";
@@ -289,6 +306,16 @@ export async function runReminderCron(
     );
 
     if (!telegramResponse.ok) {
+      if (diagnostics.length < 10) {
+        diagnostics.push({
+          profileId: profile.id,
+          reminderCode: reminder.code,
+          stage: "telegram",
+          status: telegramResponse.status,
+          message: await readResponseText(telegramResponse),
+        });
+      }
+
       failed += 1;
       continue;
     }
@@ -302,6 +329,15 @@ export async function runReminderCron(
       });
 
     if (deliveryError) {
+      if (diagnostics.length < 10) {
+        diagnostics.push({
+          profileId: profile.id,
+          reminderCode: reminder.code,
+          stage: "delivery",
+          message: deliveryError.message,
+        });
+      }
+
       failed += 1;
       continue;
     }
@@ -316,5 +352,6 @@ export async function runReminderCron(
     sent,
     skipped,
     failed,
+    diagnostics,
   });
 }
