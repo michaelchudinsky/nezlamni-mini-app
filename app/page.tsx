@@ -659,6 +659,8 @@ export default function Home() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [isStartIntroDone, setIsStartIntroDone] = useState(false);
   const [startIntroStep, setStartIntroStep] = useState(0);
+  const [isFirstActionOpen, setIsFirstActionOpen] = useState(false);
+  const [isFirstActionSaving, setIsFirstActionSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -944,8 +946,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       return;
     }
 
-    setProfile(data);
-    setMessage("Профіль збережено!");
+  setProfile(data);
+  setMessage("Профіль збережено!");
+  setIsFirstActionOpen(
+    !completedTaskCodes.includes("water_wakeup") &&
+      (data.points_total || 0) === 0
+  );
   }
 
   function today() {
@@ -1539,6 +1545,102 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setProfile(data);
     setCompletedTaskCodes((currentCodes) => [...currentCodes, item.code]);
     setMessage(`💧 Вода зарахована: ${item.title} +1 бал`);
+    showRewardToast(1);
+    await syncProfileStats(profile.id);
+    await fetchLeaderboard();
+  }
+
+  async function completeFirstWaterAction() {
+    if (!profile || isFirstActionSaving) return;
+
+    if (completedTaskCodes.includes("water_wakeup")) {
+      setIsFirstActionOpen(false);
+      setMessage("Перший бал уже твій. Продовжуй день.");
+      return;
+    }
+
+    setIsFirstActionSaving(true);
+
+    const todayDate = today();
+    const { data: existingLogs, error: existingLogsError } = await supabase
+      .from("daily_logs")
+      .select("task_code")
+      .eq("profile_id", profile.id)
+      .eq("task_code", "water_wakeup")
+      .eq("event_day", todayDate);
+
+    if (existingLogsError) {
+      setIsFirstActionSaving(false);
+      showLoadError("check first water action", existingLogsError);
+      return;
+    }
+
+    if (existingLogs && existingLogs.length > 0) {
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.includes("water_wakeup")
+          ? currentCodes
+          : [...currentCodes, "water_wakeup"]
+      );
+      setIsFirstActionSaving(false);
+      setIsFirstActionOpen(false);
+      setMessage("Перший бал уже твій. Продовжуй день.");
+      return;
+    }
+
+    const { error: insertLogError } = await supabase.from("daily_logs").insert({
+      profile_id: profile.id,
+      task_code: "water_wakeup",
+      points: 1,
+      event_day: todayDate,
+    });
+
+    if (insertLogError) {
+      setIsFirstActionSaving(false);
+
+      if (isDuplicateLogError(insertLogError)) {
+        await syncProfileStats(profile.id);
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes("water_wakeup")
+            ? currentCodes
+            : [...currentCodes, "water_wakeup"]
+        );
+        setIsFirstActionOpen(false);
+        setMessage("Перший бал уже твій. Продовжуй день.");
+        return;
+      }
+
+      showSaveError("save first water action", insertLogError);
+      return;
+    }
+
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({
+        points_today: profile.points_today + 1,
+        points_total: profile.points_total + 1,
+        streak_current:
+          profile.last_activity_date === todayDate
+            ? profile.streak_current || 1
+            : 1,
+        last_activity_date: todayDate,
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    setIsFirstActionSaving(false);
+
+    if (updateProfileError) {
+      showSaveError("update profile after first water action", updateProfileError);
+      await syncProfileStats(profile.id);
+      return;
+    }
+
+    setProfile(data);
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, "water_wakeup"]);
+    setIsFirstActionOpen(false);
+    setActiveTab("home");
+    setMessage("Перший бал твій. Ти вже в грі.");
     showRewardToast(1);
     await syncProfileStats(profile.id);
     await fetchLeaderboard();
@@ -2273,6 +2375,54 @@ async function updateWeight() {
             height={936}
             className="aspect-[16/9] w-full rounded-[2rem] border border-amber-500/30 object-cover shadow-2xl shadow-amber-950/30"
           />
+        </div>
+      </main>
+    );
+  }
+
+  if (isFirstActionOpen) {
+    return (
+      <main className="min-h-screen bg-black p-6 text-white">
+        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center space-y-5">
+          <section className="rounded-[2rem] border border-green-500/30 bg-gradient-to-br from-zinc-900 via-black to-green-950 p-6 shadow-2xl shadow-green-950/30">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-green-400">
+              Перший крок
+            </p>
+            <div className="mt-5 grid h-28 w-28 place-items-center rounded-[2rem] bg-cyan-500/15 text-6xl">
+              💧
+            </div>
+            <h1 className="mt-6 text-4xl font-black leading-tight">
+              Випий склянку води
+            </h1>
+            <p className="mt-3 text-base leading-relaxed text-zinc-300">
+              Почни шлях з простої дії. Один ковток — і перший бал уже твій.
+            </p>
+
+            <div className="mt-6 rounded-2xl border border-green-500/25 bg-green-950/30 p-4">
+              <p className="text-sm font-black text-green-300">
+                Що буде після натискання?
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                Ми зарахуємо пункт “Після пробудження”, додамо +1 бал і
+                відкриємо головний екран.
+              </p>
+            </div>
+
+            <button
+              onClick={completeFirstWaterAction}
+              disabled={isFirstActionSaving}
+              className="mt-6 w-full rounded-2xl bg-green-600 p-4 text-base font-black disabled:opacity-50"
+            >
+              {isFirstActionSaving ? "Зараховуємо..." : "Випив воду +1"}
+            </button>
+
+            <button
+              onClick={() => setIsFirstActionOpen(false)}
+              className="mt-3 w-full rounded-2xl bg-zinc-900 p-4 text-sm font-bold text-zinc-300"
+            >
+              Перейти на головну
+            </button>
+          </section>
         </div>
       </main>
     );
