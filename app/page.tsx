@@ -149,6 +149,11 @@ type OnboardingSlide = {
   bullets: string[];
 };
 
+type DailyMotivation = {
+  title: string;
+  text: string;
+};
+
 type ReminderSettingKey =
   | "reminders_enabled"
   | "reminder_morning_enabled"
@@ -251,6 +256,97 @@ const REMINDER_OPTIONS: ReminderOption[] = [
   },
 ];
 
+const DAILY_MOTIVATIONS: DailyMotivation[] = [
+  {
+    title: "Сила змін в тобі",
+    text: "Твій шлях — твоя легенда. Один день, одне рішення, один крок.",
+  },
+  {
+    title: "Почни як воїн",
+    text: "Сьогодні ти обираєш не легкість, а силу. І це вже перемога.",
+  },
+  {
+    title: "Твій день — твоя битва",
+    text: "Не віддавай цей день хаосу. Забери його діями.",
+  },
+  {
+    title: "Вогонь всередині",
+    text: "Ти сильніший, ніж здається. Просто дай собі доказ сьогодні.",
+  },
+  {
+    title: "Крок незламного",
+    text: "Не треба стрибати далеко. Достатньо зробити крок, який не зрадиш.",
+  },
+  {
+    title: "Стань опорою собі",
+    text: "Коли ти тримаєш слово перед собою, світ всередині стає міцнішим.",
+  },
+  {
+    title: "Не згасай",
+    text: "Імпульс уже є. Підкинь у нього дію, і він стане силою.",
+  },
+  {
+    title: "Тіло чує волю",
+    text: "Кожна дія сьогодні говорить тілу: ми йдемо вперед.",
+  },
+  {
+    title: "Повернись у стрій",
+    text: "День може хитнутись. Але незламний повертається.",
+  },
+  {
+    title: "Половина легенди",
+    text: "Ти вже не на старті. Ти в середині шляху, де народжується характер.",
+  },
+  {
+    title: "Тиха перемога",
+    text: "Справжня сила не кричить. Вона просто робить своє.",
+  },
+  {
+    title: "Вище слабкості",
+    text: "Слабкість просить відкласти. Ти обираєш діяти.",
+  },
+  {
+    title: "Темп переможця",
+    text: "Не гори один день. Світи стабільно.",
+  },
+  {
+    title: "Повага в дії",
+    text: "Кожен виконаний пункт — це повага до себе, яку видно без слів.",
+  },
+  {
+    title: "Нова норма",
+    text: "Те, що було важким, стає твоїм. Так народжується сила.",
+  },
+  {
+    title: "Чесний шлях",
+    text: "Не обманюй себе. Чесні дії дають справжній результат.",
+  },
+  {
+    title: "Ти ростеш",
+    text: "Навіть коли дзеркало мовчить, характер уже змінюється.",
+  },
+  {
+    title: "Сильний вечір",
+    text: "Закрий день так, щоб завтра прокинутись з повагою до себе.",
+  },
+  {
+    title: "Без переговорів",
+    text: "Не торгуйся зі слабкістю. Відкрий завдання і забери своє.",
+  },
+  {
+    title: "Фініш видно",
+    text: "Саме тут важливо не відпустити. Дотисни день.",
+  },
+  {
+    title: "Стабільність сильних",
+    text: "Не ідеальність перемагає. Перемагає повернення.",
+  },
+  {
+    title: "Останній ривок",
+    text: "Ще один день до доказу. Покажи собі, ким ти став.",
+  },
+];
+
 const WATER_ITEMS: WaterItem[] = [
   {
     code: "water_wakeup",
@@ -275,7 +371,7 @@ const WATER_ITEMS: WaterItem[] = [
   {
     code: "water_daily_norm",
     title: "Денна норма",
-    description: "Закрий свою норму води за день.",
+    description: "Закрий свою норму води за день",
   },
 ];
 
@@ -296,13 +392,13 @@ const FOOD_ITEMS: FoodItem[] = [
   {
     code: "food_three_meals",
     title: "3 основні прийоми їжі",
-    description: "Сніданок, обід і вечеря без хаотичного добирання їжі.",
+    description: "Сніданок, обід і вечеря без додаткових прийомів їжі.",
     points: 2,
   },
   {
     code: "food_dinner_before_20",
-    title: "Останній прийом їжі до 20:00",
-    description: "Після 20:00 тільки вода або несолодкий чай.",
+    title: "Вечеря до 20:00",
+    description: "Останній основний прийом їжі не пізніше 20:00.",
     points: 1,
   },
 ];
@@ -316,37 +412,45 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
   },
   {
     code: "activity_walk_60_pro",
-    title: "Прогулянка PRO 60 хв",
+    title: "Прогулянка 60 хв",
     description: "Приблизно 6000 кроків — сильний рівень денного руху.",
-    points: 2,
+    points: 5,
   },
   {
     code: "activity_walk_90_pro",
-    title: "Прогулянка PRO 90 хв",
+    title: "Прогулянка 90 хв",
     description: "Приблизно 9000 кроків — потужний рівень витривалості.",
-    points: 2,
+    points: 7,
   },
   {
     code: "activity_workout_20",
     title: "Тренування / Зарядка 20+ хв",
-    description: "Силова, йога, домашня зарядка або будь-який свідомий рух.",
+    description: "Спорт, зарядка, вправи або будь-який свідомий рух.",
     points: 3,
   },
 ];
+
+const WALK_ACTIVITY_CODES = [
+  "activity_walk_30",
+  "activity_walk_60_pro",
+  "activity_walk_90_pro",
+];
+
+const ACTIVITY_GOAL_COUNT = 2;
 
 const NIGHT_ITEMS: NightItem[] = [
   {
     code: "night_sleep_7",
     title: "Сон 7+ годин",
     description:
-      "Ранковий check за попередню ніч: спав 7 годин або більше.",
+      "Ранкова перевірка за попередню ніч: спав 7 годин або більше.",
     points: 3,
   },
   {
     code: "night_no_food_after_20",
     title: "Без їжі після 20:00",
     description:
-      "За попередній вечір і ніч: після 20:00 без їжі та калорійних напоїв.",
+      "За попередню ніч: після 20:00 без їжі та перекусів.",
     points: 2,
   },
 ];
@@ -403,18 +507,18 @@ function getMonthLabel(monthValue: string) {
 const START_INTRO_SLIDES: OnboardingSlide[] = [
   {
     eyebrow: "Ласкаво просимо",
-    title: "NEZLAMNI — це твій 30-денний шлях до перемоги і контролю.",
-    text: "Це не магія. Це система: маленькі щоденні дії, які повертають тобі тіло, енергію, віру в себе і в свої сили.",
+    title: "30-денний шлях до перемоги і контролю.",
+    text: "Система допомагає тримати базу схуднення без хаосу: вода, харчування, рух і сон. Ти не вгадуєш, що робити, а щодня робиш прості дії і отримаєш за це бали.",
     bullets: [
-      "Без хаосу і зривів",
-      "З балами за кожну дію",
-      "З відчуттям: я знову керую собою",
+      "4 напрямки: вода, їжа, рух, сон",
+      "Короткі завдання на кожен день",
+      "Завдання виконано — бали отримано",
     ],
   },
   {
     eyebrow: "Як це працює",
-    title: "Кожен день ти збираєш 4 сили схуднення.",
-    text: "Вода, харчування, рух і сон. Відмічай виконане протягом дня, отримуй бали і тримай streak (стабільність).",
+    title: "Кожен день ти збираєш бали за завдання для схуднення.",
+    text: "Вода, харчування, рух і сон. Відмічай виконане протягом дня, отримуй бали і тримай стабільність (streak).",
     bullets: [
       "Максимум 30 балів на день",
       "Пункти можна додавати поступово",
@@ -423,57 +527,57 @@ const START_INTRO_SLIDES: OnboardingSlide[] = [
   },
   {
     eyebrow: "Твій результат",
-    title: "Ти стаєш не ідеальним. Ти стаєш незламним.",
+    title: "Ти стаєш не ''Ідеальним'', ти стаєш Незламним.",
     text: "Через 30 днів ти побачиш не тільки цифру на вагах, а нову дисципліну: менше хаосу, більше сили, більше поваги до себе.",
     bullets: [
       "Стартуй з анкети",
       "Вкажи поточну вагу і ціль",
-      "Почни перший день сьогодні",
+      "Почни перший вже день сьогодні",
     ],
   },
 ];
 
 const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
-    eyebrow: "30 днів сили",
-    title: "Ти не худнеш на силі волі. Ти збираєш день.",
-    text: "NEZLAMNI допомагає щодня тримати просту базу: вода, білок, рух і сон. Без хаосу, без самобичування, маленькими перемогами.",
+    eyebrow: "Що це",
+    title: "NEZLAMNI — це щоденна система дисципліни.",
+    text: "Система допомагає тримати базу схуднення без хаосу: вода, харчування, рух і сон. Ти не вгадуєш, що робити, а щодня збираєш прості дії.",
     bullets: [
-      "Отримуй бали за дії",
-      "Тримай streak і темп",
-      "Бач свій прогрес щодня",
+      "4 напрямки: вода, їжа, рух, сон",
+      "Короткі завдання на кожен день",
+      "Фокус на діях, а не на ідеальності",
     ],
   },
   {
-    eyebrow: "Як працюють бали",
-    title: "Максимум за день — 30 балів",
-    text: "Не треба бути ідеальним. Просто забирай свої пункти протягом дня і повертайся, коли виконав ще один крок.",
+    eyebrow: "Як користуватись",
+    title: "Відкривай додаток і відмічай виконане.",
+    text: "Можна заходити кілька разів на день. Виконав дію — відмітив її. Згадав пізніше — повернувся і дозаповнив день.",
     bullets: [
-      "Сон і ніч без їжі — до 5",
-      "Вода — до 5",
-      "Харчування і білок — до 10",
-      "Активність — до 10",
+      "Натискай на блок завдання",
+      "Обирай тільки те, що реально зробив",
+      "Випадковий пункт можна скасувати",
     ],
   },
   {
-    eyebrow: "Коли що відмічати",
-    title: "Відмічай одразу після дії",
-    text: "Так легше не забути і чесно бачити день. Якщо натиснула випадково — пункт можна скасувати.",
+    eyebrow: "Бали і прогрес",
+    title: "Максимум за день — 30 балів.",
+    text: "Бали показують, як ти тримаєш день. Вони впливають на рейтинг, стабільність (streak) і статус профілю. Не треба ідеально — важливо не випадати.",
     bullets: [
-      "Зранку: сон за минулу ніч і перша вода",
-      "Після їжі: харчування без перекусів",
-      "Після прогулянки: активність",
-      "Ввечері: закрий воду і нічний режим",
+      "Вода — до 5 балів",
+      "Харчування — до 10 балів",
+      "Активність — до 10 балів",
+      "Сон і нічний режим — до 5 балів",
     ],
   },
   {
-    eyebrow: "Кроки без стресу",
-    title: "Кроки можна рахувати телефоном",
-    text: "Підійде будь-який простий спосіб. Головне — не точність до кроку, а чесний рух.",
+    eyebrow: "Коли відмічати",
+    title: "Розклади день на прості моменти.",
+    text: "Так легше не забути і чесно бачити картину дня. Нагадування в Telegram допоможуть повернутись у потрібний момент.",
     bullets: [
-      "iPhone: Здоровʼя / Apple Health",
-      "Android: Google Fit або Samsung Health",
-      "Годинник, браслет або 30 хв ≈ 3000 кроків",
+      "Зранку: сон і перша вода",
+      "Вдень: вода, їжа і рух",
+      "Ввечері: останній прийом їжі і сон",
+      "Після дії: одразу забирай свої бали",
     ],
   },
 ];
@@ -915,6 +1019,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
   }
 
+  function getDailyMotivation() {
+    const dayIndex = (getDaysWithUs() - 1) % DAILY_MOTIVATIONS.length;
+
+    return DAILY_MOTIVATIONS[dayIndex];
+  }
+
   function getLevel() {
     const status = getCurrentProfileStatus();
 
@@ -990,8 +1100,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   }
 
   function getActivityCompletedCount() {
-    return ACTIVITY_ITEMS.filter((item) => completedTaskCodes.includes(item.code))
-      .length;
+    const hasWalk = WALK_ACTIVITY_CODES.some((code) =>
+      completedTaskCodes.includes(code)
+    );
+    const hasWorkout = completedTaskCodes.includes("activity_workout_20");
+
+    return Number(hasWalk) + Number(hasWorkout);
   }
 
   function getActivityPointsEarned() {
@@ -1034,7 +1148,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     }
 
     return {
-      title: "Почни з малого",
+      title: "Прогрес дня",
       description: "Закрий один простий пункт і запусти рух дня.",
     };
   }
@@ -1559,6 +1673,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     if (!profile) return;
 
     const todayDate = today();
+    const isWalkItem = WALK_ACTIVITY_CODES.includes(item.code);
 
     if (completedTaskCodes.includes(item.code)) {
       const { error: deleteLogError } = await supabase
@@ -1593,6 +1708,75 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         currentCodes.filter((code) => code !== item.code)
       );
       setMessage(`↩️ Скасовано: ${item.title} -${item.points} бали`);
+      await syncProfileStats(profile.id);
+      await fetchLeaderboard();
+      return;
+    }
+
+    const currentWalkItem = isWalkItem
+      ? ACTIVITY_ITEMS.find(
+          (activityItem) =>
+            WALK_ACTIVITY_CODES.includes(activityItem.code) &&
+            completedTaskCodes.includes(activityItem.code)
+        )
+      : null;
+
+    if (isWalkItem && currentWalkItem) {
+      const { error: deleteWalkLogsError } = await supabase
+        .from("daily_logs")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("event_day", todayDate)
+        .in("task_code", WALK_ACTIVITY_CODES);
+
+      if (deleteWalkLogsError) {
+        showSaveError("replace activity walk item", deleteWalkLogsError);
+        return;
+      }
+
+      const { error: insertWalkLogError } = await supabase
+        .from("daily_logs")
+        .insert({
+          profile_id: profile.id,
+          task_code: item.code,
+          points: item.points,
+          event_day: todayDate,
+        });
+
+      if (insertWalkLogError) {
+        showSaveError("save replacement activity walk item", insertWalkLogError);
+        await syncProfileStats(profile.id);
+        return;
+      }
+
+      const pointsDelta = item.points - currentWalkItem.points;
+      const { data, error: updateProfileError } = await supabase
+        .from("profiles")
+        .update({
+          points_today: Math.max(0, profile.points_today + pointsDelta),
+          points_total: Math.max(0, profile.points_total + pointsDelta),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+
+      if (updateProfileError) {
+        showSaveError("update profile after activity walk replacement", updateProfileError);
+        await syncProfileStats(profile.id);
+        return;
+      }
+
+      setProfile(data);
+      setCompletedTaskCodes((currentCodes) => [
+        ...currentCodes.filter((code) => !WALK_ACTIVITY_CODES.includes(code)),
+        item.code,
+      ]);
+      setMessage(
+        `⚡ Прогулянку оновлено: ${item.title} ${pointsDelta >= 0 ? "+" : ""}${pointsDelta} бали`
+      );
+      if (pointsDelta > 0) {
+        showRewardToast(pointsDelta);
+      }
       await syncProfileStats(profile.id);
       await fetchLeaderboard();
       return;
@@ -2035,7 +2219,7 @@ async function updateWeight() {
                 className="w-full rounded-2xl bg-green-600 p-4 text-base font-black"
               >
                 {startIntroStep === START_INTRO_SLIDES.length - 1
-                  ? "Хочу стати незламним"
+                  ? "Хочу стати Незламним"
                   : "Далі"}
               </button>
             </footer>
@@ -2061,7 +2245,7 @@ async function updateWeight() {
 
             <input
               className="w-full rounded-xl p-3 bg-zinc-800"
-              placeholder="Точка А: твоя вага зараз "
+              placeholder="Старт : твоя вага зараз "
               type="number"
               value={startWeight}
               onChange={(e) => setStartWeight(e.target.value)}
@@ -2069,7 +2253,7 @@ async function updateWeight() {
 
             <input
               className="w-full rounded-xl p-3 bg-zinc-800"
-              placeholder="Точка Б: бажана вага "
+              placeholder="Перемога : бажана вага "
               type="number"
               value={targetWeight}
               onChange={(e) => setTargetWeight(e.target.value)}
@@ -2101,7 +2285,7 @@ async function updateWeight() {
   const isFoodCompleted = foodCompletedCount === FOOD_ITEMS.length;
   const activityCompletedCount = getActivityCompletedCount();
   const activityPointsEarned = getActivityPointsEarned();
-  const isActivityCompleted = activityCompletedCount === ACTIVITY_ITEMS.length;
+  const isActivityCompleted = activityPointsEarned >= 10;
   const nightCompletedCount = getNightCompletedCount();
   const nightPointsEarned = getNightPointsEarned();
   const isNightCompleted = nightCompletedCount === NIGHT_ITEMS.length;
@@ -2116,6 +2300,7 @@ async function updateWeight() {
   );
   const dayStatus = getDayStatus(dayPoints);
   const todayFocus = getTodayFocus();
+  const dailyMotivation = getDailyMotivation();
   const currentProfileStatus = getCurrentProfileStatus();
   const nextProfileStatus = getNextProfileStatus();
   const profileStatusProgress = getProfileStatusProgress();
@@ -2156,7 +2341,7 @@ async function updateWeight() {
       points: activityPointsEarned,
       maxPoints: 10,
       progress: activityCompletedCount,
-      total: ACTIVITY_ITEMS.length,
+      total: ACTIVITY_GOAL_COUNT,
       isCompleted: isActivityCompleted,
       onClick: () => setIsActivityModalOpen(true),
     },
@@ -2270,7 +2455,7 @@ async function updateWeight() {
             <header className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
-                  Mini App
+                  Power of
                 </p>
                 <h1 className="text-4xl font-black">NEZLAMNI 🔥</h1>
                 <p className="mt-1 text-sm text-zinc-400">
@@ -2332,7 +2517,7 @@ async function updateWeight() {
               </div>
               <div className="p-5">
                 <p className="text-sm font-bold uppercase tracking-wider text-green-400">
-                  Твої бали
+                  Твої загальні бали
                 </p>
                 <p className="text-4xl font-black">
                   {profile.points_total || 0}
@@ -2344,7 +2529,7 @@ async function updateWeight() {
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold text-green-400">
-                    Прогрес дня
+                    Почни з малого
                   </p>
                   <h2 className="text-2xl font-black">{dayStatus.title}</h2>
                 </div>
@@ -2388,7 +2573,7 @@ async function updateWeight() {
               <div className="mb-4 flex items-end justify-between">
                 <div>
                   <p className="text-sm font-semibold text-green-400">
-                    Сьогоднішні завдання
+                    Завдання на сьогодні
                   </p>
                   <h2 className="text-2xl font-black">Забери свої бали</h2>
                 </div>
@@ -2430,7 +2615,7 @@ async function updateWeight() {
                     : isFoodTask
                       ? `${foodCompletedCount}/${FOOD_ITEMS.length}`
                       : isActivityTask
-                        ? `${activityCompletedCount}/${ACTIVITY_ITEMS.length}`
+                        ? `${activityPointsEarned}/10`
                         : isNightTask
                           ? `${nightCompletedCount}/${NIGHT_ITEMS.length}`
                           : isCompleted
@@ -2441,7 +2626,7 @@ async function updateWeight() {
                     : isFoodTask
                       ? (foodCompletedCount / FOOD_ITEMS.length) * 100
                       : isActivityTask
-                        ? (activityCompletedCount / ACTIVITY_ITEMS.length) * 100
+                        ? (activityPointsEarned / 10) * 100
                         : isNightTask
                           ? (nightCompletedCount / NIGHT_ITEMS.length) * 100
                           : isCompleted
@@ -2497,9 +2682,11 @@ async function updateWeight() {
 
             <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-5">
               <p className="text-sm font-bold text-green-400">Мотивація дня</p>
-              <h2 className="mt-2 text-2xl font-black">Сила роду в тобі</h2>
+              <h2 className="mt-2 text-2xl font-black">
+                {dailyMotivation.title}
+              </h2>
               <p className="mt-2 text-sm text-zinc-300">
-                Твій шлях — твоя легенда. Один день, одне рішення, один крок.
+                {dailyMotivation.text}
               </p>
               <button
                 onClick={() => setActiveTab("tasks")}
@@ -3041,7 +3228,7 @@ async function updateWeight() {
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold text-green-400">
-                    Прогрес дня
+                    Почни з малого
                   </p>
                   <h2 className="text-2xl font-black">{dayStatus.title}</h2>
                 </div>
@@ -3445,14 +3632,14 @@ async function updateWeight() {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-green-400">
-                  Твоя денна норма:{" "}
-                  {getDailyWaterNorm()} л
+                  Твоя персональна денна норма:{" "}
+                  {getDailyWaterNorm()} л 
                 </p>
                 <h2 className="text-3xl font-black">Вода</h2>
               </div>
               <button
                 onClick={() => setIsWaterModalOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+                className="grid h-12 w-12 place-items-center rounded-full bg-zinc-900 text-2xl"
               >
                 ×
               </button>
@@ -3487,7 +3674,7 @@ async function updateWeight() {
 
             <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
               <div>
-                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-sm text-zinc-400">Завдання на сьогодні</p>
                 <p className="text-2xl font-black">
                   {waterCompletedCount}/{WATER_ITEMS.length}
                 </p>
@@ -3614,7 +3801,7 @@ async function updateWeight() {
               </div>
               <button
                 onClick={() => setIsFoodModalOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+                className="grid h-12 w-12 place-items-center rounded-full bg-zinc-900 text-2xl"
               >
                 ×
               </button>
@@ -3649,7 +3836,7 @@ async function updateWeight() {
 
             <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
               <div>
-                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-sm text-zinc-400">Завдання на сьогодні</p>
                 <p className="text-2xl font-black">
                   {foodCompletedCount}/{FOOD_ITEMS.length}
                 </p>
@@ -3775,7 +3962,7 @@ async function updateWeight() {
               </div>
               <button
                 onClick={() => setIsActivityModalOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+                className="grid h-12 w-12 place-items-center rounded-full bg-zinc-900 text-2xl"
               >
                 ×
               </button>
@@ -3810,9 +3997,9 @@ async function updateWeight() {
 
             <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
               <div>
-                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-sm text-zinc-400">Завдання на сьогодні</p>
                 <p className="text-2xl font-black">
-                  {activityCompletedCount}/{ACTIVITY_ITEMS.length}
+                  {activityCompletedCount}/{ACTIVITY_GOAL_COUNT}
                 </p>
               </div>
               <div className="text-right">
@@ -3927,7 +4114,7 @@ async function updateWeight() {
               </div>
               <button
                 onClick={() => setIsNightModalOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl"
+                className="grid h-12 w-12 place-items-center rounded-full bg-zinc-900 text-2xl"
               >
                 ×
               </button>
@@ -3938,7 +4125,7 @@ async function updateWeight() {
                 Ранковий check за попередню ніч
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                Відмічай сон і ніч без їжі, вранці. Натиснув випадково —
+                Відмічай сон і також ніч без їжі, вранці. Натиснув випадково —
                 натисни ще раз, щоб скасувати пункт.
               </p>
             </div>
@@ -3948,7 +4135,7 @@ async function updateWeight() {
                 🌙
               </div>
               <p className="text-sm leading-relaxed text-zinc-300">
-                Це завдання ми рахуємо вранці за попередню ніч: як ти спав і чи
+                Це завдання ти рахуєш вранці за попередню ніч: як ти спав і чи
                 не їв після 20:00. Сон 7+ годин — база відновлення, контролю
                 апетиту і нормального жироспалювання.
               </p>
@@ -3962,7 +4149,7 @@ async function updateWeight() {
 
             <div className="mb-4 flex items-center justify-between rounded-2xl bg-zinc-900 p-4">
               <div>
-                <p className="text-sm text-zinc-400">Сьогодні</p>
+                <p className="text-sm text-zinc-400">Завдання на сьогодні</p>
                 <p className="text-2xl font-black">
                   {nightCompletedCount}/{NIGHT_ITEMS.length}
                 </p>
