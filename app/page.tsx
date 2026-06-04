@@ -176,6 +176,8 @@ type ProfileStatus = {
   bonus: string;
 };
 
+type AppTheme = "dark" | "light";
+
 const PROFILE_STATUSES: ProfileStatus[] = [
   {
     title: "Новачок",
@@ -464,6 +466,9 @@ const TASK_ORDER: Record<string, number> = {
 
 const DAILY_POINTS_MAX = 30;
 const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
+const FIRST_ACTION_PROMPT_STORAGE_KEY = "nezlamni_first_action_prompt_v2_day";
+const FIRST_ACTION_PROMPT_DELAY_MS = 5000;
+const THEME_STORAGE_KEY = "nezlamni_app_theme";
 
 function getMonthValue(date = new Date()) {
   return date.toISOString().slice(0, 7);
@@ -661,6 +666,7 @@ export default function Home() {
   const [startIntroStep, setStartIntroStep] = useState(0);
   const [isFirstActionOpen, setIsFirstActionOpen] = useState(false);
   const [isFirstActionSaving, setIsFirstActionSaving] = useState(false);
+  const [appTheme, setAppTheme] = useState<AppTheme>("dark");
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -908,23 +914,64 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   }, [init]);
 
   useEffect(() => {
-    if (!profile) return;
-
-    void fetchLeaderboard();
-  }, [fetchLeaderboard, profile]);
-
-  useEffect(() => {
     const timer = window.setTimeout(() => {
-      const hasSeenOnboarding =
-        window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1";
+      const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
 
-      if (!hasSeenOnboarding) {
-        setIsOnboardingOpen(true);
+      if (savedTheme === "light" || savedTheme === "dark") {
+        setAppTheme(savedTheme);
       }
     }, 0);
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, appTheme);
+    document.body.classList.toggle("theme-dark", appTheme === "dark");
+    document.body.classList.toggle("theme-light", appTheme === "light");
+  }, [appTheme]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const timer = window.setTimeout(() => {
+      void fetchLeaderboard();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchLeaderboard, profile]);
+
+  useEffect(() => {
+    if (
+      !profile ||
+      !profile.start_weight ||
+      !profile.target_weight ||
+      activeTab !== "home" ||
+      isOnboardingOpen ||
+      isFirstActionOpen
+    ) {
+      return;
+    }
+
+    const todayDate = today();
+    const dismissedDay = window.localStorage.getItem(
+      FIRST_ACTION_PROMPT_STORAGE_KEY
+    );
+
+    if (dismissedDay === todayDate) return;
+
+    const timer = window.setTimeout(() => {
+      setIsFirstActionOpen(true);
+    }, FIRST_ACTION_PROMPT_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    activeTab,
+    completedTaskCodes,
+    isFirstActionOpen,
+    isOnboardingOpen,
+    profile,
+  ]);
 
   async function saveProfile() {
     if (!profile) return;
@@ -948,10 +995,11 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
   setProfile(data);
   setMessage("Профіль збережено!");
-  setIsFirstActionOpen(
-    !completedTaskCodes.includes("water_wakeup") &&
-      (data.points_total || 0) === 0
-  );
+  setActiveTab("home");
+  window.localStorage.removeItem(FIRST_ACTION_PROMPT_STORAGE_KEY);
+  window.setTimeout(() => {
+    setIsFirstActionOpen(true);
+  }, FIRST_ACTION_PROMPT_DELAY_MS);
   }
 
   function today() {
@@ -1255,6 +1303,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setOnboardingStep(0);
   }
 
+  function toggleAppTheme() {
+    setAppTheme((currentTheme) =>
+      currentTheme === "dark" ? "light" : "dark"
+    );
+  }
+
   function showNextOnboardingStep() {
     if (onboardingStep >= ONBOARDING_SLIDES.length - 1) {
       closeOnboarding();
@@ -1554,6 +1608,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     if (!profile || isFirstActionSaving) return;
 
     if (completedTaskCodes.includes("water_wakeup")) {
+      window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, today());
       setIsFirstActionOpen(false);
       setMessage("Перший бал уже твій. Продовжуй день.");
       return;
@@ -1583,6 +1638,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       );
       setIsFirstActionSaving(false);
       setIsFirstActionOpen(false);
+      window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, todayDate);
       setMessage("Перший бал уже твій. Продовжуй день.");
       return;
     }
@@ -1605,6 +1661,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
             : [...currentCodes, "water_wakeup"]
         );
         setIsFirstActionOpen(false);
+        window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, todayDate);
         setMessage("Перший бал уже твій. Продовжуй день.");
         return;
       }
@@ -1640,6 +1697,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, "water_wakeup"]);
     setIsFirstActionOpen(false);
     setActiveTab("home");
+    window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, todayDate);
     setMessage("Перший бал твій. Ти вже в грі.");
     showRewardToast(1);
     await syncProfileStats(profile.id);
@@ -2380,54 +2438,6 @@ async function updateWeight() {
     );
   }
 
-  if (isFirstActionOpen) {
-    return (
-      <main className="min-h-screen bg-black p-6 text-white">
-        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center space-y-5">
-          <section className="rounded-[2rem] border border-green-500/30 bg-gradient-to-br from-zinc-900 via-black to-green-950 p-6 shadow-2xl shadow-green-950/30">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-green-400">
-              Перший крок
-            </p>
-            <div className="mt-5 grid h-28 w-28 place-items-center rounded-[2rem] bg-cyan-500/15 text-6xl">
-              💧
-            </div>
-            <h1 className="mt-6 text-4xl font-black leading-tight">
-              Випий склянку води
-            </h1>
-            <p className="mt-3 text-base leading-relaxed text-zinc-300">
-              Почни шлях з простої дії. Один ковток — і перший бал уже твій.
-            </p>
-
-            <div className="mt-6 rounded-2xl border border-green-500/25 bg-green-950/30 p-4">
-              <p className="text-sm font-black text-green-300">
-                Що буде після натискання?
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                Ми зарахуємо пункт “Після пробудження”, додамо +1 бал і
-                відкриємо головний екран.
-              </p>
-            </div>
-
-            <button
-              onClick={completeFirstWaterAction}
-              disabled={isFirstActionSaving}
-              className="mt-6 w-full rounded-2xl bg-green-600 p-4 text-base font-black disabled:opacity-50"
-            >
-              {isFirstActionSaving ? "Зараховуємо..." : "Випив воду +1"}
-            </button>
-
-            <button
-              onClick={() => setIsFirstActionOpen(false)}
-              className="mt-3 w-full rounded-2xl bg-zinc-900 p-4 text-sm font-bold text-zinc-300"
-            >
-              Перейти на головну
-            </button>
-          </section>
-        </div>
-      </main>
-    );
-  }
-
   const waterCompletedCount = getWaterCompletedCount();
   const isWaterCompleted = waterCompletedCount === WATER_ITEMS.length;
   const foodCompletedCount = getFoodCompletedCount();
@@ -2517,12 +2527,114 @@ async function updateWeight() {
   const topUsers = leaderboard.slice(0, 3);
   const restUsers = leaderboard.slice(3, 10);
   const onboardingSlide = ONBOARDING_SLIDES[onboardingStep];
+  const isFirstWaterActionDone = completedTaskCodes.includes("water_wakeup");
 
   return (
-    <main className="min-h-screen bg-black p-5 pb-28 text-white">
+    <main
+      className={`app-shell theme-${appTheme} min-h-screen bg-black p-5 pb-28 text-white`}
+    >
       {rewardToast && (
         <div className="reward-toast fixed inset-x-8 top-4 z-[60] mx-auto max-w-xs rounded-xl border border-green-400/40 bg-green-500 px-4 py-3 text-center text-sm font-black text-white shadow-xl shadow-green-500/30">
           {rewardToast}
+        </div>
+      )}
+
+      {isFirstActionOpen && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/80 px-4 pb-4">
+          <section className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-cyan-400/30 bg-zinc-950 shadow-2xl shadow-cyan-950/30">
+            <div className="bg-gradient-to-br from-cyan-500/20 via-zinc-950 to-green-500/20 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
+                  Як це працює
+                </p>
+                <div className="rounded-full border border-green-400/40 bg-green-500/10 px-3 py-1 text-sm font-black text-green-300">
+                  +1 бал
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-end gap-4">
+                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[1.5rem] bg-cyan-400/15 text-5xl shadow-inner shadow-cyan-950/40">
+                  💧
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black leading-tight">
+                    Система проста: дія → бали → прогрес.
+                  </h2>
+                </div>
+              </div>
+
+              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+                Щодня ти відмічаєш воду, харчування, рух і сон. Не треба бути
+                ідеальним — треба робити маленькі кроки і збирати бали.
+              </p>
+            </div>
+
+            <div className="space-y-4 p-5">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ["1", "Випий"],
+                  ["2", "Натисни"],
+                  ["3", "Погнали"],
+                ].map(([step, label], index) => (
+                  <div
+                    key={step}
+                    className={`rounded-2xl border p-3 text-center ${
+                      index === 0
+                        ? "border-cyan-400/50 bg-cyan-400/10"
+                        : "border-zinc-800 bg-zinc-900"
+                    }`}
+                  >
+                    <p className="text-lg font-black">{step}</p>
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                      {label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border border-green-500/25 bg-green-950/25 p-4">
+                <p className="text-sm font-black text-green-300">
+                  Перше завдання прямо зараз
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                  Випий склянку води. Ми зарахуємо пункт “Після пробудження”
+                  і додамо перший бал до твого дня.
+                </p>
+              </div>
+
+              {isFirstWaterActionDone && (
+                <div className="rounded-2xl border border-cyan-400/25 bg-cyan-950/25 p-4 text-sm font-bold text-cyan-200">
+                  Перший бал уже зараховано сьогодні. Можеш продовжувати день
+                  з головного екрану.
+                </div>
+              )}
+
+              <button
+                onClick={completeFirstWaterAction}
+                disabled={isFirstActionSaving}
+                className="w-full rounded-2xl bg-green-600 p-4 text-base font-black shadow-lg shadow-green-950/40 disabled:opacity-50"
+              >
+                {isFirstActionSaving
+                  ? "Зараховуємо..."
+                  : isFirstWaterActionDone
+                    ? "Показати головну"
+                    : "Погнали: випив воду +1"}
+              </button>
+
+              <button
+                onClick={() => {
+                  window.localStorage.setItem(
+                    FIRST_ACTION_PROMPT_STORAGE_KEY,
+                    today()
+                  );
+                  setIsFirstActionOpen(false);
+                }}
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-sm font-bold text-zinc-300"
+              >
+                Зроблю це пізніше
+              </button>
+            </div>
+          </section>
         </div>
       )}
 
@@ -2613,14 +2725,44 @@ async function updateWeight() {
                 </p>
                 <button
                   onClick={openOnboarding}
-                  className="help-pulse mt-3 rounded-full border border-green-500/30 bg-green-950/30 px-4 py-2 text-xs font-black text-green-300"
+                  className="help-pulse mt-3 rounded-full border border-red-500/35 bg-red-950/30 px-4 py-2 text-xs font-black text-[#FFB86A]"
                 >
                   Як все тут працює?
                 </button>
               </div>
 
-              <button className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-zinc-900 text-xl">
-                🔔
+              <button
+                onClick={toggleAppTheme}
+                role="switch"
+                aria-checked={appTheme === "light"}
+                aria-label={
+                  appTheme === "dark"
+                    ? "Увімкнути світлу тему"
+                    : "Увімкнути темну тему"
+                }
+                className="theme-toggle relative h-11 w-20 shrink-0 rounded-full border border-zinc-800 bg-zinc-900 p-1 shadow-lg"
+              >
+                <span
+                  className={`absolute left-1 top-1 h-9 w-9 rounded-full bg-green-500 shadow-lg shadow-green-950/30 transition-transform ${
+                    appTheme === "light" ? "translate-x-9" : "translate-x-0"
+                  }`}
+                />
+                <span className="relative z-10 grid h-full grid-cols-2 items-center text-center text-base">
+                  <span
+                    className={
+                      appTheme === "dark" ? "text-black" : "text-zinc-400"
+                    }
+                  >
+                    🌙
+                  </span>
+                  <span
+                    className={
+                      appTheme === "light" ? "text-black" : "text-zinc-400"
+                    }
+                  >
+                    ☀️
+                  </span>
+                </span>
               </button>
             </header>
 
@@ -2635,41 +2777,41 @@ async function updateWeight() {
                   <h2 className="truncate text-2xl font-black">
                     {profile.first_name || "друже"}
                   </h2>
-                  <p className="mt-1 text-sm font-semibold text-green-400">
+                  <p className="mt-1 text-sm font-semibold text-[#EF4444]">
                     {getLevel()}
                   </p>
 
                   <div className="mt-4 flex items-center gap-3">
                     <div className="h-3 flex-1 overflow-hidden rounded-full bg-zinc-800">
                       <div
-                        className="h-full rounded-full bg-green-500"
+                        className="h-full rounded-full bg-[#CB161C]"
                         style={{ width: `${weightProgress}%` }}
                       />
                     </div>
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-[#FFB86A]">
                       {weightProgress}%
                     </span>
                   </div>
                 </div>
 
                 <div className="rounded-2xl bg-orange-500/15 px-3 py-2 text-center">
-                  <p className="text-2xl font-black">
+                  <p className="text-2xl font-black text-[#FFB86A]">
                     {profile.streak_current || 0}
                   </p>
-                  <p className="text-xs font-bold text-orange-300">streak</p>
+                  <p className="text-xs font-bold text-[#FFB86A]">streak</p>
                 </div>
               </div>
             </section>
 
             <section className="grid grid-cols-[1fr_1.3fr] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
-              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl">
+              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl text-[#FFB86A]">
                 ❖
               </div>
               <div className="p-5">
-                <p className="text-sm font-bold uppercase tracking-wider text-green-400">
+                <p className="text-sm font-bold uppercase tracking-wider text-white">
                   Твої загальні бали
                 </p>
-                <p className="text-4xl font-black">
+                <p className="text-4xl font-black text-[#FFB86A]">
                   {profile.points_total || 0}
                 </p>
               </div>
@@ -2678,22 +2820,25 @@ async function updateWeight() {
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-bold text-green-400">
+                  <p className="text-sm font-bold text-[#FFB86A]">
                     Почни з малого
                   </p>
-                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
+                  <h2 className="text-2xl font-black text-white">
+                    {dayStatus.title}
+                  </h2>
                 </div>
                 <div className="text-right">
                   <p className="text-3xl font-black">
-                    {dayPoints}/{DAILY_POINTS_MAX}
+                    <span className="text-[#FFB86A]">{dayPoints}</span>
+                    <span className="text-white">/{DAILY_POINTS_MAX}</span>
                   </p>
-                  <p className="text-xs font-bold text-zinc-400">балів</p>
+                  <p className="text-xs font-bold text-white">балів</p>
                 </div>
               </div>
 
               <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
                 <div
-                  className="h-full rounded-full bg-green-500"
+                  className="h-full rounded-full bg-[#EF4444]"
                   style={{ width: `${dayProgress}%` }}
                 />
               </div>

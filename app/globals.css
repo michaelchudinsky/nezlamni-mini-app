@@ -31,6 +31,181 @@ body {
 
 .help-pulse {
   animation: help-pulse 2.4s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgb(220 38 38 / 0);
+}
+
+.theme-dark :where([class*="text-green"], [class*="text-lime"], [class*="text-emerald"]) {
+  color: #ef4444 !important;
+}
+
+.theme-dark :where([class*="bg-green-600"], [class*="bg-green-500"], [class*="bg-lime"], [class*="bg-emerald"]) {
+  background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+}
+
+.theme-dark :where([class*="bg-green-950"], [class*="bg-green-500/10"], [class*="bg-green-500/15"], [class*="bg-green-950/20"], [class*="bg-green-950/25"], [class*="bg-green-950/30"], [class*="bg-green-950/40"], [class*="bg-lime"], [class*="bg-emerald"]) {
+  background-color: rgb(127 29 29 / 0.28) !important;
+}
+
+.theme-dark :where([class*="border-green"], [class*="border-lime"], [class*="border-emerald"]) {
+  border-color: rgb(239 68 68 / 0.38) !important;
+}
+
+.theme-dark :where([class*="shadow-green"], [class*="shadow-lime"], [class*="shadow-emerald"]) {
+  box-shadow: 0 18px 42px rgb(127 29 29 / 0.24) !important;
+}
+
+.theme-dark :where([class*="from-green"], [class*="from-lime"], [class*="to-emerald"], [class*="to-green"]) {
+  --tw-gradient-from: #dc2626 !important;
+  --tw-gradient-to: #7f1d1d !important;
+}
+
+.theme-dark :where(.h-full):where([class*="bg-green-500"], [class*="bg-lime"], [class*="bg-emerald"]) {
+  background: linear-gradient(90deg, #dc2626, #ef4444) !important;
+}
+
+.app-shell {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.theme-light {
+  --ethno-gold: #d4af3c;
+  --ethno-red: #b91c1c;
+  --ethno-black: #111111;
+  --ethno-gray: #5f6268;
+  --cloth: #fffdf8;
+  background:
+    linear-gradient(90deg, rgb(185 28 28 / 0.16) 0 2px, transparent 2px 10px) 24px 0 / 10px 100% no-repeat,
+    linear-gradient(90deg, rgb(212 175 60 / 0.18) 0 2px, transparent 2px 12px) calc(100% - 26px) 0 / 12px 100% no-repeat,
+    radial-gradient(circle at 88% 7%, color-mix(in srgb, var(--ethno-gold) 18%, transparent), transparent 18%),
+    radial-gradient(circle at 8% 24%, rgb(185 28 28 / 0.08), transparent 22%),
+    repeating-linear-gradient(0deg, rgb(95 98 104 / 0.035) 0 1px, transparent 1px 18px),
+    linear-gradient(180deg, #f6f3ef 0%, var(--cloth) 38%, #f8f3ea 100%) !important;
+  color: var(--ethno-black) !important;
+}
+
+.theme-light :where(.text-white) {
+  color: var(--ethno-black) !important;
+}
+
+.theme-light :where([class*="text-zinc-300"], [class*="text-zinc-400"]) {
+  color: #4f4a4b !important;
+}
+
+.theme-light :where([class*="text-zinc-500"]) {
+  color: var(--ethno-gray) !important;
+}
+
+.theme-light :where([class*="bg-black"]) {
+  background-color: var(--cloth) !important;
+}
+
+.theme-light :where([class*="bg-zinc-950"]) {
+  background-color: #fffefa !important;
+}
+
+.theme-light :where([class*="bg-zinc-900"]) {
+  background-color: #fffefa !important;
+}
+
+.theme-light :where([class*="bg-zinc-800"]) {
+  background-color: #eee5d6 !important;
+}
+
+.theme-light :where([class*="border-zinc-800"]) {
+  border-color: color-mix(in srgb, var(--ethno-gold) 55%, transparent) !important;
+}
+
+.theme-light :where([class*="shadow-green-950"], [class*="shadow-cyan-950"]) {
+  box-shadow: 0 22px 55px rgb(17 17 17 / 0.08), 0 0 34px color-mix(in srgb, var(--ethno-gold) 10%, transparent) !important;
+}
+
+.theme-light :where(.bg-black\/80, .bg-black\/75) {
+  background-color: rgb(17 17 17 / 0.42) !important;
+}
+
+.theme-light :where(.bg-black\/30, .bg-black\/40) {
+  background-color: rgb(255 253 248 / 0.82) !important;
+}
+
+.theme-light .theme-toggle {
+  border-color: color-mix(in srgb, var(--ethno-gold) 76%, #111111);
+  background: linear-gradient(135deg, #fffefa, #efe5d2);
+  color: var(--ethno-black);
+  box-shadow: 0 12px 30px rgb(17 17 17 / 0.1), 0 0 18px color-mix(in srgb, var(--ethno-gold) 16%, transparent);
+}
+
+.theme-light .theme-toggle > span:first-child {
+  background: linear-gradient(135deg, var(--ethno-red), #8f151b) !important;
+  box-shadow: 0 10px 24px rgb(185 28 28 / 0.22);
+}
+
+.theme-light :where([class*="text-green"]) {
+  color: var(--ethno-red) !important;
+}
+
+.theme-light :where([class*="bg-green-600"], [class*="bg-green-500"]) {
+  background: linear-gradient(135deg, var(--ethno-red), #94151b) !important;
+}
+
+.theme-light :where([class*="bg-green-950"], [class*="bg-green-500/10"], [class*="bg-green-500/15"], [class*="bg-green-950/20"], [class*="bg-green-950/25"], [class*="bg-green-950/30"], [class*="bg-green-950/40"]) {
+  background-color: rgb(185 28 28 / 0.07) !important;
+}
+
+.theme-light :where([class*="border-green"]) {
+  border-color: rgb(185 28 28 / 0.38) !important;
+}
+
+.theme-light :where([class*="shadow-green-500"]) {
+  box-shadow: 0 16px 34px rgb(185 28 28 / 0.2) !important;
+}
+
+.theme-light :where([class*="text-cyan"], [class*="text-orange"]) {
+  color: var(--ethno-gold) !important;
+}
+
+.theme-light :where([class*="bg-cyan"], [class*="bg-orange"]) {
+  background-color: color-mix(in srgb, var(--ethno-gold) 16%, transparent) !important;
+}
+
+.theme-light :where([class*="border-cyan"], [class*="border-orange"]) {
+  border-color: color-mix(in srgb, var(--ethno-gold) 50%, transparent) !important;
+}
+
+.theme-light :where([class*="from-green"], [class*="to-emerald"]) {
+  --tw-gradient-from: #b91c1c !important;
+  --tw-gradient-to: #991b1b !important;
+}
+
+.theme-light :where([class*="from-cyan"], [class*="to-blue"], [class*="from-orange"], [class*="to-rose"]) {
+  --tw-gradient-from: color-mix(in srgb, var(--ethno-gold) 28%, transparent) !important;
+  --tw-gradient-to: rgb(185 28 28 / 0.18) !important;
+}
+
+.theme-light :where(section, .theme-toggle) {
+  position: relative;
+}
+
+.theme-light :where(section)::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px color-mix(in srgb, var(--ethno-gold) 16%, transparent);
+}
+
+.theme-light :where(.h-3, .h-4):where([class*="bg-zinc-800"]) {
+  background-color: #eee5d6 !important;
+}
+
+.theme-light :where(.h-full):where([class*="bg-green-500"]) {
+  background: linear-gradient(90deg, var(--ethno-red), var(--ethno-gold)) !important;
+}
+
+.theme-light :where(.rounded-3xl, .rounded-\[2rem\]) {
+  box-shadow: 0 18px 44px rgb(17 17 17 / 0.08), 0 0 26px color-mix(in srgb, var(--ethno-gold) 9%, transparent);
 }
 
 @keyframes reward-toast-slide {
@@ -58,12 +233,12 @@ body {
 @keyframes help-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(34 197 94 / 0);
+    box-shadow: 0 0 0 0 rgb(220 38 38 / 0);
     transform: scale(1);
   }
 
   45% {
-    box-shadow: 0 0 0 8px rgb(34 197 94 / 0.16);
-    transform: scale(1.03);
+    box-shadow: 0 0 0 4px rgb(220 38 38 / 0.28);
+    transform: scale(1.015);
   }
 }
