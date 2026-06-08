@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { Camera, Plus, Trash2 } from "lucide-react";
+import Cropper, { type Area } from "react-easy-crop";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -17,6 +19,7 @@ type Profile = {
   telegram_id: string;
   telegram_username?: string | null;
   show_telegram_contact?: boolean | null;
+  avatar_url?: string | null;
   first_name: string | null;
   points_today: number;
   points_total: number;
@@ -37,6 +40,7 @@ type Profile = {
 type LeaderboardUser = {
   profile_id: string;
   name: string;
+  avatarUrl: string | null;
   points: number;
   totalPoints: number;
   status: ProfileStatus;
@@ -78,6 +82,7 @@ type LeaderboardLog = {
         telegram_id: string | null;
         telegram_username: string | null;
         show_telegram_contact: boolean | null;
+        avatar_url: string | null;
         points_total: number | null;
         registration_date: string | null;
       }
@@ -86,6 +91,7 @@ type LeaderboardLog = {
         telegram_id: string | null;
         telegram_username: string | null;
         show_telegram_contact: boolean | null;
+        avatar_url: string | null;
         points_total: number | null;
         registration_date: string | null;
       }[]
@@ -177,6 +183,86 @@ type ProfileStatus = {
 };
 
 type AppTheme = "dark" | "light";
+
+type ProfileAvatarProps = {
+  name: string | null | undefined;
+  avatarUrl?: string | null;
+  className: string;
+  textClassName?: string;
+};
+
+const AVATAR_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
+
+async function createCroppedAvatar(
+  imageUrl: string,
+  cropPixels: Area
+): Promise<File> {
+  const image = new window.Image();
+  image.src = imageUrl;
+  await image.decode();
+
+  const canvas = document.createElement("canvas");
+  const size = 640;
+  canvas.width = size;
+  canvas.height = size;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas is not available");
+  }
+
+  context.drawImage(
+    image,
+    cropPixels.x,
+    cropPixels.y,
+    cropPixels.width,
+    cropPixels.height,
+    0,
+    0,
+    size,
+    size
+  );
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (result) =>
+        result ? resolve(result) : reject(new Error("Avatar crop failed")),
+      "image/jpeg",
+      0.9
+    );
+  });
+
+  return new File([blob], "avatar.jpg", { type: "image/jpeg" });
+}
+
+function ProfileAvatar({
+  name,
+  avatarUrl,
+  className,
+  textClassName = "",
+}: ProfileAvatarProps) {
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+
+  return (
+    <div
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-green-500 to-emerald-800 font-black ${className}`}
+    >
+      <span className={textClassName}>{(name || "U").slice(0, 1)}</span>
+      {avatarUrl && avatarUrl !== failedAvatarUrl && (
+        // Supabase Storage URLs are user-generated and loaded directly.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={() => setFailedAvatarUrl(avatarUrl)}
+        />
+      )}
+    </div>
+  );
+}
 
 const PROFILE_STATUSES: ProfileStatus[] = [
   {
@@ -666,6 +752,11 @@ export default function Home() {
   const [startIntroStep, setStartIntroStep] = useState(0);
   const [isFirstActionOpen, setIsFirstActionOpen] = useState(false);
   const [isFirstActionSaving, setIsFirstActionSaving] = useState(false);
+  const [isAvatarSaving, setIsAvatarSaving] = useState(false);
+  const [avatarCropSource, setAvatarCropSource] = useState<string | null>(null);
+  const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarCropPixels, setAvatarCropPixels] = useState<Area | null>(null);
   const [appTheme, setAppTheme] = useState<AppTheme>("dark");
 
   const [name, setName] = useState("");
@@ -762,7 +853,7 @@ const fetchLeaderboard = useCallback(async () => {
   const { data, error } = await supabase
     .from("daily_logs")
     .select(
-      "profile_id, points, event_day, profiles(first_name, telegram_id, telegram_username, show_telegram_contact, points_total, registration_date)"
+      "profile_id, points, event_day, profiles(first_name, telegram_id, telegram_username, show_telegram_contact, avatar_url, points_total, registration_date)"
     )
     .gte(
       "event_day",
@@ -790,6 +881,7 @@ const fetchLeaderboard = useCallback(async () => {
     const registrationDate = profileData?.registration_date || null;
     const telegramUsername = profileData?.telegram_username || null;
     const showTelegramContact = profileData?.show_telegram_contact || false;
+    const avatarUrl = profileData?.avatar_url || null;
 
     if (leaderboardMode === "newcomers") {
       if (!registrationDate || !log.event_day) return;
@@ -820,6 +912,7 @@ const fetchLeaderboard = useCallback(async () => {
       map.set(profileId, {
         profile_id: profileId,
         name,
+        avatarUrl,
         points: log.points || 0,
         totalPoints,
         status,
@@ -1372,6 +1465,135 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
         ? "Telegram-контакт відкрито у публічному профілі."
         : "Telegram-контакт приховано."
     );
+    await fetchLeaderboard();
+  }
+
+  function closeAvatarCrop() {
+    if (avatarCropSource) {
+      URL.revokeObjectURL(avatarCropSource);
+    }
+
+    setAvatarCropSource(null);
+    setAvatarCrop({ x: 0, y: 0 });
+    setAvatarZoom(1);
+    setAvatarCropPixels(null);
+  }
+
+  function selectAvatarFile(file: File) {
+    if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+      setMessage("Обери фото у форматі JPG, PNG або WebP.");
+      return;
+    }
+
+    if (file.size > AVATAR_MAX_SIZE) {
+      setMessage("Фото завелике. Максимальний розмір — 5 МБ.");
+      return;
+    }
+
+    if (avatarCropSource) {
+      URL.revokeObjectURL(avatarCropSource);
+    }
+
+    setAvatarCropSource(URL.createObjectURL(file));
+    setAvatarCrop({ x: 0, y: 0 });
+    setAvatarZoom(1);
+    setAvatarCropPixels(null);
+  }
+
+  async function saveCroppedAvatar() {
+    if (!avatarCropSource || !avatarCropPixels || isAvatarSaving) return;
+
+    try {
+      const file = await createCroppedAvatar(
+        avatarCropSource,
+        avatarCropPixels
+      );
+      const isSaved = await uploadProfileAvatar(file);
+
+      if (isSaved) {
+        closeAvatarCrop();
+      }
+    } catch (error) {
+      showSaveError("crop profile avatar", error);
+    }
+  }
+
+  async function uploadProfileAvatar(file: File) {
+    if (!profile || isAvatarSaving) return false;
+
+    setIsAvatarSaving(true);
+
+    const avatarPath = `${profile.id}/avatar`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(avatarPath, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      setIsAvatarSaving(false);
+      showSaveError("upload profile avatar", uploadError);
+      return false;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(avatarPath);
+    const avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: avatarUrl })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    setIsAvatarSaving(false);
+
+    if (updateProfileError) {
+      showSaveError("save profile avatar", updateProfileError);
+      return false;
+    }
+
+    setProfile(data as Profile);
+    setMessage("Фото профілю оновлено.");
+    await fetchLeaderboard();
+    return true;
+  }
+
+  async function deleteProfileAvatar() {
+    if (!profile?.avatar_url || isAvatarSaving) return;
+
+    setIsAvatarSaving(true);
+
+    const avatarPath = `${profile.id}/avatar`;
+    const { error: storageError } = await supabase.storage
+      .from("avatars")
+      .remove([avatarPath]);
+
+    if (storageError) {
+      setIsAvatarSaving(false);
+      showSaveError("delete profile avatar", storageError);
+      return;
+    }
+
+    const { data, error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    setIsAvatarSaving(false);
+
+    if (updateProfileError) {
+      showSaveError("clear profile avatar", updateProfileError);
+      return;
+    }
+
+    setProfile(data as Profile);
+    setMessage("Фото профілю видалено.");
     await fetchLeaderboard();
   }
 
@@ -2539,6 +2761,73 @@ async function updateWeight() {
         </div>
       )}
 
+      {avatarCropSource && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-black/85 px-4 pb-4">
+          <section className="mx-auto w-full max-w-md rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-black">Обрізати фото</h2>
+              <button
+                type="button"
+                onClick={closeAvatarCrop}
+                disabled={isAvatarSaving}
+                className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-xl disabled:opacity-50"
+                aria-label="Закрити"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="relative mt-4 aspect-square w-full overflow-hidden rounded-2xl bg-black">
+              <Cropper
+                image={avatarCropSource}
+                crop={avatarCrop}
+                zoom={avatarZoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setAvatarCrop}
+                onZoomChange={setAvatarZoom}
+                onCropComplete={(_, croppedAreaPixels) =>
+                  setAvatarCropPixels(croppedAreaPixels)
+                }
+              />
+            </div>
+
+            <label className="mt-5 block">
+              <span className="text-xs font-bold text-zinc-400">Масштаб</span>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.01}
+                value={avatarZoom}
+                onChange={(event) => setAvatarZoom(Number(event.target.value))}
+                className="mt-2 w-full accent-red-500"
+              />
+            </label>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={closeAvatarCrop}
+                disabled={isAvatarSaving}
+                className="rounded-2xl border border-zinc-700 bg-zinc-900 p-3 font-black text-zinc-300 disabled:opacity-50"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveCroppedAvatar()}
+                disabled={!avatarCropPixels || isAvatarSaving}
+                className="rounded-2xl bg-red-600 p-3 font-black text-white disabled:opacity-50"
+              >
+                {isAvatarSaving ? "Зберігаємо..." : "Зберегти"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {isFirstActionOpen && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/80 px-4 pb-4">
           <section className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-cyan-400/30 bg-zinc-950 shadow-2xl shadow-cyan-950/30">
@@ -2719,13 +3008,12 @@ async function updateWeight() {
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
                   Power of
                 </p>
-                <h1 className="text-4xl font-black">NEZLAMNI 🔥</h1>
+                <h1 className="text-4xl font-black">NEZLAMNI</h1>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Сила. Дисципліна. Незламність.
                 </p>
                 <button
                   onClick={openOnboarding}
-                  className="help-pulse mt-3 rounded-full border border-red-500/35 bg-red-950/30 px-4 py-2 text-xs font-black text-[#FFB86A]"
+                  className="help-pulse mt-3 rounded-full border border-red-500/35 bg-red-950/30 px-4 py-2 text-xs font-black text-red-300"
                 >
                   Як все тут працює?
                 </button>
@@ -2768,8 +3056,42 @@ async function updateWeight() {
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
               <div className="flex gap-4">
-                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-gradient-to-br from-green-500 to-emerald-700 text-3xl font-black">
-                  {(profile.first_name || "U").slice(0, 1)}
+                <div className="relative shrink-0">
+                  <ProfileAvatar
+                    name={profile.first_name}
+                    avatarUrl={profile.avatar_url}
+                    className="h-20 w-20"
+                    textClassName="text-3xl"
+                  />
+                  <label
+                    title={
+                      profile.avatar_url ? "Замінити фото" : "Додати фото"
+                    }
+                    aria-label={
+                      profile.avatar_url ? "Замінити фото" : "Додати фото"
+                    }
+                    className={`absolute -bottom-1 -right-1 grid h-9 w-9 cursor-pointer place-items-center rounded-full border-2 border-zinc-900 bg-red-600 text-white shadow-lg ${
+                      isAvatarSaving ? "pointer-events-none opacity-60" : ""
+                    }`}
+                  >
+                    <Camera size={17} strokeWidth={2.4} />
+                    <Plus
+                      size={11}
+                      strokeWidth={3}
+                      className="absolute right-0.5 top-0.5"
+                    />
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={isAvatarSaving}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (file) selectAvatarFile(file);
+                      }}
+                    />
+                  </label>
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -2777,41 +3099,41 @@ async function updateWeight() {
                   <h2 className="truncate text-2xl font-black">
                     {profile.first_name || "друже"}
                   </h2>
-                  <p className="mt-1 text-sm font-semibold text-[#EF4444]">
+                  <p className="mt-1 text-sm font-semibold text-green-400">
                     {getLevel()}
                   </p>
 
                   <div className="mt-4 flex items-center gap-3">
                     <div className="h-3 flex-1 overflow-hidden rounded-full bg-zinc-800">
                       <div
-                        className="h-full rounded-full bg-[#CB161C]"
+                        className="h-full rounded-full bg-green-500"
                         style={{ width: `${weightProgress}%` }}
                       />
                     </div>
-                    <span className="text-xs text-[#FFB86A]">
+                    <span className="text-xs text-zinc-400">
                       {weightProgress}%
                     </span>
                   </div>
                 </div>
 
                 <div className="rounded-2xl bg-orange-500/15 px-3 py-2 text-center">
-                  <p className="text-2xl font-black text-[#FFB86A]">
+                  <p className="text-2xl font-black">
                     {profile.streak_current || 0}
                   </p>
-                  <p className="text-xs font-bold text-[#FFB86A]">streak</p>
+                  <p className="text-xs font-bold text-orange-300">streak</p>
                 </div>
               </div>
             </section>
 
             <section className="grid grid-cols-[1fr_1.3fr] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
-              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl text-[#FFB86A]">
+              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl">
                 ❖
               </div>
               <div className="p-5">
-                <p className="text-sm font-bold uppercase tracking-wider text-white">
+                <p className="text-sm font-bold uppercase tracking-wider text-green-400">
                   Твої загальні бали
                 </p>
-                <p className="text-4xl font-black text-[#FFB86A]">
+                <p className="text-4xl font-black">
                   {profile.points_total || 0}
                 </p>
               </div>
@@ -2820,25 +3142,22 @@ async function updateWeight() {
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-bold text-[#FFB86A]">
+                  <p className="text-sm font-bold text-green-400">
                     Почни з малого
                   </p>
-                  <h2 className="text-2xl font-black text-white">
-                    {dayStatus.title}
-                  </h2>
+                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
                 </div>
                 <div className="text-right">
                   <p className="text-3xl font-black">
-                    <span className="text-[#FFB86A]">{dayPoints}</span>
-                    <span className="text-white">/{DAILY_POINTS_MAX}</span>
+                    {dayPoints}/{DAILY_POINTS_MAX}
                   </p>
-                  <p className="text-xs font-bold text-white">балів</p>
+                  <p className="text-xs font-bold text-zinc-400">балів</p>
                 </div>
               </div>
 
               <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
                 <div
-                  className="h-full rounded-full bg-[#EF4444]"
+                  className="h-full rounded-full bg-green-500"
                   style={{ width: `${dayProgress}%` }}
                 />
               </div>
@@ -2849,12 +3168,10 @@ async function updateWeight() {
             </section>
 
             <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
-              <p className="text-sm font-bold text-white">
+              <p className="text-sm font-bold text-green-400">
                 Фокус сьогодні
               </p>
-              <h2 className="mt-1 text-2xl font-black text-[#FFB86A]">
-                {todayFocus.title}
-              </h2>
+              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
               <p className="mt-2 text-sm text-zinc-300">
                 {todayFocus.description}
               </p>
@@ -2977,9 +3294,9 @@ async function updateWeight() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+            <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-5">
               <p className="text-sm font-bold text-green-400">Мотивація дня</p>
-              <h2 className="mt-2 text-2xl font-black text-[#FFB86A]">
+              <h2 className="mt-2 text-2xl font-black">
                 {dailyMotivation.title}
               </h2>
               <p className="mt-2 text-sm text-zinc-300">
@@ -3117,9 +3434,12 @@ async function updateWeight() {
                       index === 0 ? "pb-8" : "pb-4"
                     }`}
                   >
-                    <div className="mx-auto mb-2 grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-green-500 to-emerald-800 text-xl font-black">
-                      {user.name.slice(0, 1)}
-                    </div>
+                    <ProfileAvatar
+                      name={user.name}
+                      avatarUrl={user.avatarUrl}
+                      className="mx-auto mb-2 h-16 w-16"
+                      textClassName="text-xl"
+                    />
                     <p className="font-bold">{user.name}</p>
                     <p className="text-xs font-bold text-green-300">
                       {user.status.icon} {user.status.title}
@@ -3148,6 +3468,12 @@ async function updateWeight() {
                     className="flex w-full items-center justify-between rounded-2xl bg-zinc-800/70 p-3 text-left"
                   >
                     <span className="text-zinc-400">{index + 4}</span>
+                    <ProfileAvatar
+                      name={user.name}
+                      avatarUrl={user.avatarUrl}
+                      className="ml-3 h-10 w-10"
+                      textClassName="text-sm"
+                    />
                     <span className="min-w-0 flex-1 px-3">
                       <span className="block font-bold">{user.name}</span>
                       <span className="block text-xs text-zinc-400">
@@ -3271,12 +3597,69 @@ async function updateWeight() {
             </header>
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-center">
-              <div className="mx-auto mb-3 grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-green-500 to-emerald-800 text-4xl font-black">
-                {(profile.first_name || "U").slice(0, 1)}
+              <div className="mx-auto mb-3 w-fit">
+                <ProfileAvatar
+                  name={profile.first_name}
+                  avatarUrl={profile.avatar_url}
+                  className="h-24 w-24"
+                  textClassName="text-4xl"
+                />
               </div>
               <h2 className="text-3xl font-black">
                 {profile.first_name || "User"}
               </h2>
+              <p className="mt-1 text-xs text-zinc-500">
+                JPG, PNG або WebP · до 5 МБ
+              </p>
+              <div className="mt-4 flex justify-center gap-2">
+                <label
+                  title={
+                    profile.avatar_url ? "Замінити фото" : "Додати фото"
+                  }
+                  aria-label={
+                    profile.avatar_url ? "Замінити фото" : "Додати фото"
+                  }
+                  className={`relative grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-red-600 text-white shadow-lg ${
+                    isAvatarSaving ? "pointer-events-none opacity-60" : ""
+                  }`}
+                >
+                  {isAvatarSaving ? (
+                    "…"
+                  ) : (
+                    <>
+                      <Camera size={20} strokeWidth={2.4} />
+                      <Plus
+                        size={12}
+                        strokeWidth={3}
+                        className="absolute right-1 top-1"
+                      />
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={isAvatarSaving}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) selectAvatarFile(file);
+                    }}
+                  />
+                </label>
+                {profile.avatar_url && (
+                  <button
+                    type="button"
+                    onClick={() => void deleteProfileAvatar()}
+                    disabled={isAvatarSaving}
+                    title="Видалити фото"
+                    aria-label="Видалити фото"
+                    className="grid h-11 w-11 place-items-center rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 disabled:opacity-60"
+                  >
+                    <Trash2 size={19} />
+                  </button>
+                )}
+              </div>
               <p className="text-sm text-zinc-400">
                 Учасник з {profile.registration_date || today()} ·{" "}
                 {getDaysWithUs()} днів з нами
@@ -3826,17 +4209,25 @@ async function updateWeight() {
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
 
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-green-400">
-                  Публічний профіль
-                </p>
-                <h2 className="mt-1 text-3xl font-black">
-                  {selectedPublicProfile.name}
-                </h2>
-                <p className="mt-1 text-sm font-bold text-green-300">
-                  {selectedPublicProfile.status.icon}{" "}
-                  {selectedPublicProfile.status.title}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <ProfileAvatar
+                  name={selectedPublicProfile.name}
+                  avatarUrl={selectedPublicProfile.avatarUrl}
+                  className="h-16 w-16"
+                  textClassName="text-xl"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-green-400">
+                    Публічний профіль
+                  </p>
+                  <h2 className="mt-1 truncate text-3xl font-black">
+                    {selectedPublicProfile.name}
+                  </h2>
+                  <p className="mt-1 text-sm font-bold text-green-300">
+                    {selectedPublicProfile.status.icon}{" "}
+                    {selectedPublicProfile.status.title}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedPublicProfile(null)}
@@ -4571,7 +4962,7 @@ async function updateWeight() {
                     : "text-zinc-400"
                 }`}
               >
-                <span className="block text-[29px] leading-none">
+                <span className="block text-2xl leading-none">
                   {item.icon}
                 </span>
                 <span className="mt-1 block leading-tight">{item.label}</span>

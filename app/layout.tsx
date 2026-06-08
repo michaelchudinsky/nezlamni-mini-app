@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import "react-easy-crop/react-easy-crop.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
