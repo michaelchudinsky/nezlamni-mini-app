@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Cropper, { type Area } from "react-easy-crop";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -3056,7 +3056,7 @@ async function updateWeight() {
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
               <div className="flex gap-4">
-                <div className="relative shrink-0">
+                <div className="relative h-20 w-20 shrink-0">
                   <ProfileAvatar
                     name={profile.first_name}
                     avatarUrl={profile.avatar_url}
@@ -3070,15 +3070,16 @@ async function updateWeight() {
                     aria-label={
                       profile.avatar_url ? "Замінити фото" : "Додати фото"
                     }
-                    className={`absolute -bottom-1 -right-1 grid h-9 w-9 cursor-pointer place-items-center rounded-full border-2 border-zinc-900 bg-red-600 text-white shadow-lg ${
+                    className={`absolute bottom-1 right-0 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 ${
                       isAvatarSaving ? "pointer-events-none opacity-60" : ""
                     }`}
                   >
-                    <Camera size={17} strokeWidth={2.4} />
-                    <Plus
-                      size={11}
-                      strokeWidth={3}
-                      className="absolute right-0.5 top-0.5"
+                    <Image
+                      src="/icons/camera-profile-v3.svg"
+                      alt=""
+                      width={12}
+                      height={12}
+                      className="block h-3 w-3 object-contain"
                     />
                     <input
                       type="file"
@@ -3619,21 +3620,20 @@ async function updateWeight() {
                   aria-label={
                     profile.avatar_url ? "Замінити фото" : "Додати фото"
                   }
-                  className={`relative grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-red-600 text-white shadow-lg ${
+                  className={`relative grid h-[42px] w-[42px] cursor-pointer place-items-center rounded-full border border-zinc-700 bg-zinc-800 ${
                     isAvatarSaving ? "pointer-events-none opacity-60" : ""
                   }`}
                 >
                   {isAvatarSaving ? (
                     "…"
                   ) : (
-                    <>
-                      <Camera size={20} strokeWidth={2.4} />
-                      <Plus
-                        size={12}
-                        strokeWidth={3}
-                        className="absolute right-1 top-1"
-                      />
-                    </>
+                    <Image
+                      src="/icons/camera-profile-v3.svg"
+                      alt=""
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 object-contain"
+                    />
                   )}
                   <input
                     type="file"
@@ -3654,7 +3654,7 @@ async function updateWeight() {
                     disabled={isAvatarSaving}
                     title="Видалити фото"
                     aria-label="Видалити фото"
-                    className="grid h-11 w-11 place-items-center rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 disabled:opacity-60"
+                    className="grid h-[42px] w-[42px] place-items-center rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 disabled:opacity-60"
                   >
                     <Trash2 size={19} />
                   </button>
