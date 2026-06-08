@@ -3003,204 +3003,163 @@ async function updateWeight() {
       <div className="mx-auto max-w-md">
         {activeTab === "home" && (
           <div className="space-y-5">
-            <header className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
-                  Power of
-                </p>
-                <h1 className="text-4xl font-black">NEZLAMNI</h1>
-                <p className="mt-1 text-sm text-zinc-400">
-                </p>
-                <button
-                  onClick={openOnboarding}
-                  className="help-pulse mt-3 rounded-full border border-red-500/35 bg-red-950/30 px-4 py-2 text-xs font-black text-red-300"
-                >
-                  Як все тут працює?
-                </button>
-              </div>
+            <div className="grid min-h-[calc(100dvh-7.5rem)] grid-rows-[minmax(0,3fr)_minmax(0,7fr)] gap-3">
+              <div className="flex min-h-0 flex-col gap-2">
+                <header className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-green-400">
+                      Power of
+                    </p>
+                    <h1 className="truncate text-2xl font-black leading-none">
+                      NEZLAMNI
+                    </h1>
+                  </div>
 
-              <button
-                onClick={toggleAppTheme}
-                role="switch"
-                aria-checked={appTheme === "light"}
-                aria-label={
-                  appTheme === "dark"
-                    ? "Увімкнути світлу тему"
-                    : "Увімкнути темну тему"
-                }
-                className="theme-toggle relative h-11 w-20 shrink-0 rounded-full border border-zinc-800 bg-zinc-900 p-1 shadow-lg"
-              >
-                <span
-                  className={`absolute left-1 top-1 h-9 w-9 rounded-full bg-green-500 shadow-lg shadow-green-950/30 transition-transform ${
-                    appTheme === "light" ? "translate-x-9" : "translate-x-0"
-                  }`}
-                />
-                <span className="relative z-10 grid h-full grid-cols-2 items-center text-center text-base">
-                  <span
-                    className={
-                      appTheme === "dark" ? "text-black" : "text-zinc-400"
-                    }
-                  >
-                    🌙
-                  </span>
-                  <span
-                    className={
-                      appTheme === "light" ? "text-black" : "text-zinc-400"
-                    }
-                  >
-                    ☀️
-                  </span>
-                </span>
-              </button>
-            </header>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={openOnboarding}
+                      className="help-pulse rounded-full border border-red-500/35 bg-red-950/30 px-3 py-2 text-[10px] font-black text-red-300"
+                    >
+                      Як все працює?
+                    </button>
+                    <button
+                      onClick={toggleAppTheme}
+                      role="switch"
+                      aria-checked={appTheme === "light"}
+                      aria-label={
+                        appTheme === "dark"
+                          ? "Увімкнути світлу тему"
+                          : "Увімкнути темну тему"
+                      }
+                      className="theme-toggle relative h-9 w-16 shrink-0 rounded-full border border-zinc-800 bg-zinc-900 p-1 shadow-lg"
+                    >
+                      <span
+                        className={`absolute left-1 top-1 h-7 w-7 rounded-full bg-green-500 transition-transform ${
+                          appTheme === "light"
+                            ? "translate-x-7"
+                            : "translate-x-0"
+                        }`}
+                      />
+                      <span className="relative z-10 grid h-full grid-cols-2 items-center text-center text-sm">
+                        <span>🌙</span>
+                        <span>☀️</span>
+                      </span>
+                    </button>
+                  </div>
+                </header>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-              <div className="flex gap-4">
-                <div className="relative h-20 w-20 shrink-0">
-                  <ProfileAvatar
-                    name={profile.first_name}
-                    avatarUrl={profile.avatar_url}
-                    className="h-20 w-20"
-                    textClassName="text-3xl"
-                  />
-                  <label
-                    title={
-                      profile.avatar_url ? "Замінити фото" : "Додати фото"
-                    }
-                    aria-label={
-                      profile.avatar_url ? "Замінити фото" : "Додати фото"
-                    }
-                    className={`absolute bottom-1 right-0 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 ${
-                      isAvatarSaving ? "pointer-events-none opacity-60" : ""
-                    }`}
-                  >
-                    <Image
-                      src="/icons/camera-profile-v3.svg"
-                      alt=""
-                      width={12}
-                      height={12}
-                      className="block h-3 w-3 object-contain"
+                <section className="grid min-h-0 flex-1 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 py-2 shadow-xl">
+                  <div className="relative h-14 w-14 shrink-0">
+                    <ProfileAvatar
+                      name={profile.first_name}
+                      avatarUrl={profile.avatar_url}
+                      className="h-14 w-14"
+                      textClassName="text-xl"
                     />
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      disabled={isAvatarSaving}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = "";
-                        if (file) selectAvatarFile(file);
-                      }}
-                    />
-                  </label>
-                </div>
+                    <label
+                      title={
+                        profile.avatar_url ? "Замінити фото" : "Додати фото"
+                      }
+                      aria-label={
+                        profile.avatar_url ? "Замінити фото" : "Додати фото"
+                      }
+                      className={`absolute bottom-0 right-0 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 ${
+                        isAvatarSaving ? "pointer-events-none opacity-60" : ""
+                      }`}
+                    >
+                      <Image
+                        src="/icons/camera-profile-v3.svg"
+                        alt=""
+                        width={12}
+                        height={12}
+                        className="block h-3 w-3 object-contain"
+                      />
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        disabled={isAvatarSaving}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (file) selectAvatarFile(file);
+                        }}
+                      />
+                    </label>
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-zinc-400">Вітаємо,</p>
-                  <h2 className="truncate text-2xl font-black">
-                    {profile.first_name || "друже"}
-                  </h2>
-                  <p className="mt-1 text-sm font-semibold text-green-400">
-                    {getLevel()}
-                  </p>
-
-                  <div className="mt-4 flex items-center gap-3">
-                    <div className="h-3 flex-1 overflow-hidden rounded-full bg-zinc-800">
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-black leading-tight">
+                      {profile.first_name || "друже"}
+                    </p>
+                    <p className="truncate text-xs font-bold text-green-400">
+                      {getLevel()}
+                    </p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-800">
                       <div
                         className="h-full rounded-full bg-green-500"
                         style={{ width: `${weightProgress}%` }}
                       />
                     </div>
-                    <span className="text-xs text-zinc-400">
-                      {weightProgress}%
-                    </span>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div>
+                      <p className="text-lg font-black leading-none">
+                        {profile.points_total || 0}
+                      </p>
+                      <p className="mt-1 text-[9px] font-bold uppercase text-zinc-400">
+                        бали
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-black leading-none">
+                        {profile.streak_current || 0}
+                      </p>
+                      <p className="mt-1 text-[9px] font-bold text-orange-300">
+                        streak
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+                  <div className="mb-1.5 flex items-center justify-between gap-3">
+                    <p className="truncate text-xs font-black">
+                      {dayStatus.title}
+                    </p>
+                    <p className="shrink-0 text-sm font-black">
+                      {dayPoints}/{DAILY_POINTS_MAX}
+                    </p>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-green-500"
+                      style={{ width: `${dayProgress}%` }}
+                    />
+                  </div>
+                </section>
+              </div>
+
+              <section className="flex min-h-0 flex-col">
+                <div className="mb-2 flex items-end justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-green-400">
+                      Завдання на сьогодні
+                    </p>
+                    <h2 className="text-xl font-black leading-tight">
+                      Забери свої бали
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("tasks")}
+                    className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-zinc-300"
+                  >
+                    {completedCount}/{tasks.length}
+                  </button>
                 </div>
 
-                <div className="rounded-2xl bg-orange-500/15 px-3 py-2 text-center">
-                  <p className="text-2xl font-black">
-                    {profile.streak_current || 0}
-                  </p>
-                  <p className="text-xs font-bold text-orange-300">streak</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="grid grid-cols-[1fr_1.3fr] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
-              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl">
-                ❖
-              </div>
-              <div className="p-5">
-                <p className="text-sm font-bold uppercase tracking-wider text-green-400">
-                  Твої загальні бали
-                </p>
-                <p className="text-4xl font-black">
-                  {profile.points_total || 0}
-                </p>
-              </div>
-            </section>
-
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold text-green-400">
-                    Почни з малого
-                  </p>
-                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-black">
-                    {dayPoints}/{DAILY_POINTS_MAX}
-                  </p>
-                  <p className="text-xs font-bold text-zinc-400">балів</p>
-                </div>
-              </div>
-
-              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-green-500"
-                  style={{ width: `${dayProgress}%` }}
-                />
-              </div>
-
-              <p className="mt-3 text-sm text-zinc-400">
-                {dayStatus.description}
-              </p>
-            </section>
-
-            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
-              <p className="text-sm font-bold text-green-400">
-                Фокус сьогодні
-              </p>
-              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
-              <p className="mt-2 text-sm text-zinc-300">
-                {todayFocus.description}
-              </p>
-              <button
-                onClick={todayFocus.onClick}
-                className="mt-4 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
-              >
-                {todayFocus.action}
-              </button>
-            </section>
-
-            <section>
-              <div className="mb-4 flex items-end justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-green-400">
-                    Завдання на сьогодні
-                  </p>
-                  <h2 className="text-2xl font-black">Забери свої бали</h2>
-                </div>
-                <button
-                  onClick={() => setActiveTab("tasks")}
-                  className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300"
-                >
-                  {completedCount}/{tasks.length}
-                </button>
-              </div>
-
-              <div className="space-y-3">
+              <div className="grid min-h-0 flex-1 auto-rows-fr gap-2 overflow-y-auto pb-1">
                 {orderedTasks.map((task) => {
                   const meta = getTaskMeta(task);
                   const isWaterTask = task.code.toLowerCase() === "water";
@@ -3252,33 +3211,33 @@ async function updateWeight() {
                     <button
                       key={task.id}
                       onClick={() => completeTask(task)}
-                      className={`relative w-full overflow-hidden rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+                      className={`relative min-h-[72px] w-full overflow-hidden rounded-2xl border p-3 text-left shadow-lg transition active:scale-[0.99] ${
                         isCompleted
                           ? "border-green-500/40 bg-green-950/40 text-white"
                           : `border-zinc-800 bg-zinc-900 ${meta.glow}`
                       }`}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex h-full items-center gap-3">
                         <div
-                          className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-3xl shadow-lg`}
+                          className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${meta.accent} text-2xl shadow-lg`}
                         >
                           {isCompleted ? "✓" : meta.emoji}
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-lg font-black leading-tight">
+                          <h3 className="font-black leading-tight">
                             {meta.title}
                           </h3>
-                          <p className="truncate text-sm text-zinc-300">
+                          <p className="truncate text-xs text-zinc-300">
                             {meta.description}
                           </p>
                         </div>
 
                         <div className="text-right">
-                          <p className="text-2xl font-black text-green-300">
+                          <p className="text-lg font-black text-green-300">
                             {pointsText}
                           </p>
-                          <p className="text-sm text-zinc-400">
+                          <p className="text-xs text-zinc-400">
                             {statusText}
                           </p>
                         </div>
@@ -3293,6 +3252,23 @@ async function updateWeight() {
                   );
                 })}
               </div>
+            </section>
+            </div>
+
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
+              <p className="text-sm font-bold text-green-400">
+                Фокус сьогодні
+              </p>
+              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
+              <p className="mt-2 text-sm text-zinc-300">
+                {todayFocus.description}
+              </p>
+              <button
+                onClick={todayFocus.onClick}
+                className="mt-4 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
+              >
+                {todayFocus.action}
+              </button>
             </section>
 
             <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-5">
