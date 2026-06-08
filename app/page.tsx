@@ -2849,10 +2849,12 @@ async function updateWeight() {
             </section>
 
             <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
-              <p className="text-sm font-bold text-green-400">
+              <p className="text-sm font-bold text-white">
                 Фокус сьогодні
               </p>
-              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
+              <h2 className="mt-1 text-2xl font-black text-[#FFB86A]">
+                {todayFocus.title}
+              </h2>
               <p className="mt-2 text-sm text-zinc-300">
                 {todayFocus.description}
               </p>
@@ -2975,9 +2977,9 @@ async function updateWeight() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-5">
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
               <p className="text-sm font-bold text-green-400">Мотивація дня</p>
-              <h2 className="mt-2 text-2xl font-black">
+              <h2 className="mt-2 text-2xl font-black text-[#FFB86A]">
                 {dailyMotivation.title}
               </h2>
               <p className="mt-2 text-sm text-zinc-300">
@@ -4569,7 +4571,7 @@ async function updateWeight() {
                     : "text-zinc-400"
                 }`}
               >
-                <span className="block text-2xl leading-none">
+                <span className="block text-[29px] leading-none">
                   {item.icon}
                 </span>
                 <span className="mt-1 block leading-tight">{item.label}</span>
