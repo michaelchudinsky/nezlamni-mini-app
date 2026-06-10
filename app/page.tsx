@@ -4,6 +4,7 @@ import Image from "next/image";
 import {
   Check,
   CircleHelp,
+  Dumbbell,
   Gift,
   House,
   ListChecks,
@@ -11,6 +12,7 @@ import {
   Sun,
   Trash2,
   Trophy,
+  Utensils,
   UserRound,
   X,
 } from "lucide-react";
@@ -664,370 +666,89 @@ const TASK_ORDER: Record<string, number> = {
 };
 
 const DAILY_POINTS_MAX = 30;
+
+function createBonusDay(
+  foodQuest: string,
+  sportChallenge: string
+): {
+  daily: BonusTaskTemplate;
+  challenge: BonusTaskTemplate;
+} {
+  return {
+    daily: {
+      title: foodQuest,
+      description: `Виконай Food Quest дня: ${foodQuest}.`,
+      points: 2,
+    },
+    challenge: {
+      title: sportChallenge,
+      description: `Виконай Sport Challenge дня: ${sportChallenge}.`,
+      points: 3,
+    },
+  };
+}
+
 const BONUS_DAY_PLAN: Array<{
   daily: BonusTaskTemplate;
   challenge: BonusTaskTemplate;
 }> = [
-  {
-    daily: {
-      title: "Склянка перед вибором",
-      description: "Перед наступним прийомом їжі випий склянку води й зачекай 10 хвилин.",
-      points: 2,
-    },
-    challenge: {
-      title: "Чесне фото старту",
-      description: "Зроби фото прогресу без фільтрів. Воно потрібне тільки для чесного порівняння із собою.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "10 хвилин без телефону",
-      description: "Поїж один прийом їжі без телефону, відео та стрічки новин.",
-      points: 2,
-    },
-    challenge: {
-      title: "Прогулянка після їжі",
-      description: "Вийди на спокійну прогулянку щонайменше на 15 хвилин після одного прийому їжі.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Овочевий старт",
-      description: "Почни один основний прийом їжі з овочів або салату.",
-      points: 2,
-    },
-    challenge: {
-      title: "Солодке під контроль",
-      description: "Проведи день без солодких напоїв і цукру в каві або чаї.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Ранкова розминка",
-      description: "Зроби 5 хвилин легкої розминки одразу після пробудження.",
-      points: 2,
-    },
-    challenge: {
-      title: "Додаткові 2000 кроків",
-      description: "Пройди на 2000 кроків більше, ніж зазвичай проходиш у будній день.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Повільні перші укуси",
-      description: "Перші п'ять хвилин одного прийому їжі їж повільно й без поспіху.",
-      points: 2,
-    },
-    challenge: {
-      title: "Вечір без перекусів",
-      description: "Після вечері залиш тільки воду або несолодкий чай.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Білок на сніданок",
-      description: "Додай до сніданку яйця, сир, йогурт без цукру, рибу або інше джерело білка.",
-      points: 2,
-    },
-    challenge: {
-      title: "20 хвилин сили",
-      description: "Зроби 20 хвилин тренування, зарядки або вправ із власною вагою.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Підготуй воду",
-      description: "Зранку постав поруч пляшку з денною нормою води.",
-      points: 2,
-    },
-    challenge: {
-      title: "План на завтра",
-      description: "Увечері заздалегідь виріши, якими будуть три основні прийоми їжі завтра.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Сходи замість ліфта",
-      description: "Хоча б один раз сьогодні обери сходи замість ліфта або ескалатора.",
-      points: 2,
-    },
-    challenge: {
-      title: "Година активності",
-      description: "Збери сумарно 60 хвилин ходьби або іншого руху протягом дня.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Перевір справжній голод",
-      description: "Перед незапланованою їжею зупинись і оціни голод за шкалою від 1 до 10.",
-      points: 2,
-    },
-    challenge: {
-      title: "День без доставки",
-      description: "Приготуй або збери всі основні прийоми їжі самостійно.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Світло зранку",
-      description: "Проведи 10 хвилин на денному світлі в першій половині дня.",
-      points: 2,
-    },
-    challenge: {
-      title: "Екран на паузу",
-      description: "Відклади телефон щонайменше за 30 хвилин до сну.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Корисний запас",
-      description: "Підготуй один простий білковий продукт на випадок зайнятого дня.",
-      points: 2,
-    },
-    challenge: {
-      title: "Ревізія кухні",
-      description: "Прибери з видимого місця продукти, які найчастіше провокують випадкові перекуси.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Пауза після порції",
-      description: "Після основної порції зачекай 10 хвилин перед рішенням взяти добавку.",
-      points: 2,
-    },
-    challenge: {
-      title: "Без рідких калорій",
-      description: "Сьогодні пий воду, чай або каву без цукру та калорійних добавок.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Рух щогодини",
-      description: "Тричі за день встань і порухайся хоча б по 3 хвилини.",
-      points: 2,
-    },
-    challenge: {
-      title: "Швидка прогулянка",
-      description: "Пройди 30 хвилин у темпі, за якого дихання стає помітно активнішим.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Колір на тарілці",
-      description: "Додай до одного прийому їжі два різні овочі.",
-      points: 2,
-    },
-    challenge: {
-      title: "Домашня вечеря",
-      description: "Зроби просту домашню вечерю з білка та овочів.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Хвилина тиші",
-      description: "Перед їжею зроби п'ять повільних вдихів і видихів.",
-      points: 2,
-    },
-    challenge: {
-      title: "Половина шляху",
-      description: "Запиши одну зміну, яку вже помічаєш у дисципліні, тілі або самопочутті.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Вода поруч",
-      description: "Кожного разу, коли береш телефон, зроби кілька ковтків води.",
-      points: 2,
-    },
-    challenge: {
-      title: "Активний маршрут",
-      description: "Обери довший маршрут пішки або вийди з транспорту на одну зупинку раніше.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Чиста кава",
-      description: "Одну звичну солодку каву заміни на каву або чай без цукру.",
-      points: 2,
-    },
-    challenge: {
-      title: "День без випічки",
-      description: "Проведи день без печива, булок, тістечок і солодкої випічки.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Розтяжка ввечері",
-      description: "Зроби 7 хвилин спокійної розтяжки перед сном.",
-      points: 2,
-    },
-    challenge: {
-      title: "Ранній відбій",
-      description: "Ляж спати щонайменше на 30 хвилин раніше, ніж зазвичай.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Менша тарілка",
-      description: "Один прийом їжі подай на тарілці меншого розміру.",
-      points: 2,
-    },
-    challenge: {
-      title: "Їжа без добавки",
-      description: "Усі основні прийоми їжі сьогодні заверши однією порцією.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "П'ять хвилин ходьби",
-      description: "Коли відчуєш втому, обери коротку ходьбу замість лежання з телефоном.",
-      points: 2,
-    },
-    challenge: {
-      title: "Сильні 7000",
-      description: "Набери щонайменше 7000 кроків за день.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Спочатку білок",
-      description: "В одному прийомі їжі спочатку з'їж білкову частину та овочі.",
-      points: 2,
-    },
-    challenge: {
-      title: "Без фастфуду",
-      description: "Сьогодні повністю відмовся від фастфуду та снеків.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Подяка тілу",
-      description: "Назви одну річ, за яку сьогодні вдячний своєму тілу.",
-      points: 2,
-    },
-    challenge: {
-      title: "Тренування без торгу",
-      description: "Зроби заплановане тренування навіть у скороченому форматі.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Порядок у холодильнику",
-      description: "Постав воду, овочі та білкові продукти на найпомітніше місце.",
-      points: 2,
-    },
-    challenge: {
-      title: "Заготовка на два дні",
-      description: "Підготуй основу хоча б для двох майбутніх прийомів їжі.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Дихання замість перекусу",
-      description: "При емоційному бажанні поїсти зроби хвилину повільного дихання.",
-      points: 2,
-    },
-    challenge: {
-      title: "Вечірня прогулянка",
-      description: "Заміни 20 хвилин вечірнього екрана на прогулянку.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Одна корисна заміна",
-      description: "Заміни калорійний соус, напій або гарнір на легший варіант.",
-      points: 2,
-    },
-    challenge: {
-      title: "День простих продуктів",
-      description: "Склади меню дня переважно з продуктів без довгого складу на упаковці.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Ранковий план",
-      description: "Зранку визнач один точний час для руху або прогулянки.",
-      points: 2,
-    },
-    challenge: {
-      title: "9000 кроків",
-      description: "Збери 9000 кроків протягом дня у комфортному для себе темпі.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Повільна вечеря",
-      description: "Виділи на вечерю щонайменше 15 хвилин і не поспішай.",
-      points: 2,
-    },
-    challenge: {
-      title: "Кухня закрита",
-      description: "Після вечері прибери їжу та не повертайся до неї до ранку.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Перевір поставу",
-      description: "Тричі за день випрями спину, опусти плечі та зроби глибокий вдих.",
-      points: 2,
-    },
-    challenge: {
-      title: "30 хвилин для тіла",
-      description: "Присвяти 30 хвилин будь-якій активності, яка тобі справді підходить.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Підсумок дня",
-      description: "Увечері назви одну дію, якою сьогодні пишаєшся.",
-      points: 2,
-    },
-    challenge: {
-      title: "Повтори сильний день",
-      description: "Обери найкориснішу дію попередніх днів і свідомо повтори її сьогодні.",
-      points: 3,
-    },
-  },
-  {
-    daily: {
-      title: "Обіцянка наступного циклу",
-      description: "Визнач одну звичку, яку точно переносиш у наступні 30 днів.",
-      points: 2,
-    },
-    challenge: {
-      title: "Фото і чесний висновок",
-      description: "Зроби нове фото прогресу та коротко запиши, що змінилося за цикл.",
-      points: 3,
-    },
-  },
+  createBonusDay("День без смаженого", "9000 кроків"),
+  createBonusDay(
+    "День без солодощів, чипсів та шкідливих перекусів",
+    "50 присідань за день"
+  ),
+  createBonusDay("Не їсти після 18:00", "Танці 20 хвилин"),
+  createBonusDay("Вечеря лише овочі", "Контрастний душ"),
+  createBonusDay("День без солодких напоїв", "Планка 3 хвилини сумарно"),
+  createBonusDay("День без борошняного", "100 стрибків"),
+  createBonusDay("День лише мʼясо та овочі", "Зарядка після пробудження"),
+  createBonusDay("День без цукру", "11000 кроків"),
+  createBonusDay(
+    "День без солодощів, чипсів та шкідливих перекусів",
+    "50 присідань за день"
+  ),
+  createBonusDay("Не їсти за 3 години до сну", "Танці 20 хвилин"),
+  createBonusDay("Білкова вечеря", "Контрастний душ"),
+  createBonusDay("День без хліба", "50 випадів"),
+  createBonusDay("День без солодких напоїв", "Планка 3 хвилини сумарно"),
+  createBonusDay(
+    "День без фастфуду, ковбас і напівфабрикатів",
+    "Зарядка після пробудження"
+  ),
+  createBonusDay("День без молочних продуктів", "13000 кроків"),
+  createBonusDay(
+    "День без солодощів, чипсів та шкідливих перекусів",
+    "50 присідань за день"
+  ),
+  createBonusDay("Вечеря без вуглеводів", "Танці 20 хвилин"),
+  createBonusDay("Вечеря лише овочі та білок", "Контрастний душ"),
+  createBonusDay("День без борошняного", "100 стрибків"),
+  createBonusDay(
+    "День без фастфуду, ковбас і напівфабрикатів",
+    "50 випадів"
+  ),
+  createBonusDay("День лише мʼясо та овочі", "Зарядка після пробудження"),
+  createBonusDay("День без солі", "15000 кроків"),
+  createBonusDay(
+    "День без солодощів, чипсів та шкідливих перекусів",
+    "50 присідань за день"
+  ),
+  createBonusDay("Не їсти після 18:00", "Танці 20 хвилин"),
+  createBonusDay(
+    "Вечеря лише овочі та білок",
+    "Контрастний душ або прохолодний душ"
+  ),
+  createBonusDay("День без хліба", "Планка 3 хвилини сумарно"),
+  createBonusDay("День без солодких напоїв", "100 стрибків"),
+  createBonusDay("День лише мʼясо та овочі", "50 випадів"),
+  createBonusDay(
+    "День без цукру, борошняного та фастфуду",
+    "60 хвилин активності"
+  ),
+  createBonusDay(
+    "Три чисті прийоми їжі без шкідливих перекусів",
+    "Контрольна прогулянка 10000 кроків"
+  ),
 ];
 const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
 const FIRST_ACTION_PROMPT_STORAGE_KEY = "nezlamni_first_action_prompt_v2_day";
@@ -3076,8 +2797,29 @@ async function updateWeight() {
     if (!profile || isBonusTaskSaving) return;
 
     if (completedTaskCodes.includes(task.code)) {
-      setMessage("Це бонусне завдання вже виконано сьогодні.");
+      setIsBonusTaskSaving(true);
+
+      const { error } = await supabase
+        .from("daily_logs")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("task_code", task.code)
+        .eq("event_day", today());
+
+      if (error) {
+        setIsBonusTaskSaving(false);
+        showSaveError("cancel bonus task", error);
+        return;
+      }
+
+      setCompletedTaskCodes((currentCodes) =>
+        currentCodes.filter((code) => code !== task.code)
+      );
       setSelectedBonusTask(null);
+      setIsBonusTaskSaving(false);
+      setMessage("Виконання бонусного завдання скасовано.");
+      await syncProfileStats(profile.id);
+      await fetchLeaderboard();
       return;
     }
 
@@ -3651,7 +3393,7 @@ async function updateWeight() {
 
               <button
                 onClick={openOnboarding}
-                className="help-pulse mb-0.5 shrink-0 rounded-full border border-red-500/35 bg-red-950/30 px-3 py-2 text-[10px] font-black text-red-300 sm:text-xs"
+                className="help-pulse mb-0.5 shrink-0 rounded-full border border-red-500/35 bg-red-950/30 px-3 py-2 text-[10px] font-black text-orange-300 sm:text-xs"
               >
                 Як все працює?
               </button>
@@ -3787,8 +3529,11 @@ async function updateWeight() {
                     <span className="text-xs font-bold text-zinc-400">
                       Прогрес дня
                     </span>
-                    <span className="text-xs font-black text-orange-300">
-                      {dayPoints}/{DAILY_POINTS_MAX}
+                    <span className="text-xs font-black">
+                      <span className="text-white">{dayPoints}</span>
+                      <span className="text-orange-300">
+                        /{DAILY_POINTS_MAX}
+                      </span>
                     </span>
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
@@ -3802,22 +3547,6 @@ async function updateWeight() {
             </section>
 
             <section>
-              <div className="mb-2 flex items-end justify-between">
-                <h2 className="min-w-0 whitespace-nowrap text-sm font-black">
-                  <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
-                    Основні
-                  </span>
-                  <span className="text-zinc-600"> · </span>
-                  <span>Завдання на сьогодні</span>
-                </h2>
-                <button
-                  onClick={() => setActiveTab("tasks")}
-                  className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300"
-                >
-                  {completedCount}/{tasks.length}
-                </button>
-              </div>
-
               <div className="grid grid-cols-2 gap-2">
                 {orderedTasks.map((task) => {
                   const meta = getTaskMeta(task);
@@ -3880,8 +3609,9 @@ async function updateWeight() {
                           {isCompleted ? "✓" : meta.emoji}
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-black leading-none text-orange-300">
-                            {earnedPoints}/{maxPoints}
+                          <p className="text-xl font-black leading-none">
+                            <span className="text-white">+{earnedPoints}</span>
+                            <span className="text-orange-300">/{maxPoints}</span>
                           </p>
                           <p className="text-[10px] text-zinc-400">балів</p>
                         </div>
@@ -3904,30 +3634,14 @@ async function updateWeight() {
                     </button>
                   );
                 })}
-              </div>
-
-              <div className="mt-3">
-                <div className="mb-2">
-                  <h3 className="min-w-0 whitespace-nowrap text-sm font-black">
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
-                      Додаткові можливості
-                    </span>
-                    <span className="text-zinc-600"> · </span>
-                    <span>Бонусні завдання</span>
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {dailyBonusTasks.map((bonus) => {
+                {dailyBonusTasks.map((bonus) => {
                     const isCompleted = completedTaskCodes.includes(bonus.code);
                     const label =
                       bonus.slot === "daily"
-                        ? "Food квест"
-                        : "Sport челендж";
-                    const meta =
-                      bonus.slot === "daily"
-                        ? TASK_META.food
-                        : TASK_META.activity;
+                        ? "FOOD КВЕСТ"
+                        : "SPORT ЧЕЛЛЕНДЖ";
+                    const BonusIcon =
+                      bonus.slot === "daily" ? Utensils : Dumbbell;
 
                     return (
                       <button
@@ -3942,29 +3656,41 @@ async function updateWeight() {
                       >
                         <div className="flex items-start justify-between">
                           <span
-                            className={`grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br ${meta.accent} text-base shadow-lg`}
+                            className={`grid h-7 w-7 place-items-center rounded-lg shadow-lg ${
+                              bonus.slot === "daily"
+                                ? "bg-pink-500 text-white"
+                                : "bg-white text-zinc-950"
+                            }`}
                           >
-                            {isCompleted ? "✓" : meta.emoji}
+                            {isCompleted ? (
+                              "✓"
+                            ) : (
+                              <BonusIcon size={16} strokeWidth={2.2} />
+                            )}
                           </span>
                           <span className="text-right">
-                            <span className="block text-xl font-black leading-none text-orange-300">
-                              {isCompleted ? bonus.points : 0}/{bonus.points}
+                            <span className="block text-xl font-black leading-none">
+                              <span className="text-white">
+                                +{isCompleted ? bonus.points : 0}
+                              </span>
+                              <span className="text-orange-300">
+                                /{bonus.points}
+                              </span>
                             </span>
                             <span className="block text-[10px] text-zinc-400">
                               балів
                             </span>
                           </span>
                         </div>
-                        <p className="mt-2 truncate text-xs font-black">
-                          {label}
+                        <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-cyan-400">
+                          Бонус
                         </p>
-                        <p className="mt-0.5 truncate text-[10px] text-zinc-500">
-                          {isCompleted ? "Виконано" : bonus.title}
+                        <p className="mt-0.5 truncate text-xs font-black">
+                          {label}
                         </p>
                       </button>
                     );
-                  })}
-                </div>
+                })}
               </div>
             </section>
 
@@ -4715,7 +4441,10 @@ async function updateWeight() {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-black">
-                    {dayPoints}/{DAILY_POINTS_MAX}
+                    <span className="text-white">{dayPoints}</span>
+                    <span className="text-orange-300">
+                      /{DAILY_POINTS_MAX}
+                    </span>
                   </p>
                   <p className="text-[10px] font-bold text-zinc-400">балів</p>
                 </div>
@@ -4730,16 +4459,6 @@ async function updateWeight() {
             </section>
 
             <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-black">
-                  <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
-                    Основні
-                  </span>
-                  <span className="text-zinc-600"> · </span>
-                  <span>Завдання на сьогодні</span>
-                </h2>
-              </div>
-
               <div className="space-y-2">
                 {taskSummaries.map((task) => {
                   const progressPercent = (task.points / task.maxPoints) * 100;
@@ -4776,37 +4495,25 @@ async function updateWeight() {
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <p className="text-xl font-black text-orange-300">
-                          {task.points}/{task.maxPoints}
+                        <p className="text-xl font-black">
+                          <span className="text-white">+{task.points}</span>
+                          <span className="text-orange-300">
+                            /{task.maxPoints}
+                          </span>
                         </p>
                         <p className="text-[10px] text-zinc-500">балів</p>
                       </div>
                     </button>
                   );
                 })}
-              </div>
-
-              <div className="mb-3 mt-5">
-                <h2 className="text-sm font-black">
-                  <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
-                    Додаткові можливості
-                  </span>
-                  <span className="text-zinc-600"> · </span>
-                  <span>Бонусні завдання</span>
-                </h2>
-              </div>
-
-              <div className="space-y-2">
                 {dailyBonusTasks.map((bonus) => {
                   const isCompleted = completedTaskCodes.includes(bonus.code);
                   const label =
                     bonus.slot === "daily"
-                      ? "Food квест"
-                      : "Sport челендж";
-                  const meta =
-                    bonus.slot === "daily"
-                      ? TASK_META.food
-                      : TASK_META.activity;
+                      ? "FOOD КВЕСТ"
+                      : "SPORT ЧЕЛЛЕНДЖ";
+                  const BonusIcon =
+                    bonus.slot === "daily" ? Utensils : Dumbbell;
 
                   return (
                     <button
@@ -4820,23 +4527,39 @@ async function updateWeight() {
                       }`}
                     >
                       <span
-                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${meta.accent} text-xl shadow-lg`}
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-lg ${
+                          bonus.slot === "daily"
+                            ? "bg-pink-500 text-white"
+                            : "bg-white text-zinc-950"
+                        }`}
                       >
-                        {isCompleted ? "✓" : meta.emoji}
+                        {isCompleted ? (
+                          "✓"
+                        ) : (
+                          <BonusIcon size={21} strokeWidth={2.2} />
+                        )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-black">
-                          {label}
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-sm font-black">
+                            {label}
+                          </span>
+                          <span className="rounded border border-[#D4AF3C]/50 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-[#D4AF3C]">
+                            Бонус
+                          </span>
                         </span>
                         <span className="mt-0.5 block text-xs text-zinc-500">
-                          {isCompleted
-                            ? "Виконано сьогодні"
-                            : `${bonus.title}: ${bonus.description}`}
+                          {isCompleted ? "Виконано сьогодні" : "Відкрити завдання"}
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className="block text-xl font-black text-orange-300">
-                          {isCompleted ? bonus.points : 0}/{bonus.points}
+                        <span className="block text-xl font-black">
+                          <span className="text-white">
+                            +{isCompleted ? bonus.points : 0}
+                          </span>
+                          <span className="text-orange-300">
+                            /{bonus.points}
+                          </span>
                         </span>
                         <span className="block text-[10px] text-zinc-500">
                           балів
@@ -5179,8 +4902,8 @@ async function updateWeight() {
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-300">
                   День {selectedBonusTask.cycleDay} із 30 ·{" "}
                   {selectedBonusTask.slot === "daily"
-                    ? "Food квест"
-                    : "Sport челендж"}
+                    ? "FOOD КВЕСТ"
+                    : "SPORT ЧЕЛЛЕНДЖ"}
                 </p>
                 <h2
                   id="bonus-task-title"
@@ -5201,15 +4924,17 @@ async function updateWeight() {
             </div>
 
             <div
-              className={`my-5 grid h-24 place-items-center rounded-2xl bg-gradient-to-br text-5xl shadow-lg ${
+              className={`my-5 grid h-24 place-items-center rounded-2xl shadow-lg ${
                 selectedBonusTask.slot === "daily"
-                  ? TASK_META.food.accent
-                  : TASK_META.activity.accent
+                  ? "bg-pink-500 text-white"
+                  : "bg-white text-zinc-950"
               }`}
             >
-              {selectedBonusTask.slot === "daily"
-                ? TASK_META.food.emoji
-                : TASK_META.activity.emoji}
+              {selectedBonusTask.slot === "daily" ? (
+                <Utensils size={44} strokeWidth={1.8} />
+              ) : (
+                <Dumbbell size={44} strokeWidth={1.8} />
+              )}
             </div>
 
             <p className="text-sm leading-relaxed text-zinc-300">
@@ -5228,16 +4953,17 @@ async function updateWeight() {
             <button
               type="button"
               onClick={() => completeBonusTask(selectedBonusTask)}
-              disabled={
-                isBonusTaskSaving ||
+              disabled={isBonusTaskSaving}
+              className={`mt-4 w-full rounded-2xl p-4 font-black transition active:scale-[0.99] disabled:bg-zinc-800 disabled:text-zinc-500 ${
                 completedTaskCodes.includes(selectedBonusTask.code)
-              }
-              className="mt-4 w-full rounded-2xl bg-[#CB161C] p-4 font-black text-white transition active:scale-[0.99] disabled:bg-zinc-800 disabled:text-zinc-500"
+                  ? "border border-red-500/40 bg-zinc-900 text-red-300"
+                  : "bg-[#CB161C] text-white"
+              }`}
             >
-              {completedTaskCodes.includes(selectedBonusTask.code)
-                ? "Виконано сьогодні"
-                : isBonusTaskSaving
-                  ? "Зберігаємо..."
+              {isBonusTaskSaving
+                ? "Зберігаємо..."
+                : completedTaskCodes.includes(selectedBonusTask.code)
+                  ? "Скасувати виконання"
                   : "Завдання виконано"}
             </button>
 
