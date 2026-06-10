@@ -1,7 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import {
+  Check,
+  CircleHelp,
+  Gift,
+  House,
+  ListChecks,
+  Pencil,
+  Sun,
+  Trash2,
+  Trophy,
+  UserRound,
+  X,
+} from "lucide-react";
 import Cropper, { type Area } from "react-easy-crop";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -160,6 +172,18 @@ type DailyMotivation = {
   text: string;
 };
 
+type BonusTaskTemplate = {
+  title: string;
+  description: string;
+  points: number;
+};
+
+type BonusTask = BonusTaskTemplate & {
+  code: string;
+  cycleDay: number;
+  slot: "daily" | "challenge";
+};
+
 type ReminderSettingKey =
   | "reminders_enabled"
   | "reminder_morning_enabled"
@@ -247,7 +271,7 @@ function ProfileAvatar({
 
   return (
     <div
-      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-green-500 to-emerald-800 font-black ${className}`}
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full border border-[#D4AF3C] bg-gradient-to-br from-green-500 to-emerald-800 font-black ${className}`}
     >
       <span className={textClassName}>{(name || "U").slice(0, 1)}</span>
       {avatarUrl && avatarUrl !== failedAvatarUrl && (
@@ -261,6 +285,95 @@ function ProfileAvatar({
         />
       )}
     </div>
+  );
+}
+
+function MetallicCrown({
+  rank,
+  className = "",
+}: {
+  rank: number;
+  className?: string;
+}) {
+  const palette =
+    rank === 1
+      ? ["#8A5A08", "#FFE79A", "#D4AF3C", "#9A680E"]
+      : rank === 2
+        ? ["#71717A", "#FFFFFF", "#D4D4D8", "#8B8B93"]
+        : ["#7C2D12", "#FFAA74", "#D95A24", "#8F3215"];
+  const gradientId = `crown-metal-${rank}`;
+
+  return (
+    <svg
+      viewBox="0 0 64 46"
+      aria-hidden="true"
+      className={className}
+      style={{
+        filter: `drop-shadow(0 3px 5px ${palette[2]}66)`,
+      }}
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={palette[0]} />
+          <stop offset="18%" stopColor={palette[2]} />
+          <stop offset="34%" stopColor={palette[1]} />
+          <stop offset="43%" stopColor="#FFFFFF" />
+          <stop offset="51%" stopColor={palette[1]} />
+          <stop offset="68%" stopColor={palette[2]} />
+          <stop offset="84%" stopColor={palette[0]} />
+          <stop offset="100%" stopColor={palette[3]} />
+        </linearGradient>
+        <linearGradient
+          id={`${gradientId}-vertical`}
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="1"
+        >
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity=".7" />
+          <stop offset="28%" stopColor={palette[1]} stopOpacity=".35" />
+          <stop offset="58%" stopColor={palette[0]} stopOpacity=".12" />
+          <stop offset="100%" stopColor="#000000" stopOpacity=".45" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M9 36 6 14l15 12L32 6l11 20 15-12-3 22H9Z"
+        fill={`url(#${gradientId})`}
+        stroke={palette[2]}
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 36 6 14l15 12L32 6l11 20 15-12-3 22H9Z"
+        fill={`url(#${gradientId}-vertical)`}
+      />
+      <path
+        d="M9 35h46v7H9z"
+        fill={`url(#${gradientId})`}
+        stroke={palette[2]}
+        strokeWidth="1.25"
+      />
+      <path
+        d="M12 36.5h40"
+        fill="none"
+        stroke="#FFFFFF"
+        strokeOpacity=".7"
+        strokeWidth="1"
+      />
+      <path
+        d="M13 33h38"
+        fill="none"
+        stroke="#FFFFFF"
+        strokeOpacity=".45"
+        strokeWidth="1.5"
+      />
+      <circle cx="6" cy="13" r="3" fill={palette[2]} />
+      <circle cx="32" cy="5" r="3.5" fill={palette[2]} />
+      <circle cx="58" cy="13" r="3" fill={palette[2]} />
+      <circle cx="6" cy="12" r="1" fill="#FFFFFF" fillOpacity=".7" />
+      <circle cx="31" cy="4" r="1.2" fill="#FFFFFF" fillOpacity=".75" />
+      <circle cx="57" cy="12" r="1" fill="#FFFFFF" fillOpacity=".7" />
+    </svg>
   );
 }
 
@@ -469,13 +582,13 @@ const FOOD_ITEMS: FoodItem[] = [
     title: "Білкова броня",
     description:
       "Додай білок у кожен основний прийом їжі: яйця, рибу, мʼясо, сир або бобові.",
-    points: 4,
+    points: 3,
   },
   {
     code: "food_no_snacks",
     title: "Без перекусів",
     description: "Ніяких цукерок, горішків, яблук чи кави з молоком між їжею.",
-    points: 3,
+    points: 2,
   },
   {
     code: "food_three_meals",
@@ -496,25 +609,25 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     code: "activity_walk_30",
     title: "Прогулянка 30 хв",
     description: "Приблизно 3000 кроків у спокійному або швидкому темпі.",
-    points: 3,
+    points: 2,
   },
   {
     code: "activity_walk_60_pro",
     title: "Прогулянка 60 хв",
     description: "Приблизно 6000 кроків — сильний рівень денного руху.",
-    points: 5,
+    points: 4,
   },
   {
     code: "activity_walk_90_pro",
     title: "Прогулянка 90 хв",
     description: "Приблизно 9000 кроків — потужний рівень витривалості.",
-    points: 7,
+    points: 6,
   },
   {
     code: "activity_workout_20",
     title: "Тренування / Зарядка 20+ хв",
     description: "Спорт, зарядка, вправи або будь-який свідомий рух.",
-    points: 3,
+    points: 2,
   },
 ];
 
@@ -532,7 +645,7 @@ const NIGHT_ITEMS: NightItem[] = [
     title: "Сон 7+ годин",
     description:
       "Ранкова перевірка за попередню ніч: спав 7 годин або більше.",
-    points: 3,
+    points: 2,
   },
   {
     code: "night_no_food_after_20",
@@ -551,6 +664,371 @@ const TASK_ORDER: Record<string, number> = {
 };
 
 const DAILY_POINTS_MAX = 30;
+const BONUS_DAY_PLAN: Array<{
+  daily: BonusTaskTemplate;
+  challenge: BonusTaskTemplate;
+}> = [
+  {
+    daily: {
+      title: "Склянка перед вибором",
+      description: "Перед наступним прийомом їжі випий склянку води й зачекай 10 хвилин.",
+      points: 2,
+    },
+    challenge: {
+      title: "Чесне фото старту",
+      description: "Зроби фото прогресу без фільтрів. Воно потрібне тільки для чесного порівняння із собою.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "10 хвилин без телефону",
+      description: "Поїж один прийом їжі без телефону, відео та стрічки новин.",
+      points: 2,
+    },
+    challenge: {
+      title: "Прогулянка після їжі",
+      description: "Вийди на спокійну прогулянку щонайменше на 15 хвилин після одного прийому їжі.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Овочевий старт",
+      description: "Почни один основний прийом їжі з овочів або салату.",
+      points: 2,
+    },
+    challenge: {
+      title: "Солодке під контроль",
+      description: "Проведи день без солодких напоїв і цукру в каві або чаї.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Ранкова розминка",
+      description: "Зроби 5 хвилин легкої розминки одразу після пробудження.",
+      points: 2,
+    },
+    challenge: {
+      title: "Додаткові 2000 кроків",
+      description: "Пройди на 2000 кроків більше, ніж зазвичай проходиш у будній день.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Повільні перші укуси",
+      description: "Перші п'ять хвилин одного прийому їжі їж повільно й без поспіху.",
+      points: 2,
+    },
+    challenge: {
+      title: "Вечір без перекусів",
+      description: "Після вечері залиш тільки воду або несолодкий чай.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Білок на сніданок",
+      description: "Додай до сніданку яйця, сир, йогурт без цукру, рибу або інше джерело білка.",
+      points: 2,
+    },
+    challenge: {
+      title: "20 хвилин сили",
+      description: "Зроби 20 хвилин тренування, зарядки або вправ із власною вагою.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Підготуй воду",
+      description: "Зранку постав поруч пляшку з денною нормою води.",
+      points: 2,
+    },
+    challenge: {
+      title: "План на завтра",
+      description: "Увечері заздалегідь виріши, якими будуть три основні прийоми їжі завтра.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Сходи замість ліфта",
+      description: "Хоча б один раз сьогодні обери сходи замість ліфта або ескалатора.",
+      points: 2,
+    },
+    challenge: {
+      title: "Година активності",
+      description: "Збери сумарно 60 хвилин ходьби або іншого руху протягом дня.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Перевір справжній голод",
+      description: "Перед незапланованою їжею зупинись і оціни голод за шкалою від 1 до 10.",
+      points: 2,
+    },
+    challenge: {
+      title: "День без доставки",
+      description: "Приготуй або збери всі основні прийоми їжі самостійно.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Світло зранку",
+      description: "Проведи 10 хвилин на денному світлі в першій половині дня.",
+      points: 2,
+    },
+    challenge: {
+      title: "Екран на паузу",
+      description: "Відклади телефон щонайменше за 30 хвилин до сну.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Корисний запас",
+      description: "Підготуй один простий білковий продукт на випадок зайнятого дня.",
+      points: 2,
+    },
+    challenge: {
+      title: "Ревізія кухні",
+      description: "Прибери з видимого місця продукти, які найчастіше провокують випадкові перекуси.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Пауза після порції",
+      description: "Після основної порції зачекай 10 хвилин перед рішенням взяти добавку.",
+      points: 2,
+    },
+    challenge: {
+      title: "Без рідких калорій",
+      description: "Сьогодні пий воду, чай або каву без цукру та калорійних добавок.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Рух щогодини",
+      description: "Тричі за день встань і порухайся хоча б по 3 хвилини.",
+      points: 2,
+    },
+    challenge: {
+      title: "Швидка прогулянка",
+      description: "Пройди 30 хвилин у темпі, за якого дихання стає помітно активнішим.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Колір на тарілці",
+      description: "Додай до одного прийому їжі два різні овочі.",
+      points: 2,
+    },
+    challenge: {
+      title: "Домашня вечеря",
+      description: "Зроби просту домашню вечерю з білка та овочів.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Хвилина тиші",
+      description: "Перед їжею зроби п'ять повільних вдихів і видихів.",
+      points: 2,
+    },
+    challenge: {
+      title: "Половина шляху",
+      description: "Запиши одну зміну, яку вже помічаєш у дисципліні, тілі або самопочутті.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Вода поруч",
+      description: "Кожного разу, коли береш телефон, зроби кілька ковтків води.",
+      points: 2,
+    },
+    challenge: {
+      title: "Активний маршрут",
+      description: "Обери довший маршрут пішки або вийди з транспорту на одну зупинку раніше.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Чиста кава",
+      description: "Одну звичну солодку каву заміни на каву або чай без цукру.",
+      points: 2,
+    },
+    challenge: {
+      title: "День без випічки",
+      description: "Проведи день без печива, булок, тістечок і солодкої випічки.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Розтяжка ввечері",
+      description: "Зроби 7 хвилин спокійної розтяжки перед сном.",
+      points: 2,
+    },
+    challenge: {
+      title: "Ранній відбій",
+      description: "Ляж спати щонайменше на 30 хвилин раніше, ніж зазвичай.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Менша тарілка",
+      description: "Один прийом їжі подай на тарілці меншого розміру.",
+      points: 2,
+    },
+    challenge: {
+      title: "Їжа без добавки",
+      description: "Усі основні прийоми їжі сьогодні заверши однією порцією.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "П'ять хвилин ходьби",
+      description: "Коли відчуєш втому, обери коротку ходьбу замість лежання з телефоном.",
+      points: 2,
+    },
+    challenge: {
+      title: "Сильні 7000",
+      description: "Набери щонайменше 7000 кроків за день.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Спочатку білок",
+      description: "В одному прийомі їжі спочатку з'їж білкову частину та овочі.",
+      points: 2,
+    },
+    challenge: {
+      title: "Без фастфуду",
+      description: "Сьогодні повністю відмовся від фастфуду та снеків.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Подяка тілу",
+      description: "Назви одну річ, за яку сьогодні вдячний своєму тілу.",
+      points: 2,
+    },
+    challenge: {
+      title: "Тренування без торгу",
+      description: "Зроби заплановане тренування навіть у скороченому форматі.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Порядок у холодильнику",
+      description: "Постав воду, овочі та білкові продукти на найпомітніше місце.",
+      points: 2,
+    },
+    challenge: {
+      title: "Заготовка на два дні",
+      description: "Підготуй основу хоча б для двох майбутніх прийомів їжі.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Дихання замість перекусу",
+      description: "При емоційному бажанні поїсти зроби хвилину повільного дихання.",
+      points: 2,
+    },
+    challenge: {
+      title: "Вечірня прогулянка",
+      description: "Заміни 20 хвилин вечірнього екрана на прогулянку.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Одна корисна заміна",
+      description: "Заміни калорійний соус, напій або гарнір на легший варіант.",
+      points: 2,
+    },
+    challenge: {
+      title: "День простих продуктів",
+      description: "Склади меню дня переважно з продуктів без довгого складу на упаковці.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Ранковий план",
+      description: "Зранку визнач один точний час для руху або прогулянки.",
+      points: 2,
+    },
+    challenge: {
+      title: "9000 кроків",
+      description: "Збери 9000 кроків протягом дня у комфортному для себе темпі.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Повільна вечеря",
+      description: "Виділи на вечерю щонайменше 15 хвилин і не поспішай.",
+      points: 2,
+    },
+    challenge: {
+      title: "Кухня закрита",
+      description: "Після вечері прибери їжу та не повертайся до неї до ранку.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Перевір поставу",
+      description: "Тричі за день випрями спину, опусти плечі та зроби глибокий вдих.",
+      points: 2,
+    },
+    challenge: {
+      title: "30 хвилин для тіла",
+      description: "Присвяти 30 хвилин будь-якій активності, яка тобі справді підходить.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Підсумок дня",
+      description: "Увечері назви одну дію, якою сьогодні пишаєшся.",
+      points: 2,
+    },
+    challenge: {
+      title: "Повтори сильний день",
+      description: "Обери найкориснішу дію попередніх днів і свідомо повтори її сьогодні.",
+      points: 3,
+    },
+  },
+  {
+    daily: {
+      title: "Обіцянка наступного циклу",
+      description: "Визнач одну звичку, яку точно переносиш у наступні 30 днів.",
+      points: 2,
+    },
+    challenge: {
+      title: "Фото і чесний висновок",
+      description: "Зроби нове фото прогресу та коротко запиши, що змінилося за цикл.",
+      points: 3,
+    },
+  },
+];
 const ONBOARDING_STORAGE_KEY = "nezlamni_v2_onboarding_seen";
 const FIRST_ACTION_PROMPT_STORAGE_KEY = "nezlamni_first_action_prompt_v2_day";
 const FIRST_ACTION_PROMPT_DELAY_MS = 5000;
@@ -655,9 +1133,10 @@ const ONBOARDING_SLIDES: OnboardingSlide[] = [
     text: "Бали показують, як ти тримаєш день. Вони впливають на рейтинг, стабільність (streak) і статус профілю. Не треба ідеально — важливо не випадати.",
     bullets: [
       "Вода — до 5 балів",
-      "Харчування — до 10 балів",
-      "Активність — до 10 балів",
-      "Сон і нічний режим — до 5 балів",
+      "Харчування — до 8 балів",
+      "Активність — до 8 балів",
+      "Сон і нічний режим — до 4 балів",
+      "Food квест і Sport челендж — до 5 балів",
     ],
   },
   {
@@ -686,16 +1165,16 @@ const TASK_META: Record<string, TaskMeta> = {
     emoji: "⚡",
     title: "Активність",
     description: "Рухай тіло, розганяй енергію і тримай темп.",
-    accent: "from-lime-400 to-emerald-600",
-    glow: "shadow-emerald-500/20",
+    accent: "from-[#22c55e] to-[#15803d]",
+    glow: "shadow-[0_12px_28px_rgb(34_197_94/0.2)]",
     action: "Я порухався",
   },
   food: {
     emoji: "🥗",
     title: "Харчування",
     description: "Білок, режим і чистий день без перекусів.",
-    accent: "from-orange-400 to-rose-500",
-    glow: "shadow-orange-500/20",
+    accent: "from-yellow-300 to-yellow-600",
+    glow: "shadow-yellow-500/20",
     action: "Харчування під контролем",
   },
   night: {
@@ -742,6 +1221,10 @@ export default function Home() {
   const [isActivityInfoOpen, setIsActivityInfoOpen] = useState(false);
   const [isNightModalOpen, setIsNightModalOpen] = useState(false);
   const [isNightInfoOpen, setIsNightInfoOpen] = useState(false);
+  const [selectedBonusTask, setSelectedBonusTask] =
+    useState<BonusTask | null>(null);
+  const [isBonusTaskSaving, setIsBonusTaskSaving] = useState(false);
+  const [isStreakInfoOpen, setIsStreakInfoOpen] = useState(false);
   const [rewardToast, setRewardToast] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
   const [isFeedbackSaving, setIsFeedbackSaving] = useState(false);
@@ -753,6 +1236,9 @@ export default function Home() {
   const [isFirstActionOpen, setIsFirstActionOpen] = useState(false);
   const [isFirstActionSaving, setIsFirstActionSaving] = useState(false);
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
+  const [isNameEditing, setIsNameEditing] = useState(false);
+  const [isNameSaving, setIsNameSaving] = useState(false);
+  const [profileNameDraft, setProfileNameDraft] = useState("");
   const [avatarCropSource, setAvatarCropSource] = useState<string | null>(null);
   const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
   const [avatarZoom, setAvatarZoom] = useState(1);
@@ -1164,6 +1650,30 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     const diff = now.getTime() - start.getTime();
 
     return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
+  }
+
+  function getBonusCycleDay() {
+    return ((getDaysWithUs() - 1) % BONUS_DAY_PLAN.length) + 1;
+  }
+
+  function getDailyBonusTasks(): BonusTask[] {
+    const cycleDay = getBonusCycleDay();
+    const plan = BONUS_DAY_PLAN[cycleDay - 1];
+
+    return [
+      {
+        ...plan.daily,
+        code: `bonus_day_${cycleDay}_daily`,
+        cycleDay,
+        slot: "daily",
+      },
+      {
+        ...plan.challenge,
+        code: `bonus_day_${cycleDay}_challenge`,
+        cycleDay,
+        slot: "challenge",
+      },
+    ];
   }
 
   function getDailyMotivation() {
@@ -1594,6 +2104,36 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     setProfile(data as Profile);
     setMessage("Фото профілю видалено.");
+    await fetchLeaderboard();
+  }
+
+  async function saveProfileName() {
+    if (!profile || isNameSaving) return;
+
+    const nextName = profileNameDraft.trim().replace(/\s+/g, " ");
+    if (nextName.length < 2) {
+      setMessage("Ім’я має містити щонайменше 2 символи.");
+      return;
+    }
+
+    setIsNameSaving(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ first_name: nextName })
+      .eq("id", profile.id)
+      .select()
+      .single();
+
+    setIsNameSaving(false);
+
+    if (error || !data) {
+      showSaveError("update profile name", error);
+      return;
+    }
+
+    setProfile(data as Profile);
+    setIsNameEditing(false);
+    setMessage("Ім’я оновлено.");
     await fetchLeaderboard();
   }
 
@@ -2532,6 +3072,52 @@ async function updateWeight() {
     await fetchLeaderboard();
   }
 
+  async function completeBonusTask(task: BonusTask) {
+    if (!profile || isBonusTaskSaving) return;
+
+    if (completedTaskCodes.includes(task.code)) {
+      setMessage("Це бонусне завдання вже виконано сьогодні.");
+      setSelectedBonusTask(null);
+      return;
+    }
+
+    setIsBonusTaskSaving(true);
+
+    const { error } = await supabase.from("daily_logs").insert({
+      profile_id: profile.id,
+      task_code: task.code,
+      points: task.points,
+      event_day: today(),
+    });
+
+    if (error) {
+      setIsBonusTaskSaving(false);
+
+      if (isDuplicateLogError(error)) {
+        setCompletedTaskCodes((currentCodes) =>
+          currentCodes.includes(task.code)
+            ? currentCodes
+            : [...currentCodes, task.code]
+        );
+        setSelectedBonusTask(null);
+        setMessage("Це бонусне завдання вже виконано сьогодні.");
+        await syncProfileStats(profile.id);
+        return;
+      }
+
+      showSaveError("complete bonus task", error);
+      return;
+    }
+
+    setCompletedTaskCodes((currentCodes) => [...currentCodes, task.code]);
+    setSelectedBonusTask(null);
+    setIsBonusTaskSaving(false);
+    setMessage(`Бонус виконано: +${task.points} балів`);
+    showRewardToast(task.points);
+    await syncProfileStats(profile.id);
+    await fetchLeaderboard();
+  }
+
   if (!profile) {
     return (
 <main className="min-h-screen bg-black text-white p-6 pb-24">        Завантаження...
@@ -2667,15 +3253,22 @@ async function updateWeight() {
   const isFoodCompleted = foodCompletedCount === FOOD_ITEMS.length;
   const activityCompletedCount = getActivityCompletedCount();
   const activityPointsEarned = getActivityPointsEarned();
-  const isActivityCompleted = activityPointsEarned >= 10;
+  const isActivityCompleted = activityPointsEarned >= 8;
   const nightCompletedCount = getNightCompletedCount();
   const nightPointsEarned = getNightPointsEarned();
   const isNightCompleted = nightCompletedCount === NIGHT_ITEMS.length;
+  const dailyBonusTasks = getDailyBonusTasks();
+  const bonusPointsEarned = dailyBonusTasks.reduce(
+    (sum, task) =>
+      completedTaskCodes.includes(task.code) ? sum + task.points : sum,
+    0
+  );
   const dayPoints =
     waterCompletedCount +
     foodPointsEarned +
     activityPointsEarned +
-    nightPointsEarned;
+    nightPointsEarned +
+    bonusPointsEarned;
   const dayProgress = Math.min(
     100,
     Math.round((dayPoints / DAILY_POINTS_MAX) * 100)
@@ -2691,7 +3284,7 @@ async function updateWeight() {
       code: "night",
       meta: TASK_META.night,
       points: nightPointsEarned,
-      maxPoints: 5,
+      maxPoints: 4,
       progress: nightCompletedCount,
       total: NIGHT_ITEMS.length,
       isCompleted: isNightCompleted,
@@ -2711,7 +3304,7 @@ async function updateWeight() {
       code: "food",
       meta: TASK_META.food,
       points: foodPointsEarned,
-      maxPoints: 10,
+      maxPoints: 8,
       progress: foodCompletedCount,
       total: FOOD_ITEMS.length,
       isCompleted: isFoodCompleted,
@@ -2721,7 +3314,7 @@ async function updateWeight() {
       code: "activity",
       meta: TASK_META.activity,
       points: activityPointsEarned,
-      maxPoints: 10,
+      maxPoints: 8,
       progress: activityCompletedCount,
       total: ACTIVITY_GOAL_COUNT,
       isCompleted: isActivityCompleted,
@@ -2747,6 +3340,13 @@ async function updateWeight() {
   ).length;
   const weightProgress = getWeightProgress();
   const topUsers = leaderboard.slice(0, 3);
+  const podiumUsers = [
+    topUsers[1] ? { user: topUsers[1], rank: 2 } : null,
+    topUsers[0] ? { user: topUsers[0], rank: 1 } : null,
+    topUsers[2] ? { user: topUsers[2], rank: 3 } : null,
+  ].filter(
+    (entry): entry is { user: LeaderboardUser; rank: number } => entry !== null
+  );
   const restUsers = leaderboard.slice(3, 10);
   const onboardingSlide = ONBOARDING_SLIDES[onboardingStep];
   const isFirstWaterActionDone = completedTaskCodes.includes("water_wakeup");
@@ -2758,6 +3358,44 @@ async function updateWeight() {
       {rewardToast && (
         <div className="reward-toast fixed inset-x-8 top-4 z-[60] mx-auto max-w-xs rounded-xl border border-green-400/40 bg-green-500 px-4 py-3 text-center text-sm font-black text-white shadow-xl shadow-green-500/30">
           {rewardToast}
+        </div>
+      )}
+
+      {isStreakInfoOpen && (
+        <div
+          className="fixed inset-0 z-[65] grid place-items-center bg-black/70 p-5"
+          onClick={() => setIsStreakInfoOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="streak-info-title"
+            className="w-full max-w-xs rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase text-orange-300">
+                  Серія днів
+                </p>
+                <h2 id="streak-info-title" className="mt-1 text-xl font-black">
+                  Що таке streak?
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStreakInfoOpen(false)}
+                aria-label="Закрити пояснення"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-zinc-800 text-zinc-300"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+              Це кількість днів поспіль, коли ти виконав хоча б одне завдання.
+              Продовжуй щодня, щоб серія не обнулилася.
+            </p>
+          </div>
         </div>
       )}
 
@@ -2832,7 +3470,7 @@ async function updateWeight() {
         <div className="fixed inset-0 z-50 flex items-end bg-black/80 px-4 pb-4">
           <section className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-cyan-400/30 bg-zinc-950 shadow-2xl shadow-cyan-950/30">
             <div className="bg-gradient-to-br from-cyan-500/20 via-zinc-950 to-green-500/20 p-5">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
                   Як це працює
                 </p>
@@ -3002,22 +3640,21 @@ async function updateWeight() {
 
       <div className="mx-auto max-w-md">
         {activeTab === "home" && (
-          <div className="space-y-5">
-            <header className="flex items-start justify-between gap-4">
-              <div>
+          <div className="space-y-3">
+            <header className="flex items-end justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-400">
                   Power of
                 </p>
-                <h1 className="text-4xl font-black">NEZLAMNI</h1>
-                <p className="mt-1 text-sm text-zinc-400">
-                </p>
-                <button
-                  onClick={openOnboarding}
-                  className="help-pulse mt-3 rounded-full border border-red-500/35 bg-red-950/30 px-4 py-2 text-xs font-black text-red-300"
-                >
-                  Як все тут працює?
-                </button>
+                <h1 className="text-3xl font-black sm:text-4xl">NEZLAMNI</h1>
               </div>
+
+              <button
+                onClick={openOnboarding}
+                className="help-pulse mb-0.5 shrink-0 rounded-full border border-red-500/35 bg-red-950/30 px-3 py-2 text-[10px] font-black text-red-300 sm:text-xs"
+              >
+                Як все працює?
+              </button>
 
               <button
                 onClick={toggleAppTheme}
@@ -3035,34 +3672,45 @@ async function updateWeight() {
                     appTheme === "light" ? "translate-x-9" : "translate-x-0"
                   }`}
                 />
-                <span className="relative z-10 grid h-full grid-cols-2 items-center text-center text-base">
+                <span className="relative z-10 grid h-full grid-cols-2 place-items-center text-[#D4AF3C]">
                   <span
-                    className={
-                      appTheme === "dark" ? "text-black" : "text-zinc-400"
-                    }
+                    className="grid place-items-center"
                   >
-                    🌙
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-[18px] w-[18px]"
+                    >
+                      <path
+                        d="M18.8 3.2C11.2 4.1 8.1 13.8 14 18.8c2 1.7 4.7 2.2 7 1.3-2 2.1-4.9 3.4-8 3.1C6.8 22.6 2.2 17.1 2.8 10.9 3.4 4.7 8.9.1 15.1.8c1.4.2 2.6 1 3.7 2.4Z"
+                        fill="currentColor"
+                      />
+                    </svg>
                   </span>
                   <span
-                    className={
-                      appTheme === "light" ? "text-black" : "text-zinc-400"
-                    }
+                    className="grid place-items-center"
                   >
-                    ☀️
+                    <Sun
+                      size={18}
+                      strokeWidth={1.6}
+                      fill="currentColor"
+                    />
                   </span>
                 </span>
               </button>
             </header>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-              <div className="flex gap-4">
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl">
+              <div className="grid grid-cols-[5rem_minmax(0,1fr)_auto] gap-x-4 gap-y-3">
                 <div className="relative h-20 w-20 shrink-0">
-                  <ProfileAvatar
-                    name={profile.first_name}
-                    avatarUrl={profile.avatar_url}
-                    className="h-20 w-20"
-                    textClassName="text-3xl"
-                  />
+                  <div className="metallic-gold-ring rounded-full p-[2px]">
+                    <ProfileAvatar
+                      name={profile.first_name}
+                      avatarUrl={profile.avatar_url}
+                      className="h-[76px] w-[76px] !border-0"
+                      textClassName="text-3xl"
+                    />
+                  </div>
                   <label
                     title={
                       profile.avatar_url ? "Замінити фото" : "Додати фото"
@@ -3070,16 +3718,16 @@ async function updateWeight() {
                     aria-label={
                       profile.avatar_url ? "Замінити фото" : "Додати фото"
                     }
-                    className={`absolute bottom-1 right-0 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 ${
+                    className={`metallic-gold-ring absolute bottom-1 right-0 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full p-px ${
                       isAvatarSaving ? "pointer-events-none opacity-60" : ""
                     }`}
                   >
                     <Image
                       src="/icons/camera-profile-v3.svg"
                       alt=""
-                      width={12}
-                      height={12}
-                      className="block h-3 w-3 object-contain"
+                      width={16}
+                      height={16}
+                      className="block h-4 w-4 object-contain"
                     />
                     <input
                       type="file"
@@ -3103,95 +3751,65 @@ async function updateWeight() {
                   <p className="mt-1 text-sm font-semibold text-green-400">
                     {getLevel()}
                   </p>
+                </div>
 
-                  <div className="mt-4 flex items-center gap-3">
-                    <div className="h-3 flex-1 overflow-hidden rounded-full bg-zinc-800">
-                      <div
-                        className="h-full rounded-full bg-green-500"
-                        style={{ width: `${weightProgress}%` }}
-                      />
+                <div className="row-span-2 self-stretch overflow-hidden rounded-2xl border border-zinc-800 bg-black/20 text-center">
+                  <div className="px-3 py-2">
+                    <p className="text-2xl font-black">
+                      {profile.streak_current || 0}
+                    </p>
+                    <div className="mt-1 flex items-center justify-center gap-1">
+                      <p className="text-xs font-bold text-orange-300">
+                        streak
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsStreakInfoOpen(true)}
+                        aria-label="Що таке streak?"
+                        className="grid h-4 w-4 place-items-center rounded-full text-orange-300 transition hover:text-orange-200"
+                      >
+                        <CircleHelp size={13} strokeWidth={2.2} />
+                      </button>
                     </div>
-                    <span className="text-xs text-zinc-400">
-                      {weightProgress}%
-                    </span>
+                  </div>
+                  <div className="border-t border-zinc-800 px-3 py-2">
+                    <p className="text-xs font-bold uppercase text-green-400">
+                      Загальні
+                    </p>
+                    <p className="text-2xl font-black">
+                      {profile.points_total || 0}
+                    </p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-orange-500/15 px-3 py-2 text-center">
-                  <p className="text-2xl font-black">
-                    {profile.streak_current || 0}
-                  </p>
-                  <p className="text-xs font-bold text-orange-300">streak</p>
+                <div className="col-span-2">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-zinc-400">
+                      Прогрес дня
+                    </span>
+                    <span className="text-xs font-black text-orange-300">
+                      {dayPoints}/{DAILY_POINTS_MAX}
+                    </span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-green-500"
+                      style={{ width: `${dayProgress}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            </section>
-
-            <section className="grid grid-cols-[1fr_1.3fr] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
-              <div className="grid place-items-center border-r border-zinc-800 bg-black/30 p-5 text-4xl">
-                ❖
-              </div>
-              <div className="p-5">
-                <p className="text-sm font-bold uppercase tracking-wider text-green-400">
-                  Твої загальні бали
-                </p>
-                <p className="text-4xl font-black">
-                  {profile.points_total || 0}
-                </p>
-              </div>
-            </section>
-
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold text-green-400">
-                    Почни з малого
-                  </p>
-                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-black">
-                    {dayPoints}/{DAILY_POINTS_MAX}
-                  </p>
-                  <p className="text-xs font-bold text-zinc-400">балів</p>
-                </div>
-              </div>
-
-              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-green-500"
-                  style={{ width: `${dayProgress}%` }}
-                />
-              </div>
-
-              <p className="mt-3 text-sm text-zinc-400">
-                {dayStatus.description}
-              </p>
-            </section>
-
-            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
-              <p className="text-sm font-bold text-green-400">
-                Фокус сьогодні
-              </p>
-              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
-              <p className="mt-2 text-sm text-zinc-300">
-                {todayFocus.description}
-              </p>
-              <button
-                onClick={todayFocus.onClick}
-                className="mt-4 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
-              >
-                {todayFocus.action}
-              </button>
             </section>
 
             <section>
-              <div className="mb-4 flex items-end justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-green-400">
-                    Завдання на сьогодні
-                  </p>
-                  <h2 className="text-2xl font-black">Забери свої бали</h2>
-                </div>
+              <div className="mb-2 flex items-end justify-between">
+                <h2 className="min-w-0 whitespace-nowrap text-sm font-black">
+                  <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
+                    Основні
+                  </span>
+                  <span className="text-zinc-600"> · </span>
+                  <span>Завдання на сьогодні</span>
+                </h2>
                 <button
                   onClick={() => setActiveTab("tasks")}
                   className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-zinc-300"
@@ -3200,7 +3818,7 @@ async function updateWeight() {
                 </button>
               </div>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
                 {orderedTasks.map((task) => {
                   const meta = getTaskMeta(task);
                   const isWaterTask = task.code.toLowerCase() === "water";
@@ -3216,107 +3834,160 @@ async function updateWeight() {
                         : isNightTask
                           ? isNightCompleted
                           : completedTaskCodes.includes(task.code);
-                  const pointsText = isWaterTask
-                    ? `+${waterCompletedCount}`
+                  const earnedPoints = isWaterTask
+                    ? waterCompletedCount
                     : isFoodTask
-                      ? `+${foodPointsEarned}`
+                      ? foodPointsEarned
                       : isActivityTask
-                        ? `+${activityPointsEarned}`
+                        ? activityPointsEarned
                         : isNightTask
-                          ? `+${nightPointsEarned}`
-                          : `+${task.points}`;
-                  const statusText = isWaterTask
-                    ? `${waterCompletedCount}/${WATER_ITEMS.length}`
-                    : isFoodTask
-                      ? `${foodCompletedCount}/${FOOD_ITEMS.length}`
-                      : isActivityTask
-                        ? `${activityPointsEarned}/10`
-                        : isNightTask
-                          ? `${nightCompletedCount}/${NIGHT_ITEMS.length}`
+                          ? nightPointsEarned
                           : isCompleted
-                            ? "✅"
-                            : "○";
-                  const progressPercent = isWaterTask
-                    ? (waterCompletedCount / WATER_ITEMS.length) * 100
+                            ? task.points
+                            : 0;
+                  const maxPoints = isWaterTask
+                    ? 5
                     : isFoodTask
-                      ? (foodCompletedCount / FOOD_ITEMS.length) * 100
+                      ? 8
                       : isActivityTask
-                        ? (activityPointsEarned / 10) * 100
+                        ? 8
                         : isNightTask
-                          ? (nightCompletedCount / NIGHT_ITEMS.length) * 100
+                          ? 4
+                          : task.points;
+                  const progressPercent = isWaterTask
+                    ? (waterCompletedCount / 5) * 100
+                    : isFoodTask
+                      ? (foodPointsEarned / 8) * 100
+                      : isActivityTask
+                        ? (activityPointsEarned / 8) * 100
+                        : isNightTask
+                          ? (nightPointsEarned / 4) * 100
                           : isCompleted
                             ? 100
                             : 0;
-
                   return (
                     <button
                       key={task.id}
                       onClick={() => completeTask(task)}
-                      className={`relative w-full overflow-hidden rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
-                        isCompleted
-                          ? "border-green-500/40 bg-green-950/40 text-white"
-                          : `border-zinc-800 bg-zinc-900 ${meta.glow}`
+                      className={`relative flex min-h-[78px] w-full flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-left shadow-lg transition active:scale-[0.98] ${meta.glow} ${
+                        isCompleted ? "text-white ring-1 ring-white/20" : ""
                       }`}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start justify-between gap-2">
                         <div
-                          className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${meta.accent} text-3xl shadow-lg`}
+                          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${meta.accent} text-base shadow-lg`}
                         >
                           {isCompleted ? "✓" : meta.emoji}
                         </div>
-
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-lg font-black leading-tight">
-                            {meta.title}
-                          </h3>
-                          <p className="truncate text-sm text-zinc-300">
-                            {meta.description}
-                          </p>
-                        </div>
-
                         <div className="text-right">
-                          <p className="text-2xl font-black text-green-300">
-                            {pointsText}
+                          <p className="text-xl font-black leading-none text-orange-300">
+                            {earnedPoints}/{maxPoints}
                           </p>
-                          <p className="text-sm text-zinc-400">
-                            {statusText}
-                          </p>
+                          <p className="text-[10px] text-zinc-400">балів</p>
                         </div>
                       </div>
-                      <div className="absolute bottom-0 left-0 h-1 w-full bg-black/30">
-                        <div
-                          className={`h-full bg-gradient-to-r ${meta.accent}`}
-                          style={{ width: `${progressPercent}%` }}
-                        />
+
+                      <div className="mt-1.5 min-w-0">
+                        <h3 className="truncate text-sm font-black leading-tight">
+                          {meta.title}
+                        </h3>
+                      </div>
+
+                      <div className="mt-auto pt-1.5">
+                        <div className="h-1 overflow-hidden rounded-full bg-black/30">
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r ${meta.accent}`}
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
                       </div>
                     </button>
                   );
                 })}
               </div>
+
+              <div className="mt-3">
+                <div className="mb-2">
+                  <h3 className="min-w-0 whitespace-nowrap text-sm font-black">
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
+                      Додаткові можливості
+                    </span>
+                    <span className="text-zinc-600"> · </span>
+                    <span>Бонусні завдання</span>
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {dailyBonusTasks.map((bonus) => {
+                    const isCompleted = completedTaskCodes.includes(bonus.code);
+                    const label =
+                      bonus.slot === "daily"
+                        ? "Food квест"
+                        : "Sport челендж";
+                    const meta =
+                      bonus.slot === "daily"
+                        ? TASK_META.food
+                        : TASK_META.activity;
+
+                    return (
+                      <button
+                        type="button"
+                        key={bonus.code}
+                        onClick={() => setSelectedBonusTask(bonus)}
+                        className={`relative min-h-[82px] overflow-hidden rounded-2xl border p-2.5 text-left transition active:scale-[0.98] ${
+                          isCompleted
+                            ? "border-[#D4AF3C]/50 bg-[#D4AF3C]/10"
+                            : "border-zinc-800 bg-zinc-900"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <span
+                            className={`grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br ${meta.accent} text-base shadow-lg`}
+                          >
+                            {isCompleted ? "✓" : meta.emoji}
+                          </span>
+                          <span className="text-right">
+                            <span className="block text-xl font-black leading-none text-orange-300">
+                              {isCompleted ? bonus.points : 0}/{bonus.points}
+                            </span>
+                            <span className="block text-[10px] text-zinc-400">
+                              балів
+                            </span>
+                          </span>
+                        </div>
+                        <p className="mt-2 truncate text-xs font-black">
+                          {label}
+                        </p>
+                        <p className="mt-0.5 truncate text-[10px] text-zinc-500">
+                          {isCompleted ? "Виконано" : bonus.title}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </section>
 
-            <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-5">
-              <p className="text-sm font-bold text-green-400">Мотивація дня</p>
-              <h2 className="mt-2 text-2xl font-black">
+            <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-3">
+              <p className="text-xs font-bold text-orange-300">
+                Мотивація дня
+              </p>
+              <h2 className="mt-1 text-lg font-black">
                 {dailyMotivation.title}
               </h2>
-              <p className="mt-2 text-sm text-zinc-300">
+              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-300">
                 {dailyMotivation.text}
               </p>
-              <button
-                onClick={() => setActiveTab("tasks")}
-                className="mt-5 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
-              >
-                Перейти до завдань
-              </button>
             </section>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-              <p className="text-sm font-bold text-green-400">
-                Коментар розробникам
-              </p>
-              <h2 className="mt-1 text-2xl font-black">Що покращити?</h2>
-              <p className="mt-2 text-sm text-zinc-400">
+            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-black">Що покращити?</h2>
+                <p className="shrink-0 text-right text-xs font-bold text-red-400">
+                  Коментар розробникам
+                </p>
+              </div>
+              <p className="mt-1 text-xs text-zinc-400">
                 Напиши, якщо щось незручно, незрозуміло або зламалось.
               </p>
 
@@ -3324,9 +3995,9 @@ async function updateWeight() {
                 value={feedbackText}
                 onChange={(event) => setFeedbackText(event.target.value)}
                 maxLength={1000}
-                rows={4}
+                rows={3}
                 placeholder="Наприклад: не зрозумів, як зарахувати воду..."
-                className="mt-4 w-full resize-none rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-green-500"
+                className="mt-3 w-full resize-none rounded-2xl border border-zinc-800 bg-black/40 p-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-green-500"
               />
 
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -3336,7 +4007,7 @@ async function updateWeight() {
                 <button
                   onClick={submitFeedback}
                   disabled={isFeedbackSaving || feedbackText.trim().length < 3}
-                  className="rounded-full bg-green-600 px-5 py-3 text-sm font-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                  className="feedback-submit rounded-full bg-green-600 px-5 py-2.5 text-sm font-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                 >
                   {isFeedbackSaving ? "Зберігаю..." : "Надіслати"}
                 </button>
@@ -3344,10 +4015,6 @@ async function updateWeight() {
             </section>
           </div>
         )}
-        {message && (
-          <div className="bg-zinc-800 rounded-2xl p-4 mb-6">{message}</div>
-        )}
-
         {activeTab === "leaderboard" && (
           <div className="space-y-5">
             <header className="flex items-center justify-between">
@@ -3426,31 +4093,91 @@ async function updateWeight() {
             </section>
 
             {topUsers.length > 0 && (
-              <section className="grid grid-cols-3 items-end gap-3">
-                {topUsers.map((user, index) => (
-                  <button
-                    key={user.profile_id}
-                    onClick={() => setSelectedPublicProfile(user)}
-                    className={`rounded-3xl border border-zinc-800 bg-zinc-900 p-3 text-center ${
-                      index === 0 ? "pb-8" : "pb-4"
-                    }`}
-                  >
-                    <ProfileAvatar
-                      name={user.name}
-                      avatarUrl={user.avatarUrl}
-                      className="mx-auto mb-2 h-16 w-16"
-                      textClassName="text-xl"
-                    />
-                    <p className="font-bold">{user.name}</p>
-                    <p className="text-xs font-bold text-green-300">
-                      {user.status.icon} {user.status.title}
-                    </p>
-                    <p className="text-green-400">{user.points}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      🔥 {user.supportCount}
-                    </p>
-                  </button>
-                ))}
+              <section className="grid grid-cols-3 items-end gap-2 px-1 pt-4">
+                {podiumUsers.map(({ user, rank }) => {
+                  const isWinner = rank === 1;
+                  const rankStyles =
+                    rank === 1
+                      ? {
+                          ring:
+                            "linear-gradient(135deg, #704500 0%, #D4AF3C 26%, #FFF4B0 48%, #D4AF3C 68%, #7A4A00 100%)",
+                          badge:
+                            "linear-gradient(135deg, #704500 0%, #D4AF3C 28%, #FFF4B0 48%, #D4AF3C 65%, #7A4A00 100%)",
+                          points: "text-[#D4AF3C]",
+                        }
+                      : rank === 2
+                        ? {
+                            ring:
+                              "linear-gradient(135deg, #62626B 0%, #D4D4D8 26%, #FFFFFF 48%, #C4C4C9 68%, #6B6B73 100%)",
+                            badge:
+                              "linear-gradient(135deg, #62626B 0%, #D4D4D8 28%, #FFFFFF 48%, #C4C4C9 65%, #6B6B73 100%)",
+                            points: "text-[#D4D4D8]",
+                          }
+                        : {
+                            ring:
+                              "linear-gradient(135deg, #70270E 0%, #D95A24 26%, #FFB07C 48%, #D95A24 68%, #76290F 100%)",
+                            badge:
+                              "linear-gradient(135deg, #70270E 0%, #D95A24 28%, #FFB07C 48%, #D95A24 65%, #76290F 100%)",
+                            points: "text-[#D95A24]",
+                          };
+
+                  return (
+                    <button
+                      key={user.profile_id}
+                      onClick={() => setSelectedPublicProfile(user)}
+                      className={`min-w-0 text-center ${
+                        isWinner && topUsers.length === 1 ? "col-start-2" : ""
+                      } ${
+                        isWinner ? "pb-5" : "pb-1"
+                      }`}
+                    >
+                      <MetallicCrown
+                        rank={rank}
+                        className={`mx-auto mb-1 ${
+                          isWinner ? "h-9 w-12" : "h-7 w-10"
+                        }`}
+                      />
+                      <div className="relative mx-auto w-fit">
+                        <div
+                          className={`rounded-full ${
+                            isWinner ? "p-[3px]" : "p-0.5"
+                          }`}
+                          style={{
+                            background: rankStyles.ring,
+                            boxShadow: "0 0 16px rgb(255 255 255 / 0.08)",
+                          }}
+                        >
+                          <ProfileAvatar
+                            name={user.name}
+                            avatarUrl={user.avatarUrl}
+                            className={`${
+                              isWinner ? "h-24 w-24" : "h-20 w-20"
+                            } !border-0`}
+                            textClassName={isWinner ? "text-3xl" : "text-2xl"}
+                          />
+                        </div>
+                        <span
+                          className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border-2 border-zinc-950 text-xs font-black text-white shadow-lg"
+                          style={{
+                            background: rankStyles.badge,
+                            textShadow: "0 1px 2px rgb(0 0 0 / 0.75)",
+                          }}
+                        >
+                          {rank}
+                        </span>
+                      </div>
+                      <p className="mt-3 truncate text-sm font-bold">
+                        {user.name}
+                      </p>
+                      <p className={`text-lg font-black ${rankStyles.points}`}>
+                        {user.points}
+                      </p>
+                      <p className="truncate text-[10px] text-zinc-500">
+                        {user.status.icon} {user.status.title}
+                      </p>
+                    </button>
+                  );
+                })}
               </section>
             )}
 
@@ -3602,13 +4329,64 @@ async function updateWeight() {
                 <ProfileAvatar
                   name={profile.first_name}
                   avatarUrl={profile.avatar_url}
-                  className="h-24 w-24"
+                  className="h-24 w-24 !border-zinc-700"
                   textClassName="text-4xl"
                 />
               </div>
-              <h2 className="text-3xl font-black">
-                {profile.first_name || "User"}
-              </h2>
+              {isNameEditing ? (
+                <form
+                  className="mx-auto flex max-w-xs items-center gap-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void saveProfileName();
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={profileNameDraft}
+                    onChange={(event) =>
+                      setProfileNameDraft(event.target.value.slice(0, 40))
+                    }
+                    aria-label="Нове ім’я"
+                    className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-center text-lg font-black outline-none focus:border-green-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isNameSaving}
+                    aria-label="Зберегти ім’я"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-green-600 text-white disabled:opacity-50"
+                  >
+                    <Check size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isNameSaving}
+                    onClick={() => setIsNameEditing(false)}
+                    aria-label="Скасувати редагування"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-800 text-zinc-300 disabled:opacity-50"
+                  >
+                    <X size={18} />
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <h2 className="min-w-0 truncate text-3xl font-black">
+                    {profile.first_name || "User"}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileNameDraft(profile.first_name || "");
+                      setIsNameEditing(true);
+                    }}
+                    aria-label="Змінити ім’я"
+                    title="Змінити ім’я"
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-zinc-800 text-zinc-300"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                </div>
+              )}
               <p className="mt-1 text-xs text-zinc-500">
                 JPG, PNG або WebP · до 5 МБ
               </p>
@@ -3898,105 +4676,176 @@ async function updateWeight() {
               >
                 ‹
               </button>
-              <h1 className="text-2xl font-black">Завдання</h1>
+              <div className="text-center">
+                <h1 className="text-2xl font-black">Завдання</h1>
+                <p className="text-xs text-zinc-500">Детальний прогрес</p>
+              </div>
               <span className="text-sm text-zinc-400">
                 {completedCount}/{tasks.length}
               </span>
             </header>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold text-green-400">
-                    Почни з малого
-                  </p>
-                  <h2 className="text-2xl font-black">{dayStatus.title}</h2>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-black">
-                    {dayPoints}/{DAILY_POINTS_MAX}
-                  </p>
-                  <p className="text-xs font-bold text-zinc-400">балів</p>
-                </div>
+            <section className="flex h-28 items-center justify-between gap-3 rounded-3xl border border-green-500/30 bg-green-950/25 p-4">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[#D4AF3C]">
+                  Фокус сьогодні
+                </p>
+                <h2 className="mt-1 truncate text-lg font-black">
+                  {todayFocus.title}
+                </h2>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-300">
+                  {todayFocus.description}
+                </p>
               </div>
-
-              <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-green-500"
-                  style={{ width: `${dayProgress}%` }}
-                />
-              </div>
-
-              <p className="mt-3 text-sm text-zinc-400">
-                {dayStatus.description}
-              </p>
-            </section>
-
-            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
-              <p className="text-sm font-bold text-green-400">
-                Фокус сьогодні
-              </p>
-              <h2 className="mt-1 text-2xl font-black">{todayFocus.title}</h2>
-              <p className="mt-2 text-sm text-zinc-300">
-                {todayFocus.description}
-              </p>
               <button
                 onClick={todayFocus.onClick}
-                className="mt-4 rounded-full bg-green-600 px-5 py-3 text-sm font-black"
+                className="shrink-0 rounded-full bg-green-600 px-4 py-2 text-xs font-black"
               >
                 {todayFocus.action}
               </button>
             </section>
 
-            <section className="space-y-3">
-              {taskSummaries.map((task) => {
-                const progressPercent = (task.points / task.maxPoints) * 100;
+            <section className="flex h-28 flex-col justify-center rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold text-green-400">
+                    Почни з малого
+                  </p>
+                  <h2 className="text-lg font-black">{dayStatus.title}</h2>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black">
+                    {dayPoints}/{DAILY_POINTS_MAX}
+                  </p>
+                  <p className="text-[10px] font-bold text-zinc-400">балів</p>
+                </div>
+              </div>
 
-                return (
-                  <button
-                    key={task.code}
-                    onClick={task.onClick}
-                    className={`relative w-full overflow-hidden rounded-2xl border p-4 text-left ${
-                      task.isCompleted
-                        ? "border-green-500/40 bg-green-950/40"
-                        : "border-zinc-800 bg-zinc-900"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
+              <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{ width: `${dayProgress}%` }}
+                />
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-black">
+                  <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
+                    Основні
+                  </span>
+                  <span className="text-zinc-600"> · </span>
+                  <span>Завдання на сьогодні</span>
+                </h2>
+              </div>
+
+              <div className="space-y-2">
+                {taskSummaries.map((task) => {
+                  const progressPercent = (task.points / task.maxPoints) * 100;
+
+                  return (
+                    <button
+                      key={task.code}
+                      onClick={task.onClick}
+                      className={`relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left shadow-lg transition active:scale-[0.99] ${
+                        task.isCompleted
+                          ? "border-green-500/40 bg-green-950/40 text-white ring-1 ring-white/20"
+                          : "border-zinc-800 bg-zinc-900"
+                      }`}
+                    >
                       <div
-                        className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${task.meta.accent} text-3xl`}
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${task.meta.accent} text-xl shadow-lg`}
                       >
                         {task.isCompleted ? "✓" : task.meta.emoji}
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-black leading-tight">
+                        <h3 className="truncate text-sm font-black leading-tight">
                           {task.meta.title}
                         </h3>
-                        <p className="truncate text-sm text-zinc-400">
+                        <p className="mt-1 text-xs text-zinc-400">
                           {task.progress}/{task.total} пунктів
                         </p>
+                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-black/30">
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r ${task.meta.accent}`}
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-2xl font-black text-green-300">
-                          +{task.points}
+                      <div className="shrink-0 text-right">
+                        <p className="text-xl font-black text-orange-300">
+                          {task.points}/{task.maxPoints}
                         </p>
-                        <p className="text-xs text-zinc-400">
-                          з {task.maxPoints}
-                        </p>
+                        <p className="text-[10px] text-zinc-500">балів</p>
                       </div>
-                    </div>
+                    </button>
+                  );
+                })}
+              </div>
 
-                    <div className="absolute bottom-0 left-0 h-1 w-full bg-black/30">
-                      <div
-                        className={`h-full bg-gradient-to-r ${task.meta.accent}`}
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
+              <div className="mb-3 mt-5">
+                <h2 className="text-sm font-black">
+                  <span className="text-[10px] uppercase tracking-[0.16em] text-orange-300">
+                    Додаткові можливості
+                  </span>
+                  <span className="text-zinc-600"> · </span>
+                  <span>Бонусні завдання</span>
+                </h2>
+              </div>
+
+              <div className="space-y-2">
+                {dailyBonusTasks.map((bonus) => {
+                  const isCompleted = completedTaskCodes.includes(bonus.code);
+                  const label =
+                    bonus.slot === "daily"
+                      ? "Food квест"
+                      : "Sport челендж";
+                  const meta =
+                    bonus.slot === "daily"
+                      ? TASK_META.food
+                      : TASK_META.activity;
+
+                  return (
+                    <button
+                      type="button"
+                      key={bonus.code}
+                      onClick={() => setSelectedBonusTask(bonus)}
+                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
+                        isCompleted
+                          ? "border-[#D4AF3C]/50 bg-[#D4AF3C]/10"
+                          : "border-zinc-800 bg-zinc-900"
+                      }`}
+                    >
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${meta.accent} text-xl shadow-lg`}
+                      >
+                        {isCompleted ? "✓" : meta.emoji}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-black">
+                          {label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-zinc-500">
+                          {isCompleted
+                            ? "Виконано сьогодні"
+                            : `${bonus.title}: ${bonus.description}`}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-xl font-black text-orange-300">
+                          {isCompleted ? bonus.points : 0}/{bonus.points}
+                        </span>
+                        <span className="block text-[10px] text-zinc-500">
+                          балів
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
@@ -4307,6 +5156,94 @@ async function updateWeight() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedBonusTask && (
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center bg-black/80 p-5"
+          onClick={() => {
+            if (!isBonusTaskSaving) setSelectedBonusTask(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bonus-task-title"
+            className="w-full max-w-md rounded-3xl border border-[#D4AF3C]/40 bg-zinc-950 p-5 shadow-2xl shadow-amber-950/30"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-300">
+                  День {selectedBonusTask.cycleDay} із 30 ·{" "}
+                  {selectedBonusTask.slot === "daily"
+                    ? "Food квест"
+                    : "Sport челендж"}
+                </p>
+                <h2
+                  id="bonus-task-title"
+                  className="mt-2 text-2xl font-black"
+                >
+                  {selectedBonusTask.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBonusTask(null)}
+                disabled={isBonusTaskSaving}
+                aria-label="Закрити"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-900 text-zinc-300 disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div
+              className={`my-5 grid h-24 place-items-center rounded-2xl bg-gradient-to-br text-5xl shadow-lg ${
+                selectedBonusTask.slot === "daily"
+                  ? TASK_META.food.accent
+                  : TASK_META.activity.accent
+              }`}
+            >
+              {selectedBonusTask.slot === "daily"
+                ? TASK_META.food.emoji
+                : TASK_META.activity.emoji}
+            </div>
+
+            <p className="text-sm leading-relaxed text-zinc-300">
+              {selectedBonusTask.description}
+            </p>
+
+            <div className="mt-5 flex items-center justify-between rounded-2xl bg-zinc-900 px-4 py-3">
+              <span className="text-sm font-bold text-zinc-400">
+                Додаткові бали
+              </span>
+              <span className="text-2xl font-black text-orange-300">
+                +{selectedBonusTask.points}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => completeBonusTask(selectedBonusTask)}
+              disabled={
+                isBonusTaskSaving ||
+                completedTaskCodes.includes(selectedBonusTask.code)
+              }
+              className="mt-4 w-full rounded-2xl bg-[#CB161C] p-4 font-black text-white transition active:scale-[0.99] disabled:bg-zinc-800 disabled:text-zinc-500"
+            >
+              {completedTaskCodes.includes(selectedBonusTask.code)
+                ? "Виконано сьогодні"
+                : isBonusTaskSaving
+                  ? "Зберігаємо..."
+                  : "Завдання виконано"}
+            </button>
+
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-zinc-500">
+              Після 30-го дня бонусний цикл почнеться знову з першого дня.
+            </p>
           </div>
         </div>
       )}
@@ -4939,31 +5876,44 @@ async function updateWeight() {
         </div>
       )}
 
+      {message && (
+        <div className="fixed inset-x-4 bottom-24 z-[60] mx-auto max-w-md rounded-2xl border border-zinc-700 bg-zinc-800/95 px-4 py-3 text-center text-sm font-bold text-white shadow-2xl backdrop-blur">
+          {message}
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-4 pt-2 backdrop-blur">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1 text-center">
           {[
-            { tab: "home", icon: "🏠", label: "Головна" },
-            { tab: "tasks", icon: "✅", label: "Завдання" },
-            { tab: "leaderboard", icon: "🏆", label: "Рейтинг" },
-            { tab: "profile", icon: "👤", label: "Профіль" },
-            { tab: "shop", icon: "🛍️", label: "Shop" },
+            { tab: "home", icon: House, label: "Головна" },
+            { tab: "tasks", icon: ListChecks, label: "Завдання" },
+            { tab: "leaderboard", icon: Trophy, label: "Рейтинг" },
+            { tab: "profile", icon: UserRound, label: "Профіль" },
+            { tab: "shop", icon: Gift, label: "Нагороди" },
           ].map((item) => {
             const isActive =
               activeTab === item.tab ||
               (item.tab === "profile" && activeTab === "photo");
+            const Icon = item.icon;
 
             return (
               <button
                 key={item.tab}
                 onClick={() => setActiveTab(item.tab)}
-                className={`rounded-2xl px-1 py-2 text-[11px] font-bold transition ${
-                  isActive
-                    ? "bg-green-500/15 text-green-300"
-                    : "text-zinc-400"
+                className={`nav-gold-item relative px-1 py-2 text-[11px] font-bold transition ${
+                  isActive ? "is-active" : ""
                 }`}
               >
-                <span className="block text-2xl leading-none">
-                  {item.icon}
+                <span className="flex h-7 items-center justify-center">
+                  <Icon
+                    size={27}
+                    strokeWidth={1.8}
+                    fill={
+                      isActive && item.tab === "leaderboard"
+                        ? "currentColor"
+                        : "none"
+                    }
+                  />
                 </span>
                 <span className="mt-1 block leading-tight">{item.label}</span>
               </button>

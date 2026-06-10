@@ -34,6 +34,76 @@ body {
   box-shadow: 0 0 0 0 rgb(220 38 38 / 0);
 }
 
+.metallic-gold {
+  color: #d4af3c;
+  background: linear-gradient(
+    105deg,
+    #704500 0%,
+    #d4af3c 24%,
+    #fff4b0 45%,
+    #d4af3c 62%,
+    #8a5700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1px 8px rgb(212 175 60 / 0.18);
+}
+
+.metallic-gold-ring {
+  background: linear-gradient(
+    135deg,
+    #704500 0%,
+    #d4af3c 25%,
+    #fff4b0 46%,
+    #d4af3c 66%,
+    #7a4a00 100%
+  );
+  box-shadow:
+    0 0 14px rgb(212 175 60 / 0.18),
+    inset 0 1px 0 rgb(255 244 176 / 0.7);
+}
+
+.nav-gold-item {
+  color: #8b7352;
+  letter-spacing: 0;
+}
+
+.nav-gold-item svg {
+  color: #fdba74;
+  filter:
+    drop-shadow(0 1px 0 rgb(255 238 205 / 0.5))
+    drop-shadow(0 2px 2px rgb(120 53 15 / 0.45));
+}
+
+.nav-gold-item.is-active {
+  color: #d4af3c;
+  text-shadow: none;
+}
+
+.nav-gold-item.is-active svg {
+  color: #fdba74;
+  filter:
+    drop-shadow(0 1px 0 rgb(255 245 220 / 0.75))
+    drop-shadow(0 0 5px rgb(253 186 116 / 0.45));
+}
+
+.nav-gold-item.is-active::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: -8px;
+  left: 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: #d4af3c;
+  box-shadow: none;
+}
+
+.feedback-submit {
+  color: #ffffff !important;
+}
+
 .theme-dark :where([class*="text-green"], [class*="text-lime"], [class*="text-emerald"]) {
   color: #ef4444 !important;
 }
