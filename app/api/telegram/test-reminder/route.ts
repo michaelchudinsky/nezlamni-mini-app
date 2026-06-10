@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
+const REMINDER_SETTINGS_NOTE =
+  "Нагадування можна змінити у профілі NEZLAMNI.";
+
 export async function POST(request: Request) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -58,6 +61,7 @@ export async function POST(request: Request) {
     `Привіт, ${firstName}!`,
     "Це тестове нагадування NEZLAMNI.",
     "Бот працює. Скоро він буде мʼяко нагадувати про воду, рух, харчування і сон.",
+    REMINDER_SETTINGS_NOTE,
   ].join("\n\n");
 
   const telegramResponse = await fetch(

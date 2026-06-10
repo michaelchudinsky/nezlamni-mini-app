@@ -63,6 +63,9 @@ const ACTIVITY_CODES = [
   "activity_workout_20",
 ];
 
+const REMINDER_SETTINGS_NOTE =
+  "Нагадування можна змінити у профілі NEZLAMNI.";
+
 const REMINDERS: ReminderConfig[] = [
   {
     code: "morning_start",
@@ -133,8 +136,9 @@ function getLocalDateParts(timeZone: string) {
 function pickReminderText(reminder: ReminderConfig, profile: Profile) {
   const index = Math.floor(Math.random() * reminder.texts.length);
   const name = profile.first_name || "Незламний";
+  const reminderText = reminder.texts[index].replace("{name}", name);
 
-  return reminder.texts[index].replace("{name}", name);
+  return `${reminderText}\n\n${REMINDER_SETTINGS_NOTE}`;
 }
 
 function getAppUrl(request: Request) {
