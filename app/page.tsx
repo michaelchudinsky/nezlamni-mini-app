@@ -666,6 +666,14 @@ const TASK_ORDER: Record<string, number> = {
 };
 
 const DAILY_POINTS_MAX = 30;
+const MOTIVATION_THEMES = [
+  "from-red-600 via-red-900 to-amber-600",
+  "from-emerald-500 via-emerald-900 to-cyan-500",
+  "from-indigo-500 via-indigo-900 to-violet-500",
+  "from-cyan-500 via-blue-900 to-blue-500",
+  "from-rose-500 via-rose-900 to-fuchsia-500",
+  "from-orange-500 via-orange-900 to-yellow-500",
+];
 
 function createBonusDay(
   foodQuest: string,
@@ -879,7 +887,7 @@ const TASK_META: Record<string, TaskMeta> = {
     title: "Вода",
     description: "Закрий норму води та дай тілу чисту енергію.",
     accent: "from-cyan-500 to-blue-600",
-    glow: "shadow-cyan-500/20",
+    glow: "shadow-[0_10px_22px_rgb(56_189_248/0.16)]",
     action: "Випив воду",
   },
   activity: {
@@ -887,7 +895,7 @@ const TASK_META: Record<string, TaskMeta> = {
     title: "Активність",
     description: "Рухай тіло, розганяй енергію і тримай темп.",
     accent: "from-[#22c55e] to-[#15803d]",
-    glow: "shadow-[0_12px_28px_rgb(34_197_94/0.2)]",
+    glow: "shadow-[0_10px_24px_rgb(34_197_94/0.38)]",
     action: "Я порухався",
   },
   food: {
@@ -1232,6 +1240,16 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
   }, [appTheme]);
 
   useEffect(() => {
+    if (!message) return;
+
+    const timer = window.setTimeout(() => {
+      setMessage("");
+    }, 3000);
+
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
+  useEffect(() => {
     if (!profile) return;
 
     const timer = window.setTimeout(() => {
@@ -1401,6 +1419,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     const dayIndex = (getDaysWithUs() - 1) % DAILY_MOTIVATIONS.length;
 
     return DAILY_MOTIVATIONS[dayIndex];
+  }
+
+  function getDailyMotivationTheme() {
+    const dayIndex = (getDaysWithUs() - 1) % MOTIVATION_THEMES.length;
+
+    return MOTIVATION_THEMES[dayIndex];
   }
 
   function getLevel() {
@@ -3018,6 +3042,7 @@ async function updateWeight() {
   const dayStatus = getDayStatus(dayPoints);
   const todayFocus = getTodayFocus();
   const dailyMotivation = getDailyMotivation();
+  const dailyMotivationTheme = getDailyMotivationTheme();
   const currentProfileStatus = getCurrentProfileStatus();
   const nextProfileStatus = getNextProfileStatus();
   const profileStatusProgress = getProfileStatusProgress();
@@ -3095,7 +3120,7 @@ async function updateWeight() {
 
   return (
     <main
-      className={`app-shell theme-${appTheme} min-h-screen bg-black p-5 pb-28 text-white`}
+      className={`app-shell theme-${appTheme} min-h-screen bg-black p-5 pb-40 text-white`}
     >
       {rewardToast && (
         <div className="reward-toast fixed inset-x-8 top-4 z-[60] mx-auto max-w-xs rounded-xl border border-green-400/40 bg-green-500 px-4 py-3 text-center text-sm font-black text-white shadow-xl shadow-green-500/30">
@@ -3497,7 +3522,7 @@ async function updateWeight() {
 
                 <div className="row-span-2 self-stretch overflow-hidden rounded-2xl border border-zinc-800 bg-black/20 text-center">
                   <div className="px-3 py-2">
-                    <p className="text-2xl font-black">
+                    <p className="text-xl font-black">
                       {profile.streak_current || 0}
                     </p>
                     <div className="mt-1 flex items-center justify-center gap-1">
@@ -3515,10 +3540,10 @@ async function updateWeight() {
                     </div>
                   </div>
                   <div className="border-t border-zinc-800 px-3 py-2">
-                    <p className="text-xs font-bold uppercase text-green-400">
+                    <p className="text-xs font-bold uppercase text-zinc-500">
                       Загальні
                     </p>
-                    <p className="text-2xl font-black">
+                    <p className="text-xl font-black">
                       {profile.points_total || 0}
                     </p>
                   </div>
@@ -3594,11 +3619,24 @@ async function updateWeight() {
                           : isCompleted
                             ? 100
                             : 0;
+                  const earnedGlow =
+                    earnedPoints > 0
+                      ? isWaterTask
+                        ? "0 10px 22px rgb(14 165 233 / 0.2)"
+                        : isActivityTask
+                          ? "0 10px 22px rgb(34 197 94 / 0.2)"
+                          : undefined
+                      : undefined;
                   return (
                     <button
                       key={task.id}
                       onClick={() => completeTask(task)}
-                      className={`relative flex min-h-[78px] w-full flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-left shadow-lg transition active:scale-[0.98] ${meta.glow} ${
+                      style={
+                        earnedGlow ? { boxShadow: earnedGlow } : undefined
+                      }
+                      className={`relative flex min-h-[78px] w-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 p-2.5 text-left shadow-lg transition active:scale-[0.98] ${
+                        earnedPoints > 0 && !earnedGlow ? meta.glow : ""
+                      } ${
                         isCompleted ? "text-white ring-1 ring-white/20" : ""
                       }`}
                     >
@@ -3648,10 +3686,16 @@ async function updateWeight() {
                         type="button"
                         key={bonus.code}
                         onClick={() => setSelectedBonusTask(bonus)}
-                        className={`relative min-h-[82px] overflow-hidden rounded-2xl border p-2.5 text-left transition active:scale-[0.98] ${
+                        className={`relative min-h-[82px] overflow-hidden rounded-xl border p-2.5 text-left transition active:scale-[0.98] ${
                           isCompleted
                             ? "border-[#D4AF3C]/50 bg-[#D4AF3C]/10"
                             : "border-zinc-800 bg-zinc-900"
+                        } ${
+                          isCompleted
+                            ? bonus.slot === "daily"
+                              ? "shadow-lg shadow-pink-500/25"
+                              : "shadow-lg shadow-white/20"
+                            : ""
                         }`}
                       >
                         <div className="flex items-start justify-between">
@@ -3682,7 +3726,7 @@ async function updateWeight() {
                             </span>
                           </span>
                         </div>
-                        <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-cyan-400">
+                        <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-orange-300">
                           Бонус
                         </p>
                         <p className="mt-0.5 truncate text-xs font-black">
@@ -3694,16 +3738,21 @@ async function updateWeight() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-3">
-              <p className="text-xs font-bold text-orange-300">
-                Мотивація дня
-              </p>
-              <h2 className="mt-1 text-lg font-black">
-                {dailyMotivation.title}
-              </h2>
-              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-300">
-                {dailyMotivation.text}
-              </p>
+            <section
+              className={`relative scroll-mb-28 overflow-hidden rounded-3xl border border-white/20 bg-gradient-to-br p-3 ${dailyMotivationTheme}`}
+            >
+              <div className="absolute inset-0 bg-black/35" />
+              <div className="relative z-10">
+                <p className="text-xs font-bold text-orange-200 drop-shadow-[0_1px_2px_rgb(0_0_0/0.9)]">
+                  Мотивація дня
+                </p>
+                <h2 className="mt-1 text-lg font-black text-white drop-shadow-[0_2px_3px_rgb(0_0_0/0.9)]">
+                  {dailyMotivation.title}
+                </h2>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-[0_1px_2px_rgb(0_0_0/0.9)]">
+                  {dailyMotivation.text}
+                </p>
+              </div>
             </section>
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
@@ -5603,12 +5652,12 @@ async function updateWeight() {
       )}
 
       {message && (
-        <div className="fixed inset-x-4 bottom-24 z-[60] mx-auto max-w-md rounded-2xl border border-zinc-700 bg-zinc-800/95 px-4 py-3 text-center text-sm font-bold text-white shadow-2xl backdrop-blur">
+        <div className="action-toast fixed inset-x-4 bottom-24 z-[60] mx-auto max-w-md rounded-2xl border border-zinc-700 bg-zinc-800/95 px-4 py-3 text-center text-sm font-bold text-white shadow-2xl backdrop-blur">
           {message}
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-4 pt-2 backdrop-blur">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1 text-center">
           {[
             { tab: "home", icon: House, label: "Головна" },
@@ -5626,7 +5675,7 @@ async function updateWeight() {
               <button
                 key={item.tab}
                 onClick={() => setActiveTab(item.tab)}
-                className={`nav-gold-item relative px-1 py-2 text-[11px] font-bold transition ${
+                className={`nav-gold-item is-refined relative px-1 py-2 text-[11px] font-bold transition ${
                   isActive ? "is-active" : ""
                 }`}
               >
