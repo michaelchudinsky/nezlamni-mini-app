@@ -1253,12 +1253,11 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       return;
     }
 
-    const todayDate = today();
-    const dismissedDay = window.localStorage.getItem(
+    const hasSeenFirstActionPrompt = window.localStorage.getItem(
       FIRST_ACTION_PROMPT_STORAGE_KEY
     );
 
-    if (dismissedDay === todayDate) return;
+    if (hasSeenFirstActionPrompt) return;
 
     const timer = window.setTimeout(() => {
       setIsFirstActionOpen(true);
@@ -2091,7 +2090,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     if (!profile || isFirstActionSaving) return;
 
     if (completedTaskCodes.includes("water_wakeup")) {
-      window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, today());
+      window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, "1");
       setIsFirstActionOpen(false);
       setMessage("Перший бал уже твій. Продовжуй день.");
       return;
@@ -2121,7 +2120,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
       );
       setIsFirstActionSaving(false);
       setIsFirstActionOpen(false);
-      window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, todayDate);
+      window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, "1");
       setMessage("Перший бал уже твій. Продовжуй день.");
       return;
     }
@@ -2144,7 +2143,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
             : [...currentCodes, "water_wakeup"]
         );
         setIsFirstActionOpen(false);
-        window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, todayDate);
+        window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, "1");
         setMessage("Перший бал уже твій. Продовжуй день.");
         return;
       }
@@ -2180,7 +2179,7 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     setCompletedTaskCodes((currentCodes) => [...currentCodes, "water_wakeup"]);
     setIsFirstActionOpen(false);
     setActiveTab("home");
-    window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, todayDate);
+    window.localStorage.setItem(FIRST_ACTION_PROMPT_STORAGE_KEY, "1");
     setMessage("Перший бал твій. Ти вже в грі.");
     showRewardToast(1);
     await syncProfileStats(profile.id);
@@ -3294,7 +3293,7 @@ async function updateWeight() {
                 onClick={() => {
                   window.localStorage.setItem(
                     FIRST_ACTION_PROMPT_STORAGE_KEY,
-                    today()
+                    "1"
                   );
                   setIsFirstActionOpen(false);
                 }}
