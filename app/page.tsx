@@ -755,8 +755,16 @@ const FIRST_ACTION_PROMPT_STORAGE_KEY = "nezlamni_first_action_prompt_v2_day";
 const FIRST_ACTION_PROMPT_DELAY_MS = 5000;
 const THEME_STORAGE_KEY = "nezlamni_app_theme";
 
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function getMonthValue(date = new Date()) {
-  return date.toISOString().slice(0, 7);
+  return formatLocalDate(date).slice(0, 7);
 }
 
 function getMonthRange(monthValue: string) {
@@ -766,8 +774,8 @@ function getMonthRange(monthValue: string) {
   end.setDate(end.getDate() - 1);
 
   return {
-    start: start.toISOString().slice(0, 10),
-    end: end.toISOString().slice(0, 10),
+    start: formatLocalDate(start),
+    end: formatLocalDate(end),
   };
 }
 
@@ -779,10 +787,16 @@ function shiftMonth(monthValue: string, shift: number) {
 }
 
 function addDaysToDate(dateValue: string, days: number) {
-  const date = new Date(`${dateValue}T00:00:00`);
+  const normalizedDate = dateValue.slice(0, 10);
+  const date = new Date(`${normalizedDate}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return normalizedDate;
+  }
+
   date.setDate(date.getDate() + days);
 
-  return date.toISOString().slice(0, 10);
+  return formatLocalDate(date);
 }
 
 function getMonthLabel(monthValue: string) {
