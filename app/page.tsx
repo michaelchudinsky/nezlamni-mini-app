@@ -3574,85 +3574,75 @@ async function updateWeight() {
               </div>
             </section>
 
-            <section>
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
+                Фокус дня
+              </p>
+              <h2 className="mt-1 text-xl font-black">{todayFocus.title}</h2>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                {todayFocus.description}
+              </p>
+            </section>
+
+            <section aria-labelledby="daily-directions-title">
+              <div className="mb-2 flex items-center justify-between gap-3 px-1">
+                <h2 id="daily-directions-title" className="text-sm font-black">
+                  Напрямки дня
+                </h2>
+                <span className="text-xs font-bold text-zinc-500">
+                  4 основи
+                </span>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
-                {orderedTasks.map((task) => {
-                  const meta = getTaskMeta(task);
-                  const isWaterTask = task.code.toLowerCase() === "water";
-                  const isFoodTask = task.code.toLowerCase() === "food";
-                  const isActivityTask = task.code.toLowerCase() === "activity";
-                  const isNightTask = task.code.toLowerCase() === "night";
-                  const isCompleted = isWaterTask
-                    ? isWaterCompleted
-                    : isFoodTask
-                      ? isFoodCompleted
-                      : isActivityTask
-                        ? isActivityCompleted
-                        : isNightTask
-                          ? isNightCompleted
-                          : completedTaskCodes.includes(task.code);
-                  const earnedPoints = isWaterTask
-                    ? waterCompletedCount
-                    : isFoodTask
-                      ? foodPointsEarned
-                      : isActivityTask
-                        ? activityPointsEarned
-                        : isNightTask
-                          ? nightPointsEarned
-                          : isCompleted
-                            ? task.points
-                            : 0;
-                  const maxPoints = isWaterTask
-                    ? 5
-                    : isFoodTask
-                      ? 8
-                      : isActivityTask
-                        ? 8
-                        : isNightTask
-                          ? 4
-                          : task.points;
-                  const progressPercent = isWaterTask
-                    ? (waterCompletedCount / 5) * 100
-                    : isFoodTask
-                      ? (foodPointsEarned / 8) * 100
-                      : isActivityTask
-                        ? (activityPointsEarned / 8) * 100
-                        : isNightTask
-                          ? (nightPointsEarned / 4) * 100
-                          : isCompleted
-                            ? 100
-                            : 0;
+                {taskSummaries.map((task) => {
+                  const sourceTask = orderedTasks.find(
+                    (item) => item.code.toLowerCase() === task.code
+                  );
+                  const meta = sourceTask ? getTaskMeta(sourceTask) : task.meta;
+                  const progressPercent = Math.min(
+                    100,
+                    (task.points / task.maxPoints) * 100
+                  );
+
                   return (
                     <button
-                      key={task.id}
-                      onClick={() => completeTask(task)}
-                      className={`relative flex min-h-[78px] w-full flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-left shadow-lg transition active:scale-[0.98] ${meta.glow} ${
-                        isCompleted ? "text-white ring-1 ring-white/20" : ""
+                      type="button"
+                      key={task.code}
+                      onClick={() =>
+                        sourceTask ? completeTask(sourceTask) : task.onClick()
+                      }
+                      className={`relative flex min-h-[108px] w-full flex-col overflow-hidden rounded-2xl border p-3 text-left shadow-lg transition active:scale-[0.98] ${meta.glow} ${
+                        task.isCompleted
+                          ? "border-green-500/40 bg-green-950/40 text-white"
+                          : "border-zinc-800 bg-zinc-900"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div
-                          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${meta.accent} text-base shadow-lg`}
+                        <span
+                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${meta.accent} text-lg shadow-lg`}
                         >
-                          {isCompleted ? "✓" : meta.emoji}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-black leading-none">
-                            <span className="text-white">+{earnedPoints}</span>
-                            <span className="text-orange-300">/{maxPoints}</span>
-                          </p>
-                          <p className="text-[10px] text-zinc-400">балів</p>
-                        </div>
+                          {task.isCompleted ? "✓" : meta.emoji}
+                        </span>
+                        <span className="text-right text-sm font-black">
+                          <span className="text-white">{task.points}</span>
+                          <span className="text-orange-300">
+                            /{task.maxPoints}
+                          </span>
+                        </span>
                       </div>
 
-                      <div className="mt-1.5 min-w-0">
-                        <h3 className="truncate text-sm font-black leading-tight">
-                          {meta.title}
-                        </h3>
-                      </div>
+                      <h3 className="mt-2 truncate text-sm font-black">
+                        {meta.title}
+                      </h3>
+                      <p className="mt-0.5 text-[11px] text-zinc-500">
+                        {task.isCompleted
+                          ? "Готово на сьогодні"
+                          : `${task.progress}/${task.total} пунктів`}
+                      </p>
 
-                      <div className="mt-auto pt-1.5">
-                        <div className="h-1 overflow-hidden rounded-full bg-black/30">
+                      <div className="mt-auto pt-2">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-black/30">
                           <div
                             className={`h-full rounded-full bg-gradient-to-r ${meta.accent}`}
                             style={{ width: `${progressPercent}%` }}
@@ -3663,64 +3653,72 @@ async function updateWeight() {
                   );
                 })}
                 {dailyBonusTasks.map((bonus) => {
-                    const isCompleted = completedTaskCodes.includes(bonus.code);
-                    const label =
-                      bonus.slot === "daily"
-                        ? "FOOD КВЕСТ"
-                        : "SPORT ЧЕЛЛЕНДЖ";
-                    const BonusIcon =
-                      bonus.slot === "daily" ? Utensils : Dumbbell;
+                  const isCompleted = completedTaskCodes.includes(bonus.code);
+                  const label =
+                    bonus.slot === "daily"
+                      ? "FOOD КВЕСТ"
+                      : "SPORT ЧЕЛЛЕНДЖ";
+                  const BonusIcon =
+                    bonus.slot === "daily" ? Utensils : Dumbbell;
 
-                    return (
-                      <button
-                        type="button"
-                        key={bonus.code}
-                        onClick={() => setSelectedBonusTask(bonus)}
-                        className={`relative min-h-[82px] overflow-hidden rounded-2xl border p-2.5 text-left transition active:scale-[0.98] ${
-                          isCompleted
-                            ? "border-[#D4AF3C]/50 bg-[#D4AF3C]/10"
-                            : "border-zinc-800 bg-zinc-900"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <span
-                            className={`grid h-7 w-7 place-items-center rounded-lg shadow-lg ${
-                              bonus.slot === "daily"
-                                ? "bg-pink-500 text-white"
-                                : "bg-white text-zinc-950"
-                            }`}
-                          >
-                            {isCompleted ? (
-                              "✓"
-                            ) : (
-                              <BonusIcon size={16} strokeWidth={2.2} />
-                            )}
-                          </span>
-                          <span className="text-right">
-                            <span className="block text-xl font-black leading-none">
-                              <span className="text-white">
-                                +{isCompleted ? bonus.points : 0}
-                              </span>
-                              <span className="text-orange-300">
-                                /{bonus.points}
-                              </span>
+                  return (
+                    <button
+                      type="button"
+                      key={bonus.code}
+                      onClick={() => setSelectedBonusTask(bonus)}
+                      className={`relative min-h-[82px] overflow-hidden rounded-2xl border p-2.5 text-left transition active:scale-[0.98] ${
+                        isCompleted
+                          ? "border-[#D4AF3C]/50 bg-[#D4AF3C]/10"
+                          : "border-zinc-800 bg-zinc-900"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <span
+                          className={`grid h-7 w-7 place-items-center rounded-lg shadow-lg ${
+                            bonus.slot === "daily"
+                              ? "bg-pink-500 text-white"
+                              : "bg-white text-zinc-950"
+                          }`}
+                        >
+                          {isCompleted ? (
+                            "✓"
+                          ) : (
+                            <BonusIcon size={16} strokeWidth={2.2} />
+                          )}
+                        </span>
+                        <span className="text-right">
+                          <span className="block text-xl font-black leading-none">
+                            <span className="text-white">
+                              +{isCompleted ? bonus.points : 0}
                             </span>
-                            <span className="block text-[10px] text-zinc-400">
-                              балів
+                            <span className="text-orange-300">
+                              /{bonus.points}
                             </span>
                           </span>
-                        </div>
-                        <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-cyan-400">
-                          Бонус
-                        </p>
-                        <p className="mt-0.5 truncate text-xs font-black">
-                          {label}
-                        </p>
-                      </button>
-                    );
+                          <span className="block text-[10px] text-zinc-400">
+                            балів
+                          </span>
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-cyan-400">
+                        Бонус
+                      </p>
+                      <p className="mt-0.5 truncate text-xs font-black">
+                        {label}
+                      </p>
+                    </button>
+                  );
                 })}
               </div>
             </section>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("tasks")}
+              className="w-full rounded-2xl bg-green-600 px-5 py-4 text-base font-black text-white shadow-lg shadow-green-950/30 transition active:scale-[0.99]"
+            >
+              Виконати завдання
+            </button>
 
             <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-green-950 p-3">
               <p className="text-xs font-bold text-orange-300">
