@@ -291,6 +291,23 @@ function ProfileAvatar({
   );
 }
 
+function ToggleSwitch({ enabled }: { enabled: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-colors ${
+        enabled ? "bg-green-500" : "bg-zinc-700"
+      }`}
+    >
+      <span
+        className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+          enabled ? "translate-x-5" : "translate-x-0"
+        }`}
+      />
+    </span>
+  );
+}
+
 function MetallicCrown({
   rank,
   className = "",
@@ -4236,13 +4253,17 @@ async function updateTargetWeight() {
                     )
                   }
                   disabled={!profile.telegram_username}
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-black disabled:opacity-50 ${
+                  aria-label={
                     profile.show_telegram_contact
-                      ? "bg-green-500 text-zinc-950"
-                      : "bg-zinc-800 text-zinc-400"
-                  }`}
+                      ? "Приховати Telegram-контакт"
+                      : "Показувати Telegram-контакт"
+                  }
+                  aria-pressed={profile.show_telegram_contact ?? false}
+                  className="shrink-0 rounded-full disabled:opacity-50"
                 >
-                  {profile.show_telegram_contact ? "ON" : "OFF"}
+                  <ToggleSwitch
+                    enabled={profile.show_telegram_contact ?? false}
+                  />
                 </button>
               </div>
             </section>
@@ -4299,12 +4320,26 @@ async function updateTargetWeight() {
                 />
               </div>
 
-              <button
-                onClick={() => setShowWeightForm(!showWeightForm)}
-                className="mt-4 w-full rounded-2xl bg-zinc-800 p-3 font-bold"
-              >
-                Оновити вагу
-              </button>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    setShowWeightForm(!showWeightForm);
+                    setShowTargetWeightForm(false);
+                  }}
+                  className="w-full rounded-2xl bg-zinc-800 p-3 font-bold"
+                >
+                  Оновити вагу
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTargetWeightForm(!showTargetWeightForm);
+                    setShowWeightForm(false);
+                  }}
+                  className="w-full rounded-2xl bg-zinc-800 p-3 font-bold"
+                >
+                  Оновити ціль
+                </button>
+              </div>
 
               {showWeightForm && (
                 <div className="mt-4 space-y-3">
@@ -4324,13 +4359,6 @@ async function updateTargetWeight() {
                   </button>
                 </div>
               )}
-
-              <button
-                onClick={() => setShowTargetWeightForm(!showTargetWeightForm)}
-                className="mt-3 w-full rounded-2xl bg-zinc-800 p-3 font-bold"
-              >
-                Оновити ціль
-              </button>
 
               {showTargetWeightForm && (
                 <div className="mt-4 space-y-3">
@@ -4373,13 +4401,15 @@ async function updateTargetWeight() {
                       !(profile.reminders_enabled ?? true)
                     )
                   }
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-black ${
+                  aria-label={
                     profile.reminders_enabled ?? true
-                      ? "bg-green-500 text-zinc-950"
-                      : "bg-zinc-800 text-zinc-400"
-                  }`}
+                      ? "Вимкнути всі нагадування"
+                      : "Увімкнути всі нагадування"
+                  }
+                  aria-pressed={profile.reminders_enabled ?? true}
+                  className="shrink-0 rounded-full"
                 >
-                  {profile.reminders_enabled ?? true ? "Увімк." : "Вимк."}
+                  <ToggleSwitch enabled={profile.reminders_enabled ?? true} />
                 </button>
               </div>
 
@@ -4419,15 +4449,7 @@ async function updateTargetWeight() {
                         </span>
                       </span>
 
-                      <span
-                        className={`grid h-8 w-12 shrink-0 place-items-center rounded-full text-xs font-black ${
-                          isEnabled
-                            ? "bg-green-500 text-zinc-950"
-                            : "bg-zinc-700 text-zinc-400"
-                        }`}
-                      >
-                        {isEnabled ? "ON" : "OFF"}
-                      </span>
+                      <ToggleSwitch enabled={isEnabled} />
                     </button>
                   );
                 })}
