@@ -104,6 +104,10 @@ body {
   color: #ffffff !important;
 }
 
+.theme-dark .profile-action-button {
+  background-color: color-mix(in srgb, #18181b 85%, black 15%) !important;
+}
+
 .theme-dark :where([class*="text-green"], [class*="text-lime"], [class*="text-emerald"]) {
   color: #ef4444 !important;
 }
@@ -181,6 +185,10 @@ body {
 
 .theme-light :where([class*="bg-zinc-800"]) {
   background-color: #eee5d6 !important;
+}
+
+.theme-light .profile-action-button {
+  background-color: color-mix(in srgb, #fffefa 85%, black 15%) !important;
 }
 
 .theme-light :where([class*="border-zinc-800"]) {
