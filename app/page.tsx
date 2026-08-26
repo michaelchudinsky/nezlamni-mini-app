@@ -986,6 +986,8 @@ export default function Home() {
   const [targetWeight, setTargetWeight] = useState("");
 const [newWeight, setNewWeight] = useState("");
 const [showWeightForm, setShowWeightForm] = useState(false);
+const [newTargetWeight, setNewTargetWeight] = useState("");
+const [showTargetWeightForm, setShowTargetWeightForm] = useState(false);
 
   const showLoadError = useCallback((context: string, error: unknown) => {
     console.error(`[NEZLAMNI] ${context}`, error);
@@ -2694,6 +2696,29 @@ async function updateWeight() {
   setMessage("⚖️ Вага оновлена!");
 }
 
+async function updateTargetWeight() {
+  if (!profile || !newTargetWeight) return;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      target_weight: Number(newTargetWeight),
+    })
+    .eq("id", profile.id)
+    .select()
+    .single();
+
+  if (error) {
+    showSaveError("update target weight", error);
+    return;
+  }
+
+  setProfile(data);
+  setNewTargetWeight("");
+  setShowTargetWeightForm(false);
+  setMessage("🎯 Ціль оновлена!");
+}
+
   async function submitFeedback() {
     if (!profile || isFeedbackSaving) return;
 
@@ -4242,7 +4267,13 @@ async function updateWeight() {
             </section>
 
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-              <div className="mb-3 grid grid-cols-3 gap-3 text-center">
+              <div className="mb-3 grid grid-cols-4 gap-2 text-center">
+                <div>
+                  <p className="text-xs text-zinc-400">Початкова</p>
+                  <p className="text-xl font-black">
+                    {profile.start_weight ?? "—"} кг
+                  </p>
+                </div>
                 <div>
                   <p className="text-xs text-zinc-400">Поточна</p>
                   <p className="text-xl font-black">
@@ -4290,6 +4321,32 @@ async function updateWeight() {
                     className="w-full rounded-xl bg-green-600 p-3 font-bold"
                   >
                     Зберегти
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowTargetWeightForm(!showTargetWeightForm)}
+                className="mt-3 w-full rounded-2xl bg-zinc-800 p-3 font-bold"
+              >
+                Оновити ціль
+              </button>
+
+              {showTargetWeightForm && (
+                <div className="mt-4 space-y-3">
+                  <input
+                    className="w-full rounded-xl bg-zinc-800 p-3"
+                    placeholder="Нова цільова вага"
+                    type="number"
+                    value={newTargetWeight}
+                    onChange={(e) => setNewTargetWeight(e.target.value)}
+                  />
+
+                  <button
+                    onClick={updateTargetWeight}
+                    className="w-full rounded-xl bg-green-600 p-3 font-bold"
+                  >
+                    Зберегти ціль
                   </button>
                 </div>
               )}
