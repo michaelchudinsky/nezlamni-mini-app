@@ -1372,6 +1372,21 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
   }
 
+  function formatDaysWithUs() {
+    const days = getDaysWithUs();
+    const lastTwoDigits = days % 100;
+    const lastDigit = days % 10;
+
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+      return `${days} днів`;
+    }
+
+    if (lastDigit === 1) return `${days} день`;
+    if (lastDigit >= 2 && lastDigit <= 4) return `${days} дні`;
+
+    return `${days} днів`;
+  }
+
   function getBonusCycleDay() {
     return ((getDaysWithUs() - 1) % BONUS_DAY_PLAN.length) + 1;
   }
@@ -4164,8 +4179,10 @@ async function updateWeight() {
                 )}
               </div>
               <p className="text-sm text-zinc-400">
-                Учасник з {profile.registration_date || today()} ·{" "}
-                {getDaysWithUs()} днів з нами
+                <span className="font-bold text-red-500">
+                  {formatDaysWithUs()}
+                </span>{" "}
+                з нами
               </p>
             </section>
 
