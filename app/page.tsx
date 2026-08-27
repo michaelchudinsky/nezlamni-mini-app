@@ -66,6 +66,16 @@ type LeaderboardUser = {
   isSupportedByMe: boolean;
 };
 
+type ProgressPhotoState = {
+  beforeUploadedAt: string;
+  afterUploadedAt: string | null;
+  afterAvailableAt: string;
+  canUploadAfter: boolean;
+  showPublic: boolean;
+  beforeUrl: string | null;
+  afterUrl: string | null;
+};
+
 type LeaderboardMode = "month" | "newcomers";
 
 type TelegramUser = {
@@ -75,6 +85,7 @@ type TelegramUser = {
 };
 
 type TelegramWebApp = {
+  initData?: string;
   initDataUnsafe?: {
     user?: TelegramUser;
   };
@@ -262,6 +273,36 @@ async function createCroppedAvatar(
   });
 
   return new File([blob], "avatar.jpg", { type: "image/jpeg" });
+}
+
+async function compressProgressPhoto(file: File) {
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const image = new window.Image();
+    image.src = imageUrl;
+    await image.decode();
+
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(image.width * scale);
+    canvas.height = Math.round(image.height * scale);
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas is not available");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) =>
+          result ? resolve(result) : reject(new Error("Photo compression failed")),
+        "image/jpeg",
+        0.82
+      );
+    });
+    return new File([blob], "progress-photo.jpg", { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
 }
 
 function ProfileAvatar({
@@ -997,6 +1038,15 @@ export default function Home() {
   const [avatarZoom, setAvatarZoom] = useState(1);
   const [avatarCropPixels, setAvatarCropPixels] = useState<Area | null>(null);
   const [appTheme, setAppTheme] = useState<AppTheme>("dark");
+  const [progressPhotos, setProgressPhotos] =
+    useState<ProgressPhotoState | null>(null);
+  const [publicProgressPhotos, setPublicProgressPhotos] =
+    useState<ProgressPhotoState | null>(null);
+  const [isProgressPhotoLoading, setIsProgressPhotoLoading] = useState(false);
+  const [isProgressPhotoSaving, setIsProgressPhotoSaving] = useState(false);
+  const [hasProgressStorageConsent, setHasProgressStorageConsent] =
+    useState(false);
+  const [isProgressReminderOpen, setIsProgressReminderOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [startWeight, setStartWeight] = useState("");
@@ -1223,16 +1273,47 @@ const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
   setCompletedTaskCodes(completedCodes || []);
 }, [showLoadError]);
 
+const getTelegramInitData = useCallback(() => {
+  return (window as TelegramWindow).Telegram?.WebApp?.initData || "";
+}, []);
+
+const fetchProgressPhotos = useCallback(async () => {
+  const initData = getTelegramInitData();
+  if (!initData) return;
+
+  setIsProgressPhotoLoading(true);
+  try {
+    const response = await fetch("/api/progress-photos", {
+      headers: { "x-telegram-init-data": initData },
+    });
+    if (!response.ok) return;
+    const result = (await response.json()) as {
+      photos: ProgressPhotoState | null;
+    };
+    setProgressPhotos(result.photos);
+
+    if (result.photos?.canUploadAfter && !result.photos.afterUploadedAt) {
+      const reminderKey = `progress-photo-reminder-${result.photos.afterAvailableAt.slice(0, 10)}`;
+      if (window.localStorage.getItem(reminderKey) !== today()) {
+        setIsProgressReminderOpen(true);
+      }
+    }
+  } finally {
+    setIsProgressPhotoLoading(false);
+  }
+}, [getTelegramInitData]);
+
 const init = useCallback(async (tgUser: TelegramUser | null) => {
   await fetchTasks();
   const activeProfile = await getOrCreateProfile(tgUser);
 
   if (activeProfile) {
     await fetchCompletedTaskCodes(activeProfile.id);
+    await fetchProgressPhotos();
   }
 
   await fetchLeaderboard();
-}, [fetchCompletedTaskCodes, fetchLeaderboard, fetchTasks, getOrCreateProfile]);
+}, [fetchCompletedTaskCodes, fetchLeaderboard, fetchProgressPhotos, fetchTasks, getOrCreateProfile]);
 
   useEffect(() => {
     const tg = (window as TelegramWindow).Telegram?.WebApp;
@@ -1258,6 +1339,31 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "photo") return;
+    const timer = window.setTimeout(() => void fetchProgressPhotos(), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, fetchProgressPhotos]);
+
+  useEffect(() => {
+    const targetProfileId = selectedPublicProfile?.profile_id;
+    const initData = getTelegramInitData();
+    if (!targetProfileId || !initData) return;
+
+    const controller = new AbortController();
+    void fetch(`/api/progress-photos?profileId=${encodeURIComponent(targetProfileId)}`, {
+      headers: { "x-telegram-init-data": initData },
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((result: { photos?: ProgressPhotoState | null } | null) => {
+        if (result?.photos) setPublicProgressPhotos(result.photos);
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, [getTelegramInitData, selectedPublicProfile?.profile_id]);
 
   useEffect(() => {
     window.localStorage.setItem(THEME_STORAGE_KEY, appTheme);
@@ -2736,6 +2842,91 @@ async function updateTargetWeight() {
   setMessage("🎯 Ціль оновлена!");
 }
 
+async function uploadProgressPhoto(file: File, action: "before" | "after") {
+  if (isProgressPhotoSaving) return;
+  if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+    setMessage("Обери фото у форматі JPG, PNG або WebP.");
+    return;
+  }
+  if (file.size > 12 * 1024 * 1024) {
+    setMessage("Фото завелике. Обери файл до 12 МБ.");
+    return;
+  }
+  if (action === "before" && !hasProgressStorageConsent) {
+    setMessage("Спочатку підтвердь згоду на приватне зберігання фото.");
+    return;
+  }
+
+  const initData = getTelegramInitData();
+  if (!initData) {
+    setMessage("Фото прогресу можна додати через Telegram Mini App.");
+    return;
+  }
+
+  setIsProgressPhotoSaving(true);
+  try {
+    const compressedFile = await compressProgressPhoto(file);
+    const form = new FormData();
+    form.set("action", action);
+    form.set("consent", String(hasProgressStorageConsent));
+    form.set("file", compressedFile);
+    const response = await fetch("/api/progress-photos", {
+      method: "POST",
+      headers: { "x-telegram-init-data": initData },
+      body: form,
+    });
+    const result = (await response.json().catch(() => null)) as {
+      photos?: ProgressPhotoState;
+      error?: string;
+    } | null;
+
+    if (!response.ok || !result?.photos) {
+      const messages: Record<string, string> = {
+        "Before photo already exists": "Фото «До» вже збережене і не може бути замінене.",
+        "Thirty days have not passed yet": "Фото «Після» стане доступним через 30 днів.",
+        Unauthorized: "Не вдалося підтвердити Telegram-профіль. Перезапусти Mini App.",
+      };
+      setMessage(messages[result?.error || ""] || "Не вдалося зберегти фото.");
+      return;
+    }
+
+    setProgressPhotos(result.photos);
+    setMessage(action === "before" ? "📸 Фото «До» збережено." : "🎉 Фото «Після» збережено!");
+  } catch (error) {
+    showSaveError("upload progress photo", error);
+  } finally {
+    setIsProgressPhotoSaving(false);
+  }
+}
+
+async function updateProgressPhotoVisibility(showPublic: boolean) {
+  const initData = getTelegramInitData();
+  if (!initData || !progressPhotos) return;
+
+  setIsProgressPhotoSaving(true);
+  try {
+    const response = await fetch("/api/progress-photos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-telegram-init-data": initData,
+      },
+      body: JSON.stringify({ action: "visibility", showPublic }),
+    });
+    const result = (await response.json().catch(() => null)) as {
+      photos?: ProgressPhotoState;
+    } | null;
+    if (!response.ok || !result?.photos) {
+      setMessage("Не вдалося змінити видимість фото.");
+      return;
+    }
+    setProgressPhotos(result.photos);
+    setMessage(showPublic ? "Фото відкрито в публічному профілі." : "Фото приховано від інших учасників.");
+  } finally {
+    setIsProgressPhotoSaving(false);
+  }
+}
+
   async function submitFeedback() {
     if (!profile || isFeedbackSaving) return;
 
@@ -3151,6 +3342,15 @@ async function updateTargetWeight() {
     return aOrder - bOrder;
   });
   const weightProgress = getWeightProgress();
+  const progressPhotoDaysRemaining = progressPhotos
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(progressPhotos.afterAvailableAt).getTime() - Date.now()) /
+            (24 * 60 * 60 * 1000)
+        )
+      )
+    : 30;
   const topUsers = leaderboard.slice(0, 3);
   const podiumUsers = [
     topUsers[1] ? { user: topUsers[1], rank: 2 } : null,
@@ -3170,6 +3370,43 @@ async function updateTargetWeight() {
       {rewardToast && (
         <div className="reward-toast fixed inset-x-8 top-4 z-[60] mx-auto max-w-xs rounded-xl border border-green-400/40 bg-green-500 px-4 py-3 text-center text-sm font-black text-white shadow-xl shadow-green-500/30">
           {rewardToast}
+        </div>
+      )}
+
+      {isProgressReminderOpen && activeTab === "home" && (
+        <div className="fixed inset-0 z-[66] grid place-items-center bg-black/70 p-5">
+          <div className="w-full max-w-sm rounded-3xl border border-green-500/30 bg-zinc-900 p-6 text-center shadow-2xl">
+            <p className="text-4xl">📸</p>
+            <h2 className="mt-3 text-2xl font-black">Час для фото «Після»</h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              Минуло 30 днів від твого фото «До». Зафіксуй результат і порівняй зміни.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setIsProgressReminderOpen(false);
+                setActiveTab("photo");
+              }}
+              className="mt-5 w-full rounded-2xl bg-green-600 p-4 font-black text-white"
+            >
+              Додати фото «Після»
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (progressPhotos) {
+                  window.localStorage.setItem(
+                    `progress-photo-reminder-${progressPhotos.afterAvailableAt.slice(0, 10)}`,
+                    today()
+                  );
+                }
+                setIsProgressReminderOpen(false);
+              }}
+              className="mt-2 w-full p-3 text-sm font-bold text-zinc-400"
+            >
+              Нагадати завтра
+            </button>
+          </div>
         </div>
       )}
 
@@ -4804,27 +5041,114 @@ async function updateTargetWeight() {
             </header>
 
             <section className="grid grid-cols-2 gap-4">
-              <div className="grid aspect-[3/4] place-items-center rounded-3xl border border-zinc-800 bg-zinc-900 text-center text-zinc-400">
-                <div>
-                  <p className="text-4xl">📷</p>
-                  <p className="mt-2 font-bold">До</p>
-                </div>
+              <div className="relative grid aspect-[3/4] place-items-center overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 text-center text-zinc-400">
+                {progressPhotos?.beforeUrl ? (
+                  // Private signed Supabase URL.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={progressPhotos.beforeUrl} alt="Фото до" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div>
+                    <p className="text-4xl">📷</p>
+                    <p className="mt-2 font-bold">До</p>
+                  </div>
+                )}
+                <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-3 py-1 text-xs font-black text-white">До</span>
               </div>
-              <div className="grid aspect-[3/4] place-items-center rounded-3xl border border-zinc-800 bg-zinc-900 text-center text-zinc-400">
-                <div>
-                  <p className="text-4xl">📷</p>
-                  <p className="mt-2 font-bold">Після</p>
-                </div>
+              <div className="relative grid aspect-[3/4] place-items-center overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 text-center text-zinc-400">
+                {progressPhotos?.afterUrl ? (
+                  // Private signed Supabase URL.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={progressPhotos.afterUrl} alt="Фото після" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div>
+                    <p className="text-4xl">📷</p>
+                    <p className="mt-2 font-bold">Після</p>
+                  </div>
+                )}
+                <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-3 py-1 text-xs font-black text-white">Після</span>
               </div>
             </section>
 
-            <button className="w-full rounded-2xl bg-green-600 p-4 font-black">
-              + Додати нове фото
-            </button>
+            {isProgressPhotoLoading ? (
+              <p className="text-center text-sm text-zinc-400">Завантажуємо…</p>
+            ) : !progressPhotos ? (
+              <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+                <label className="flex items-start gap-3 text-sm leading-relaxed text-zinc-300">
+                  <input
+                    type="checkbox"
+                    checked={hasProgressStorageConsent}
+                    onChange={(event) => setHasProgressStorageConsent(event.target.checked)}
+                    className="mt-1 h-5 w-5 accent-green-500"
+                  />
+                  <span>
+                    Я погоджуюся на приватне зберігання фото прогресу. Фото не публікується й не показується іншим без мого окремого дозволу.
+                  </span>
+                </label>
+                <label className={`mt-4 block w-full rounded-2xl bg-green-600 p-4 text-center font-black text-white ${isProgressPhotoSaving ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>
+                  {isProgressPhotoSaving ? "Зберігаємо…" : "+ Додати фото «До»"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={isProgressPhotoSaving}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) void uploadProgressPhoto(file, "before");
+                    }}
+                  />
+                </label>
+                <p className="mt-3 text-center text-xs text-zinc-500">Після збереження фото «До» замінити його не можна.</p>
+              </section>
+            ) : !progressPhotos.afterUploadedAt ? (
+              <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-center">
+                {progressPhotos.canUploadAfter ? (
+                  <label className={`block w-full rounded-2xl bg-green-600 p-4 font-black text-white ${isProgressPhotoSaving ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>
+                    {isProgressPhotoSaving ? "Зберігаємо…" : "+ Додати фото «Після»"}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={isProgressPhotoSaving}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (file) void uploadProgressPhoto(file, "after");
+                      }}
+                    />
+                  </label>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black text-green-400">{progressPhotoDaysRemaining}</p>
+                    <p className="mt-1 font-bold">днів до фото «Після»</p>
+                    <button disabled className="mt-4 w-full rounded-2xl bg-zinc-800 p-4 font-black text-zinc-500">Додати фото «Після»</button>
+                  </>
+                )}
+              </section>
+            ) : (
+              <p className="text-center text-sm font-bold text-green-400">Готово — обидва фото збережено.</p>
+            )}
 
-            <p className="text-center text-sm text-zinc-400">
-              Роби фото раз на 7 днів для відстеження прогресу.
-            </p>
+            {progressPhotos && (
+              <section className="flex items-center justify-between gap-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+                <div>
+                  <p className="font-black">Показувати в рейтингу</p>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">Учасники бачитимуть фото «До» і «Після» у твоєму публічному профілі.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isProgressPhotoSaving || !progressPhotos.afterUploadedAt}
+                  onClick={() => void updateProgressPhotoVisibility(!progressPhotos.showPublic)}
+                  aria-pressed={progressPhotos.showPublic}
+                  aria-label={progressPhotos.showPublic ? "Приховати фото прогресу" : "Показувати фото прогресу"}
+                  className="rounded-full disabled:opacity-40"
+                >
+                  <ToggleSwitch enabled={progressPhotos.showPublic} />
+                </button>
+              </section>
+            )}
+
+            <p className="text-center text-sm text-zinc-400">Фото «Після» відкривається через 30 днів після фото «До».</p>
           </div>
         )}
       </div>
@@ -4856,7 +5180,10 @@ async function updateTargetWeight() {
                 </div>
               </div>
               <button
-                onClick={() => setSelectedPublicProfile(null)}
+                onClick={() => {
+                  setSelectedPublicProfile(null);
+                  setPublicProgressPhotos(null);
+                }}
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-zinc-900 text-xl"
               >
                 ×
@@ -4895,9 +5222,26 @@ async function updateTargetWeight() {
 
             <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
               <p className="font-bold">Фото прогресу</p>
-              <p className="mt-1 text-sm text-zinc-400">
-                Фото будуть видимі тут тільки після окремої згоди учасника.
-              </p>
+              {publicProgressPhotos?.beforeUrl && publicProgressPhotos.afterUrl ? (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-950">
+                    {/* Private signed Supabase URL shared by owner consent. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={publicProgressPhotos.beforeUrl} alt="Фото до" className="h-full w-full object-cover" />
+                    <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-black text-white">До</span>
+                  </div>
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-950">
+                    {/* Private signed Supabase URL shared by owner consent. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={publicProgressPhotos.afterUrl} alt="Фото після" className="h-full w-full object-cover" />
+                    <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-black text-white">Після</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-zinc-400">
+                  Учасник не відкрив фото прогресу для публічного перегляду.
+                </p>
+              )}
             </section>
 
             <div className="mt-4 grid gap-3">

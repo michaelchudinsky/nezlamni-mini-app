@@ -61,13 +61,14 @@ npm run build
 ```text
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 TELEGRAM_BOT_TOKEN=
 CRON_SECRET=
 TELEGRAM_MINI_APP_URL=
 NEXT_PUBLIC_APP_URL=
 ```
 
-`TELEGRAM_BOT_TOKEN` и `CRON_SECRET` нельзя отправлять в общий чат или коммитить в GitHub.
+`SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN` и `CRON_SECRET` нельзя отправлять в общий чат или коммитить в GitHub.
 
 ## Supabase
 
@@ -82,6 +83,7 @@ NEXT_PUBLIC_APP_URL=
 - `supabase/migrations/202605260003_add_public_profile_settings.sql`
 - `supabase/migrations/202605260004_create_profile_supports.sql`
 - `supabase/migrations/202606030001_create_reminder_cron_runs.sql`
+- `supabase/migrations/202608270001_create_progress_photos.sql`
 
 Перед изменениями базы нужно:
 
