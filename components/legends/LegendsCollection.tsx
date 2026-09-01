@@ -66,8 +66,8 @@ export default function LegendsCollection({ items, activeLegendSlug, isCollectio
         <div className="relative flex items-center justify-between gap-3 border-b border-[#5f2119] pb-3">
           <span className="text-xl text-[#a9271e]">✥</span>
           <div className="min-w-0 flex-1 text-center">
-            <p className="truncate text-[10px] font-black uppercase tracking-[0.17em] text-[#dfc08a]">Легенди NEZLAMNI</p>
-            <p className="mt-0.5 text-[9px] text-[#b99069]">Відкривай нових за досягнення</p>
+            <p className="truncate text-sm font-black uppercase tracking-[0.1em] text-[#dfc08a]">Легенди NEZLAMNI</p>
+            <p className="mt-0.5 text-[11px] text-[#b99069]">Відкривай нових за досягнення</p>
           </div>
           <p className="shrink-0 rounded-lg border border-[#8b3a25] bg-black/60 px-2 py-1 text-sm font-black text-[#e8c47e]">{unlockedCount}/16</p>
         </div>
@@ -84,10 +84,10 @@ export default function LegendsCollection({ items, activeLegendSlug, isCollectio
                 {active && <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-[#d4af3c] text-[9px] font-black text-black">✓</span>}
               </div>
               <div className="px-1 py-1.5">
-                <p className="truncate text-[9px] font-black leading-3 tracking-wide text-[#dfbd84]">{item.name}</p>
-                <p className="mt-0.5 truncate text-[6px] font-black uppercase leading-2 text-[#d63a27]">{item.traits[0]}</p>
+                <p className="truncate text-[13px] font-black leading-4 tracking-wide text-[#dfbd84]">{item.name}</p>
+                <p className="mt-1 truncate text-[9px] font-black uppercase leading-3 text-[#e0442e]">{item.traits[0]}</p>
                 <div className="mt-1 rounded-md border border-[#3f211b] bg-black/75 px-1 py-1">
-                  <div className="flex items-center justify-between gap-1 text-[7px] font-black"><span className="truncate text-[#9f8070]">ПРОГРЕС</span><span className="text-[#df4a32]">{item.current}/{item.target}</span></div>
+                  <div className="flex items-center justify-between gap-0.5 text-[9px] font-black"><span className="truncate text-[#b49a8c]">ПРОГРЕС</span><span className="text-[#ef553b]">{item.current}/{item.target}</span></div>
                   <div className="mt-0.5 h-0.5 overflow-hidden rounded-full bg-[#2b1714]"><div className={`h-full ${item.unlocked ? "bg-[#d4af3c]" : "bg-[#d72c20]"}`} style={{ width: `${item.unlocked ? 100 : percent}%` }} /></div>
                 </div>
               </div>
