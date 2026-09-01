@@ -3,6 +3,7 @@
 import Image from "next/image";
 import {
   Camera,
+  ChevronDown,
   Crown,
   Check,
   CircleHelp,
@@ -20,6 +21,8 @@ import {
 import Cropper, { type Area } from "react-easy-crop";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import LegendsCollection, { LegendBadge, type LegendItem } from "@/components/legends/LegendsCollection";
+import { LEGENDS } from "@/lib/legends";
 
 type Task = {
   id: string;
@@ -50,6 +53,8 @@ type Profile = {
   reminder_activity_enabled?: boolean | null;
   reminder_sleep_enabled?: boolean | null;
   timezone?: string | null;
+  active_legend_slug?: string | null;
+  legends_collection_complete?: boolean | null;
 };
 
 type LeaderboardUser = {
@@ -64,6 +69,8 @@ type LeaderboardUser = {
   showTelegramContact: boolean;
   supportCount: number;
   isSupportedByMe: boolean;
+  activeLegendSlug: string | null;
+  legendsCollectionComplete: boolean;
 };
 
 type ProgressPhotoState = {
@@ -111,6 +118,8 @@ type LeaderboardLog = {
         avatar_url: string | null;
         points_total: number | null;
         registration_date: string | null;
+        active_legend_slug: string | null;
+        legends_collection_complete: boolean | null;
       }
     | {
         first_name: string | null;
@@ -120,6 +129,8 @@ type LeaderboardLog = {
         avatar_url: string | null;
         points_total: number | null;
         registration_date: string | null;
+        active_legend_slug: string | null;
+        legends_collection_complete: boolean | null;
       }[]
     | null;
 };
@@ -221,6 +232,12 @@ type ProfileStatus = {
 };
 
 type AppTheme = "dark" | "light";
+type LegendsState = {
+  items: LegendItem[];
+  activeLegendSlug: string | null;
+  pendingUnlock: string | null;
+  isCollectionComplete: boolean;
+};
 
 type ProfileAvatarProps = {
   name: string | null | undefined;
@@ -1001,6 +1018,8 @@ export default function Home() {
   const [leaderboardMode, setLeaderboardMode] =
     useState<LeaderboardMode>("month");
   const [leaderboardMonth, setLeaderboardMonth] = useState(getMonthValue());
+  const [legendsState, setLegendsState] = useState<LegendsState | null>(null);
+  const [isStatusesOpen, setIsStatusesOpen] = useState(false);
   const [selectedPublicProfile, setSelectedPublicProfile] =
     useState<LeaderboardUser | null>(null);
   const [isSupportSaving, setIsSupportSaving] = useState(false);
@@ -1144,7 +1163,7 @@ const fetchLeaderboard = useCallback(async () => {
   const { data, error } = await supabase
     .from("daily_logs")
     .select(
-      "profile_id, points, event_day, profiles(first_name, telegram_id, telegram_username, show_telegram_contact, avatar_url, points_total, registration_date)"
+      "profile_id, points, event_day, profiles(first_name, telegram_id, telegram_username, show_telegram_contact, avatar_url, points_total, registration_date, active_legend_slug, legends_collection_complete)"
     )
     .gte(
       "event_day",
@@ -1173,6 +1192,8 @@ const fetchLeaderboard = useCallback(async () => {
     const telegramUsername = profileData?.telegram_username || null;
     const showTelegramContact = profileData?.show_telegram_contact || false;
     const avatarUrl = profileData?.avatar_url || null;
+    const activeLegendSlug = profileData?.active_legend_slug || null;
+    const legendsCollectionComplete = profileData?.legends_collection_complete || false;
 
     if (leaderboardMode === "newcomers") {
       if (!registrationDate || !log.event_day) return;
@@ -1212,6 +1233,8 @@ const fetchLeaderboard = useCallback(async () => {
         showTelegramContact,
         supportCount: 0,
         isSupportedByMe: false,
+        activeLegendSlug,
+        legendsCollectionComplete,
       });
     }
   });
@@ -1276,6 +1299,41 @@ const fetchCompletedTaskCodes = useCallback(async (profileId: string) => {
 const getTelegramInitData = useCallback(() => {
   return (window as TelegramWindow).Telegram?.WebApp?.initData || "";
 }, []);
+
+const fetchLegends = useCallback(async () => {
+  const initData = getTelegramInitData();
+  if (!initData) {
+    setLegendsState({
+      items: LEGENDS.map((item) => ({ ...item, current: 0, unlocked: false, unlockedAt: null })),
+      activeLegendSlug: null,
+      pendingUnlock: null,
+      isCollectionComplete: false,
+    });
+    return;
+  }
+  const response = await fetch("/api/legends", { headers: { "x-telegram-init-data": initData } });
+  if (!response.ok) return;
+  setLegendsState((await response.json()) as LegendsState);
+}, [getTelegramInitData]);
+
+const updateLegend = useCallback(async (action: "select" | "mark-seen", slug: string) => {
+  const initData = getTelegramInitData();
+  if (!initData) return;
+  const response = await fetch("/api/legends", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-telegram-init-data": initData },
+    body: JSON.stringify({ action, slug }),
+  });
+  if (!response.ok) return;
+  if (action === "select") {
+    setLegendsState((current) => current ? { ...current, activeLegendSlug: slug, pendingUnlock: current.pendingUnlock === slug ? null : current.pendingUnlock } : current);
+    setProfile((current) => current ? { ...current, active_legend_slug: slug } : current);
+    await fetch("/api/legends", { method: "POST", headers: { "content-type": "application/json", "x-telegram-init-data": initData }, body: JSON.stringify({ action: "mark-seen", slug }) });
+    await fetchLeaderboard();
+  } else {
+    setLegendsState((current) => current ? { ...current, pendingUnlock: current.pendingUnlock === slug ? null : current.pendingUnlock } : current);
+  }
+}, [fetchLeaderboard, getTelegramInitData]);
 
 const fetchProgressPhotos = useCallback(async () => {
   const initData = getTelegramInitData();
@@ -1345,6 +1403,12 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     const timer = window.setTimeout(() => void fetchProgressPhotos(), 0);
     return () => window.clearTimeout(timer);
   }, [activeTab, fetchProgressPhotos]);
+
+  useEffect(() => {
+    if (activeTab !== "leaderboard" && activeTab !== "home") return;
+    const timer = window.setTimeout(() => void fetchLegends(), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, completedTaskCodes, fetchLegends]);
 
   useEffect(() => {
     const targetProfileId = selectedPublicProfile?.profile_id;
@@ -3360,6 +3424,13 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
     (entry): entry is { user: LeaderboardUser; rank: number } => entry !== null
   );
   const restUsers = leaderboard.slice(3, 10);
+  const nearestLegend = legendsState?.items
+    .filter((item) => !item.unlocked)
+    .sort((left, right) => {
+      const leftProgress = left.target ? left.current / left.target : 0;
+      const rightProgress = right.target ? right.current / right.target : 0;
+      return rightProgress - leftProgress || (left.target - left.current) - (right.target - right.current);
+    })[0] || null;
   const onboardingSlide = ONBOARDING_SLIDES[onboardingStep];
   const isFirstWaterActionDone = completedTaskCodes.includes("water_wakeup");
 
@@ -3853,6 +3924,26 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
               </div>
             </section>
 
+            {nearestLegend && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("leaderboard")}
+                className="flex w-full items-center gap-3 overflow-hidden rounded-3xl border border-[#7a251b] bg-[linear-gradient(135deg,#2d0d0b_0%,#18181b_62%,#2a1c08_100%)] p-3 text-left shadow-lg shadow-red-950/20"
+              >
+                <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-[#8b6727] bg-black">
+                  <Image src={nearestLegend.imagePath} alt={nearestLegend.name} fill sizes="80px" className="object-cover brightness-[0.48]" />
+                  <span className="absolute inset-0 grid place-items-center text-xl">🔒</span>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[#d4af3c]">Найближча Легенда</span>
+                  <span className="mt-1 block text-lg font-black">{nearestLegend.name}</span>
+                  <span className="mt-0.5 block truncate text-xs text-zinc-400">{nearestLegend.shortCondition}</span>
+                  <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-black/60"><span className="block h-full rounded-full bg-gradient-to-r from-[#b4231f] to-[#d4af3c]" style={{ width: `${Math.min(100, (nearestLegend.current / nearestLegend.target) * 100)}%` }} /></span>
+                  <span className="mt-1 flex justify-between text-[10px] font-black"><span className="text-zinc-400">Залишилося {Math.max(0, nearestLegend.target - nearestLegend.current)}</span><span className="text-[#e5bd52]">{nearestLegend.current}/{nearestLegend.target}</span></span>
+                </span>
+              </button>
+            )}
+
             <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-4">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
                 Фокус дня
@@ -4201,6 +4292,7 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
                       <p className="truncate text-[10px] text-zinc-500">
                         {user.status.icon} {user.status.title}
                       </p>
+                      {user.activeLegendSlug && <LegendBadge slug={user.activeLegendSlug} complete={user.legendsCollectionComplete} />}
                     </button>
                   );
                 })}
@@ -4233,6 +4325,7 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
                       <span className="block text-xs text-zinc-400">
                         {user.status.icon} {user.status.title}
                       </span>
+                      {user.activeLegendSlug && <LegendBadge slug={user.activeLegendSlug} complete={user.legendsCollectionComplete} />}
                     </span>
                     <span className="text-right">
                       <span className="block font-bold">{user.points}</span>
@@ -4245,95 +4338,84 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
               </div>
             )}
 
-            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-5">
-              <p className="text-sm font-bold text-green-400">
-                Твій наступний статус
-              </p>
-              <div className="mt-3 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-black">
-                    {currentProfileStatus.icon} {currentProfileStatus.title}
-                  </h2>
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                    {currentProfileStatus.description}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-black">
-                    {profile.points_total || 0}
-                  </p>
-                  <p className="text-xs text-zinc-400">всього</p>
-                </div>
-              </div>
+            <section className="rounded-3xl border border-green-500/30 bg-green-950/25 p-3">
+              <button
+                type="button"
+                onClick={() => setIsStatusesOpen((current) => !current)}
+                aria-expanded={isStatusesOpen}
+                className="w-full text-left"
+              >
+                <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-wide text-green-400">Твій статус</p>
+                    <p className="mt-1 truncate text-base font-black">{currentProfileStatus.icon} {currentProfileStatus.title}</p>
+                    <p className="text-[10px] font-bold text-zinc-500">{profile.points_total || 0} балів</p>
+                  </div>
 
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-green-500"
-                  style={{ width: `${profileStatusProgress}%` }}
-                />
-              </div>
+                  <span className="mt-4 text-3xl font-black leading-none text-white">→</span>
 
-              {nextProfileStatus ? (
-                <div className="mt-4 rounded-2xl bg-zinc-950/60 p-4">
-                  <p className="text-sm font-bold text-zinc-300">
-                    Далі: {nextProfileStatus.icon} {nextProfileStatus.title}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    {nextProfileStatus.description}
-                  </p>
-                  <p className="mt-2 text-xs font-bold text-green-300">
-                    Потрібно ще{" "}
-                    {Math.max(
-                      0,
-                      nextProfileStatus.points - (profile.points_total || 0)
-                    )}{" "}
-                    балів
-                  </p>
+                  <div className="flex min-w-0 w-full flex-col items-end text-right">
+                    <p className="text-[10px] font-black uppercase tracking-wide text-orange-300">Наступний</p>
+                    {nextProfileStatus ? (
+                      <>
+                        <p className="mt-1 truncate text-base font-black">{nextProfileStatus.icon} {nextProfileStatus.title}</p>
+                        <span className="flex flex-col items-center self-end">
+                          <span className="text-[10px] font-bold text-green-300">ще {Math.max(0, nextProfileStatus.points - (profile.points_total || 0))} балів</span>
+                          <span className="grid h-5 place-items-center">
+                            <ChevronDown size={27} strokeWidth={3} className={`text-white transition-transform ${isStatusesOpen ? "rotate-180" : "rotate-0"}`} />
+                          </span>
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <p className="mt-1 text-base font-black text-[#d4af3c]">Максимум</p>
+                        <span className="flex flex-col items-center self-end">
+                          <span className="text-[10px] text-zinc-500">усі відкриті</span>
+                          <span className="grid h-5 place-items-center">
+                            <ChevronDown size={27} strokeWidth={3} className={`text-white transition-transform ${isStatusesOpen ? "rotate-180" : "rotate-0"}`} />
+                          </span>
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <p className="mt-4 text-sm text-green-300">
-                  Максимальний статус відкрито.
-                </p>
+                <span className="mt-2 flex items-center" style={{ transform: "translateY(20%)" }}>
+                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800"><span className="block h-full rounded-full bg-green-500" style={{ width: `${profileStatusProgress}%` }} /></span>
+                </span>
+              </button>
+
+              {isStatusesOpen && (
+                <div className="mt-4 space-y-2 border-t border-green-500/20 pt-4">
+                  <p className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">Усі інші статуси</p>
+                  {PROFILE_STATUSES.filter((status) => status.title !== currentProfileStatus.title).map((status) => {
+                    const isUnlocked = (profile.points_total || 0) >= status.points;
+                    return (
+                      <div key={status.title} className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/55 p-3">
+                        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${isUnlocked ? "bg-green-500/15" : "bg-zinc-800 opacity-60"}`}>{status.icon}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center justify-between gap-2"><span className="font-black">{status.title}</span><span className="shrink-0 text-[10px] font-bold text-zinc-500">{status.points} балів</span></span>
+                          <span className="mt-0.5 block text-xs text-zinc-400">{status.description}</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </section>
 
-            <section className="space-y-3">
-              <h2 className="text-lg font-black">Усі статуси</h2>
-              {PROFILE_STATUSES.map((status) => {
-                const isUnlocked = (profile.points_total || 0) >= status.points;
-                const isCurrent = status.title === currentProfileStatus.title;
+            {legendsState ? (
+              <LegendsCollection
+                items={legendsState.items}
+                activeLegendSlug={legendsState.activeLegendSlug}
+                pendingUnlock={legendsState.pendingUnlock}
+                isCollectionComplete={legendsState.isCollectionComplete}
+                onSelect={(slug) => updateLegend("select", slug)}
+                onDismissUnlock={(slug) => updateLegend("mark-seen", slug)}
+              />
+            ) : (
+              <p className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-center text-zinc-400">Завантажую колекцію…</p>
+            )}
 
-                return (
-                  <div
-                    key={status.title}
-                    className={`flex items-start gap-3 rounded-2xl border p-4 ${
-                      isCurrent
-                        ? "border-green-500/40 bg-green-950/30"
-                        : "border-zinc-800 bg-zinc-900"
-                    }`}
-                  >
-                    <div
-                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl ${
-                        isUnlocked ? "bg-green-500/15" : "bg-zinc-800"
-                      }`}
-                    >
-                      {status.icon}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-black">{status.title}</p>
-                        <span className="text-xs font-bold text-zinc-400">
-                          {status.points} балів
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        {status.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </section>
           </div>
         )}
 
@@ -5155,7 +5237,7 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
 
       {selectedPublicProfile && (
         <div className="fixed inset-0 z-50 grid place-items-end bg-black/80 px-3 pb-3">
-          <div className="w-full max-w-md rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+          <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[2rem] border border-zinc-800 bg-zinc-950 p-5 pb-28 shadow-2xl">
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-700" />
 
             <div className="mb-5 flex items-start justify-between gap-4">
@@ -5177,6 +5259,9 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
                     {selectedPublicProfile.status.icon}{" "}
                     {selectedPublicProfile.status.title}
                   </p>
+                  {selectedPublicProfile.activeLegendSlug && (
+                    <LegendBadge slug={selectedPublicProfile.activeLegendSlug} complete={selectedPublicProfile.legendsCollectionComplete} />
+                  )}
                 </div>
               </div>
               <button
@@ -5210,6 +5295,24 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
                 </p>
               </div>
             </section>
+
+            {selectedPublicProfile.activeLegendSlug && (() => {
+              const publicLegend = LEGENDS.find((item) => item.slug === selectedPublicProfile.activeLegendSlug);
+              return publicLegend ? (
+                <section className="mt-4 flex items-center gap-3 rounded-2xl border border-[#8b6727] bg-[linear-gradient(135deg,#30100d,#191919)] p-3">
+                  <span className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 ${selectedPublicProfile.legendsCollectionComplete ? "border-[#ffd86a] shadow-[0_0_18px_rgb(212_175_60/0.5)]" : "border-[#9a722b]"}`}>
+                    <Image src={publicLegend.imagePath} alt={publicLegend.name} fill sizes="64px" className="object-cover" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-[#d4af3c]">Активна Легенда</span>
+                    <span className="mt-0.5 block text-xl font-black">{publicLegend.name}</span>
+                    <span className="mt-1 block text-[10px] font-bold text-[#d46b43]">{publicLegend.traits.join(" • ")}</span>
+                    <span className="mt-1 block text-xs text-zinc-400">Заслужено: {publicLegend.shortCondition}</span>
+                    {selectedPublicProfile.legendsCollectionComplete && <span className="mt-1 block text-[10px] font-black text-[#ffd86a]">🔥 ТИТУЛ «НЕЗЛАМНИЙ»</span>}
+                  </span>
+                </section>
+              ) : null;
+            })()}
 
             <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
               <p className="text-sm leading-relaxed text-zinc-300">
