@@ -62,8 +62,8 @@ export default function LegendsCollection({ items, activeLegendSlug, isCollectio
 
   return (
     <>
-      <section className="overflow-hidden rounded-3xl border border-[#6e2419] bg-[radial-gradient(circle_at_50%_-10%,#35100d_0%,#100706_42%,#050505_78%)] p-3 shadow-[inset_0_1px_0_rgb(212_175_60/0.12),0_18px_35px_rgb(0_0_0/0.3)]">
-        <div className="relative flex items-center justify-between gap-3 border-b border-[#5f2119] pb-3">
+      <section className="-mx-3 overflow-hidden rounded-3xl border border-[#6e2419] bg-[radial-gradient(circle_at_50%_-10%,#35100d_0%,#100706_42%,#050505_78%)] p-1.5 shadow-[inset_0_1px_0_rgb(212_175_60/0.12),0_18px_35px_rgb(0_0_0/0.3)]">
+        <div className="relative mx-1.5 flex items-center justify-between gap-3 border-b border-[#5f2119] px-1 pb-3 pt-1.5">
           <span className="text-xl text-[#a9271e]">✥</span>
           <div className="min-w-0 flex-1 text-center">
             <p className="truncate text-sm font-black uppercase tracking-[0.1em] text-[#dfc08a]">Легенди NEZLAMNI</p>
@@ -72,22 +72,22 @@ export default function LegendsCollection({ items, activeLegendSlug, isCollectio
           <p className="shrink-0 rounded-lg border border-[#8b3a25] bg-black/60 px-2 py-1 text-sm font-black text-[#e8c47e]">{unlockedCount}/16</p>
         </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-1.5">
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
         {items.map((item) => {
           const active = item.slug === activeLegendSlug;
           const percent = Math.min(100, Math.round((item.current / item.target) * 100));
           return (
             <button key={item.slug} type="button" onClick={() => setSelected(item)} aria-label={`${item.name}: ${item.unlocked ? "відкрито" : `${item.current} із ${item.target}`}`} className={`relative min-w-0 overflow-hidden rounded-[10px] border bg-[#080504] text-center ${rarityClass[item.rarity]} ${active ? "ring-2 ring-[#d4af3c] shadow-[0_0_20px_rgb(212_175_60/0.35)]" : ""}`}>
               <div className="relative aspect-square overflow-hidden border-b border-[#672218] bg-black">
-                <Image src={item.imagePath} alt={item.name} fill sizes="(max-width: 430px) 22vw, 100px" className={`object-cover transition ${item.unlocked ? "" : "brightness-[0.22] grayscale-[0.45]"}`} />
+                <Image src={item.imagePath} alt={item.name} fill sizes="(max-width: 430px) 46vw, 210px" className={`object-cover transition ${item.unlocked ? "" : "brightness-[0.22] grayscale-[0.45]"}`} />
                 {!item.unlocked && <span className="absolute inset-0 grid place-items-center bg-black/15"><LockKeyhole className="text-[#d1b287]" size={17} /></span>}
                 {active && <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-[#d4af3c] text-[9px] font-black text-black">✓</span>}
               </div>
               <div className="px-1 py-1.5">
-                <p className="truncate text-[13px] font-black leading-4 tracking-wide text-[#dfbd84]">{item.name}</p>
-                <p className="mt-1 truncate text-[9px] font-black uppercase leading-3 text-[#e0442e]">{item.traits[0]}</p>
+                <p className="text-[13px] font-black leading-4 tracking-wide text-[#dfbd84]">{item.name}</p>
+                <p className="mt-1 break-words text-[9px] font-black uppercase leading-3 text-[#e0442e]">{item.traits.join(" • ")}</p>
                 <div className="mt-1 rounded-md border border-[#3f211b] bg-black/75 px-1 py-1">
-                  <div className="flex items-center justify-between gap-0.5 text-[9px] font-black"><span className="truncate text-[#b49a8c]">ПРОГРЕС</span><span className="text-[#ef553b]">{item.current}/{item.target}</span></div>
+                  <div className="flex items-center justify-between gap-1 text-[9px] font-black"><span className="text-[#b49a8c]">ПРОГРЕС</span><span className="text-[#ef553b]">{item.current}/{item.target}</span></div>
                   <div className="mt-0.5 h-0.5 overflow-hidden rounded-full bg-[#2b1714]"><div className={`h-full ${item.unlocked ? "bg-[#d4af3c]" : "bg-[#d72c20]"}`} style={{ width: `${item.unlocked ? 100 : percent}%` }} /></div>
                 </div>
               </div>
