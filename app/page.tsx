@@ -5328,15 +5328,6 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
             })()}
 
             <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-              <p className="text-sm leading-relaxed text-zinc-300">
-                {selectedPublicProfile.status.description}
-              </p>
-              <p className="mt-2 text-xs text-zinc-500">
-                Старт: {selectedPublicProfile.registrationDate || "не вказано"}
-              </p>
-            </section>
-
-            <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
               <p className="font-bold">Фото прогресу</p>
               {publicProgressPhotos?.beforeUrl && publicProgressPhotos.afterUrl ? (
                 <div className="mt-3 grid grid-cols-2 gap-3">

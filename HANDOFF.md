@@ -84,6 +84,7 @@ NEXT_PUBLIC_APP_URL=
 - `supabase/migrations/202605260004_create_profile_supports.sql`
 - `supabase/migrations/202606030001_create_reminder_cron_runs.sql`
 - `supabase/migrations/202608270001_create_progress_photos.sql`
+- `supabase/migrations/202609010001_create_user_legends.sql`
 
 Перед изменениями базы нужно:
 
@@ -94,7 +95,7 @@ NEXT_PUBLIC_APP_URL=
 
 ## Текущее состояние продукта
 
-Готовность бесплатной беты: 98%.
+Готовность бесплатной беты: 99%.
 
 Готовность NEZLAMNI v2: около 60%.
 
@@ -115,6 +116,10 @@ NEXT_PUBLIC_APP_URL=
 - поле обратной связи разработчикам;
 - настройки напоминаний в профиле;
 - тестовое Telegram-напоминание.
+- приватные фото прогресса «До/После» с отдельным разрешением на публичный показ;
+- коллекция из 16 животных «Легенды NEZLAMNI»;
+- исторический подсчёт прогресса Легенд из `daily_logs`;
+- выбор активной Легенды и её отображение в рейтинге и публичном профиле.
 
 ## Важное про Telegram и Vercel
 
