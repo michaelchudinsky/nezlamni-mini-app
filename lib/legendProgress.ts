@@ -35,7 +35,7 @@ function consecutiveStats(dates: string[]) {
   return { current, max, maxAchievedAt };
 }
 
-export function calculateLegendProgress(logs: LegendLog[], totalPoints: number): LegendProgress[] {
+export function calculateLegendProgress(logs: LegendLog[], totalPoints: number, existingUnlockedSlugs: string[] = []): LegendProgress[] {
   const sorted = [...logs].filter((log) => Boolean(log.event_day)).sort((a, b) => a.event_day.localeCompare(b.event_day));
   const byDay = new Map<string, Set<string>>();
   for (const log of sorted) {
@@ -50,24 +50,55 @@ export function calculateLegendProgress(logs: LegendLog[], totalPoints: number):
   });
   const foodDates = sorted.filter((log) => isFoodQuest(log.task_code)).map((log) => log.event_day);
   const sportDates = sorted.filter((log) => isSportChallenge(log.task_code)).map((log) => log.event_day);
+  const waterCompleteDates = activeDates.filter((date) => [...WATER].every((code) => byDay.get(date)?.has(code)));
+  const sleepCompleteDates = activeDates.filter((date) => [...NIGHT].every((code) => byDay.get(date)?.has(code)));
+  const foodCompleteDates = activeDates.filter((date) => [...FOOD].every((code) => byDay.get(date)?.has(code)));
+  const doubleBonusDates = activeDates.filter((date) => {
+    const codes = [...(byDay.get(date) || [])];
+    return codes.some(isFoodQuest) && codes.some(isSportChallenge);
+  });
   const activeStreak = consecutiveStats(activeDates);
-  const foodStreak = consecutiveStats(foodDates);
-  const values: Record<LegendRequirement, { current: number; earned: number; dates: string[]; achievedAt?: string | null }> = {
+  const values: Partial<Record<LegendRequirement, { current: number; earned: number; dates: string[]; achievedAt?: string | null }>> = {
     perfectDays: { current: perfectDates.length, earned: perfectDates.length, dates: perfectDates },
     activeStreak: { current: activeStreak.current, earned: activeStreak.max, dates: [], achievedAt: activeStreak.maxAchievedAt },
     sportChallenges: { current: sportDates.length, earned: sportDates.length, dates: sportDates },
     activeDays: { current: activeDates.length, earned: activeDates.length, dates: activeDates },
+    waterCompleteDays: { current: waterCompleteDates.length, earned: waterCompleteDates.length, dates: waterCompleteDates },
+    sleepCompleteDays: { current: sleepCompleteDates.length, earned: sleepCompleteDates.length, dates: sleepCompleteDates },
+    foodCompleteDays: { current: foodCompleteDates.length, earned: foodCompleteDates.length, dates: foodCompleteDates },
+    doubleBonusDays: { current: doubleBonusDates.length, earned: doubleBonusDates.length, dates: doubleBonusDates },
     foodQuests: { current: foodDates.length, earned: foodDates.length, dates: foodDates },
-    foodQuestStreak: { current: foodStreak.current, earned: foodStreak.max, dates: [], achievedAt: foodStreak.maxAchievedAt },
     totalTasks: { current: sorted.length, earned: sorted.length, dates: sorted.map((log) => log.event_day) },
     totalPoints: { current: totalPoints, earned: totalPoints, dates: sorted.map((log) => log.event_day) },
   };
-  return LEGENDS.map((item) => {
+  const progressBySlug = new Map<string, LegendProgress>();
+  for (const item of LEGENDS.filter((legend) => legend.requirement !== "unlockedLegends")) {
     const metric = values[item.requirement];
+    if (!metric) continue;
     const unlocked = metric.earned >= item.target;
     const achievedAt = unlocked
       ? metric.achievedAt || metric.dates[Math.min(item.target - 1, metric.dates.length - 1)] || new Date().toISOString().slice(0, 10)
       : null;
-    return { slug: item.slug, current: Math.min(metric.current, item.target), target: item.target, unlocked, achievedAt };
+    progressBySlug.set(item.slug, { slug: item.slug, current: Math.min(metric.current, item.target), target: item.target, unlocked, achievedAt });
+  }
+
+  const earnedSlugs = new Set(existingUnlockedSlugs.filter((slug) => slug !== "owl"));
+  for (const progress of progressBySlug.values()) {
+    if (progress.unlocked) earnedSlugs.add(progress.slug);
+  }
+  const owl = LEGENDS.find((item) => item.slug === "owl")!;
+  const owlUnlocked = earnedSlugs.size >= owl.target;
+  const earnedDates = [...progressBySlug.values()]
+    .filter((item) => item.unlocked && item.achievedAt)
+    .map((item) => item.achievedAt!)
+    .sort();
+  progressBySlug.set(owl.slug, {
+    slug: owl.slug,
+    current: Math.min(earnedSlugs.size, owl.target),
+    target: owl.target,
+    unlocked: owlUnlocked,
+    achievedAt: owlUnlocked ? earnedDates[Math.min(owl.target - 1, earnedDates.length - 1)] || new Date().toISOString().slice(0, 10) : null,
   });
+
+  return LEGENDS.map((item) => progressBySlug.get(item.slug)!);
 }

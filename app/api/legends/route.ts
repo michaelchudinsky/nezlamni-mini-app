@@ -38,7 +38,17 @@ export async function GET(request: Request) {
     .order("event_day", { ascending: true });
   if (logsError) return Response.json({ error: "Could not load progress" }, { status: 500 });
 
-  const calculated = calculateLegendProgress((logs || []) as LegendLog[], viewer.profile.points_total || 0);
+  const { data: existingUnlocks, error: existingUnlockError } = await viewer.admin
+    .from("user_legends")
+    .select("legend_slug")
+    .eq("profile_id", viewer.profile.id);
+  if (existingUnlockError) return Response.json({ error: "Legends database is not ready" }, { status: 503 });
+
+  const calculated = calculateLegendProgress(
+    (logs || []) as LegendLog[],
+    viewer.profile.points_total || 0,
+    (existingUnlocks || []).map((row) => row.legend_slug)
+  );
   const earned = calculated.filter((item) => item.unlocked);
   if (earned.length) {
     const { error } = await viewer.admin.from("user_legends").upsert(
