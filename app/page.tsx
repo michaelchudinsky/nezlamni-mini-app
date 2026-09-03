@@ -1019,6 +1019,7 @@ export default function Home() {
     useState<LeaderboardMode>("month");
   const [leaderboardMonth, setLeaderboardMonth] = useState(getMonthValue());
   const [legendsState, setLegendsState] = useState<LegendsState | null>(null);
+  const [shouldScrollToLegends, setShouldScrollToLegends] = useState(false);
   const [isStatusesOpen, setIsStatusesOpen] = useState(false);
   const [selectedPublicProfile, setSelectedPublicProfile] =
     useState<LeaderboardUser | null>(null);
@@ -1409,6 +1410,15 @@ const init = useCallback(async (tgUser: TelegramUser | null) => {
     const timer = window.setTimeout(() => void fetchLegends(), 0);
     return () => window.clearTimeout(timer);
   }, [activeTab, completedTaskCodes, fetchLegends]);
+
+  useEffect(() => {
+    if (!shouldScrollToLegends || activeTab !== "leaderboard" || !legendsState) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("legends-collection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setShouldScrollToLegends(false);
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, legendsState, shouldScrollToLegends]);
 
   useEffect(() => {
     const targetProfileId = selectedPublicProfile?.profile_id;
@@ -3927,7 +3937,10 @@ async function updateProgressPhotoVisibility(showPublic: boolean) {
             {nearestLegend && (
               <button
                 type="button"
-                onClick={() => setActiveTab("leaderboard")}
+                onClick={() => {
+                  setShouldScrollToLegends(true);
+                  setActiveTab("leaderboard");
+                }}
                 className="flex w-full items-center gap-3 overflow-hidden rounded-3xl border border-[#7a251b] bg-[linear-gradient(135deg,#2d0d0b_0%,#18181b_62%,#2a1c08_100%)] p-3 text-left shadow-lg shadow-red-950/20"
               >
                 <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-[#8b6727] bg-black">

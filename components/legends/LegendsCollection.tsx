@@ -62,7 +62,7 @@ export default function LegendsCollection({ items, activeLegendSlug, isCollectio
 
   return (
     <>
-      <section className="-mx-3 overflow-hidden rounded-3xl border border-[#6e2419] bg-[radial-gradient(circle_at_50%_-10%,#35100d_0%,#100706_42%,#050505_78%)] p-1.5 shadow-[inset_0_1px_0_rgb(212_175_60/0.12),0_18px_35px_rgb(0_0_0/0.3)]">
+      <section id="legends-collection" className="-mx-3 scroll-mt-4 overflow-hidden rounded-3xl border border-[#6e2419] bg-[radial-gradient(circle_at_50%_-10%,#35100d_0%,#100706_42%,#050505_78%)] p-1.5 shadow-[inset_0_1px_0_rgb(212_175_60/0.12),0_18px_35px_rgb(0_0_0/0.3)]">
         <div className="relative mx-1.5 flex items-center justify-between gap-3 border-b border-[#5f2119] px-1 pb-3 pt-1.5">
           <span className="text-xl text-[#a9271e]">✥</span>
           <div className="min-w-0 flex-1 text-center">
