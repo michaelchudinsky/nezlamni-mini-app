@@ -87,7 +87,7 @@ export default function LegendsCollection({ items, activeLegendSlug, isCollectio
                 <p className="text-[13px] font-black leading-4 tracking-wide text-[#dfbd84]">{item.name}</p>
                 <p className="mt-1 truncate text-[9px] font-black uppercase leading-3 text-[#e0442e]">{item.traits[0]}</p>
                 <div className="mt-1 rounded-md border border-[#3f211b] bg-black/75 px-1 py-1">
-                  <div className="flex items-center justify-between gap-1 text-[9px] font-black"><span className="text-[#b49a8c]">ПРОГРЕС</span><span className="text-[#ef553b]">{item.current}/{item.target}</span></div>
+                  <div className="text-center text-[11px] font-black text-[#ef553b]">{item.current}/{item.target}</div>
                   <div className="mt-0.5 h-0.5 overflow-hidden rounded-full bg-[#2b1714]"><div className={`h-full ${item.unlocked ? "bg-[#d4af3c]" : "bg-[#d72c20]"}`} style={{ width: `${item.unlocked ? 100 : percent}%` }} /></div>
                 </div>
               </div>
